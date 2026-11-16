@@ -1,0 +1,237 @@
+[
+  {
+    "days_symbol": "CARDi_ReadRom",
+    "recoded_exact_name": [
+      {
+        "module": "main",
+        "address": "0x02009ed0"
+      }
+    ],
+    "status": "contract-review-required"
+  },
+  {
+    "days_symbol": "CARDi_ReadRomIDCore",
+    "recoded_exact_name": [
+      {
+        "module": "main",
+        "address": "0x02009b4c"
+      }
+    ],
+    "status": "contract-review-required"
+  },
+  {
+    "days_symbol": "FS_ClearOverlayImage",
+    "recoded_exact_name": [
+      {
+        "module": "main",
+        "address": "0x0200b7fc"
+      }
+    ],
+    "status": "contract-review-required"
+  },
+  {
+    "days_symbol": "FS_EndOverlay",
+    "recoded_exact_name": [
+      {
+        "module": "main",
+        "address": "0x0200bc78"
+      }
+    ],
+    "status": "contract-review-required"
+  },
+  {
+    "days_symbol": "FS_LoadOverlayImage",
+    "recoded_exact_name": [
+      {
+        "module": "main",
+        "address": "0x0200ba48"
+      }
+    ],
+    "status": "contract-review-required"
+  },
+  {
+    "days_symbol": "FS_StartOverlay",
+    "recoded_exact_name": [
+      {
+        "module": "main",
+        "address": "0x0200bb88"
+      }
+    ],
+    "status": "contract-review-required"
+  },
+  {
+    "days_symbol": "MI_DmaCopy16",
+    "recoded_exact_name": [],
+    "status": "resolve-by-body-and-caller"
+  },
+  {
+    "days_symbol": "MI_DmaCopy32",
+    "recoded_exact_name": [],
+    "status": "resolve-by-body-and-caller"
+  },
+  {
+    "days_symbol": "MI_DmaCopy32Async",
+    "recoded_exact_name": [],
+    "status": "resolve-by-body-and-caller"
+  },
+  {
+    "days_symbol": "MI_DmaFill32",
+    "recoded_exact_name": [],
+    "status": "resolve-by-body-and-caller"
+  },
+  {
+    "days_symbol": "MI_DmaFill32Async",
+    "recoded_exact_name": [],
+    "status": "resolve-by-body-and-caller"
+  },
+  {
+    "days_symbol": "MI_SendGXCommandAsync",
+    "recoded_exact_name": [
+      {
+        "module": "main",
+        "address": "0x020053f8"
+      }
+    ],
+    "status": "contract-review-required"
+  },
+  {
+    "days_symbol": "MI_SendGXCommandAsyncFast",
+    "recoded_exact_name": [
+      {
+        "module": "main",
+        "address": "0x020055f8"
+      }
+    ],
+    "status": "contract-review-required"
+  },
+  {
+    "days_symbol": "MI_StopDma",
+    "recoded_exact_name": [
+      {
+        "module": "main",
+        "address": "0x02005288"
+      }
+    ],
+    "status": "contract-review-required"
+  },
+  {
+    "days_symbol": "MI_WaitDma",
+    "recoded_exact_name": [
+      {
+        "module": "main",
+        "address": "0x0200522c"
+      }
+    ],
+    "status": "contract-review-required"
+  },
+  {
+    "days_symbol": "MIi_CardDmaCopy32",
+    "recoded_exact_name": [
+      {
+        "module": "main",
+        "address": "0x020056e8"
+      }
+    ],
+    "status": "contract-review-required"
+  },
+  {
+    "days_symbol": "MIi_DmaSetChannelRegs",
+    "recoded_exact_name": [],
+    "status": "resolve-by-body-and-caller"
+  },
+  {
+    "days_symbol": "MIi_DmaSetParams",
+    "recoded_exact_name": [],
+    "status": "resolve-by-body-and-caller"
+  },
+  {
+    "days_symbol": "OS_GetInitArenaHi",
+    "recoded_exact_name": [
+      {
+        "module": "main",
+        "address": "0x020036b8"
+      }
+    ],
+    "status": "contract-review-required"
+  },
+  {
+    "days_symbol": "OS_GetInitArenaLo",
+    "recoded_exact_name": [
+      {
+        "module": "main",
+        "address": "0x02003798"
+      }
+    ],
+    "status": "contract-review-required"
+  },
+  {
+    "days_symbol": "OS_GetTick",
+    "recoded_exact_name": [
+      {
+        "module": "main",
+        "address": "0x02003fe8"
+      }
+    ],
+    "status": "contract-review-required"
+  },
+  {
+    "days_symbol": "OS_GetTickLo",
+    "recoded_exact_name": [
+      {
+        "module": "main",
+        "address": "0x02004088"
+      }
+    ],
+    "status": "contract-review-required"
+  },
+  {
+    "days_symbol": "OS_InitTick",
+    "recoded_exact_name": [
+      {
+        "module": "main",
+        "address": "0x02003f00"
+      }
+    ],
+    "status": "contract-review-required"
+  },
+  {
+    "days_symbol": "OS_ResetRequestIrqMask",
+    "recoded_exact_name": [
+      {
+        "module": "main",
+        "address": "0x02001fd0"
+      }
+    ],
+    "status": "contract-review-required"
+  },
+  {
+    "days_symbol": "PXI_InitFifo",
+    "recoded_exact_name": [
+      {
+        "module": "main",
+        "address": "0x0200e208"
+      }
+    ],
+    "status": "contract-review-required"
+  },
+  {
+    "days_symbol": "PXI_SendWordByFifo",
+    "recoded_exact_name": [
+      {
+        "module": "main",
+        "address": "0x0200e320"
+      }
+    ],
+    "status": "contract-review-required"
+  },
+  {
+    "days_symbol": "func_01ff85d0",
+    "recoded_exact_name": [],
+    "status": "resolve-by-body-and-caller"
+  },
+  {
+    "days_symbol": "func_01ff8664",
+    "recoded_exact_name": [],
+    "status": "resolve-by-body-and-caller"
+  }
+]

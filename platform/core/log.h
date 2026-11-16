@@ -1,0 +1,23 @@
+/* File log at ux0:data/khrecoded/log.txt. The previous run's log is kept as log_prev.txt,
+ * because the run that matters is usually the one that crashed. */
+#ifndef KH_LOG_H
+#define KH_LOG_H
+
+void log_init(const char *dir);
+void log_printf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+void log_flush(void);
+/* Write and sync without locking: for fault handlers, which may interrupt a logging thread. */
+void log_write_raw(const char *buf, int len);
+
+/* The line logged `back` lines ago (0 = the latest), for the on-screen console. */
+int log_recent(int back, char *out, int size);
+
+#define LOG(...) log_printf(__VA_ARGS__)
+
+/* Diagnostic detail (card reads, register changes, the game's traces, per-subsystem stats):
+ * only with debug = 1 in config.ini, so a normal run's log stays short and the memory card
+ * quiet. */
+extern int kh_log_verbose;
+#define LOGV(...) do { if (kh_log_verbose) log_printf(__VA_ARGS__); } while (0)
+
+#endif

@@ -1,0 +1,110 @@
+/* The DS 3D rendering engine on the Vita's GPU (vitaGL): a frame from the geometry engine
+ * (hw/gx3d.h) is drawn into an off-screen 256x192 x scale target, which the presentation
+ * composites with engine A's 2D layers (platform/core/video.c). */
+#ifndef KH_HW_GPU3D_H
+#define KH_HW_GPU3D_H
+
+#include "hw/gx3d.h"
+
+/* scale: the internal resolution, 1-4 times the DS's. 0 when the shaders failed to build. */
+int kh_gpu3d_init(int scale);
+
+/* From the port menu, any thread: a new internal resolution (1-4), the textures decoded again
+ * (after the filter changed). Applied at the next kh_gpu3d_render. */
+void kh_gpu3d_set_scale(int scale);
+/* The same in quarters (4 = 1x .. 16 = 4x): the 60 fps mode's dynamic resolution (game.c),
+ * and the size drawn now */
+void kh_gpu3d_set_scale_quarters(int q);
+int kh_gpu3d_scale_quarters(void);
+void kh_gpu3d_reload_textures(void);
+/* The next frame is not to be mixed with the last (60 fps mode): a different picture. */
+void kh_gpu3d_forget_previous(void);
+/* Each frame drawn as it comes, nothing held back for the 60 fps mix (the display loop sets it
+ * while the screens trade places frame by frame). */
+extern volatile int kh_gpu3d_direct;
+/* The target the next frames are drawn into, 0 or 1 (the display thread, before
+ * kh_gpu3d_prepare): the dual-3D cutscenes keep each screen's 3D in its own, shown again
+ * while the other screen gets the next frame (game.c). 0 otherwise; 1 is made when first
+ * chosen, at the size drawn then. */
+void kh_gpu3d_select_target(int target);
+/* Target 1 deleted (with target 0 chosen): out of the cutscenes, its video memory back. */
+void kh_gpu3d_drop_second_target(void);
+
+/* The single screen's field HUD (hw/fieldhud.c, khdays-port's `shape3d hud`): the
+ * frame's flat polygons (KhGxPolygon flat: the HUD's 3D pieces) wholly inside the DS rectangle
+ * src (x0, y0, x1, y1, DS dots) are drawn moved, at NDC x = mx * px + cx, y = my * py + cy from
+ * their DS position (px, py); with hide, the flat ones smaller than a quarter of the screen are
+ * not drawn. NULL: as the game lays them out. */
+typedef struct {
+    int place, hide;
+    float src[4];
+    float mx, cx, my, cy;
+} KhGpu3dHudPlace;
+void kh_gpu3d_set_hud_place(const KhGpu3dHudPlace *p);
+
+/* Draw the frame; returns the GL texture holding the 3D layer (premultiplied RGBA, GL
+ * orientation: row 0 is the bottom of the screen), 0 when there is nothing to show. */
+unsigned kh_gpu3d_render(const KhGxFrame *frame);
+
+/* Before kh_gpu3d_render, with the helper core free: decodes the frame's new and changed
+ * textures on both cores (platform/core/workers.h). Optional; render does the rest. */
+void kh_gpu3d_prepare(const KhGxFrame *frame);
+
+/* Diagnosis switches, cycled with L+R+Circle: 0 normal, 1 opaque polygons in the frame's
+ * order (no grouping by state), 2 every texture re-hashed every frame, 3 texture-coordinate
+ * generation ignored (raw TEXCOORD values). */
+extern volatile int kh_gpu3d_debug;
+/* halfway mixes shown so far (60 fps mode), for the frame-rate counter */
+extern volatile uint32_t kh_gpu3d_mixes;
+/* the display's VBlank count (game.c), for the 60 fps mix's timing; NULL: no interpolation */
+extern uint32_t (*kh_gpu3d_clock)(void);
+#define KH_GPU3D_DEBUG_MODES 4
+
+/* Write the next rendered frame's textures (TGA) and polygons (text) to
+ * ux0:data/khdays/dump/, for diagnosis. Any thread. */
+void kh_gpu3d_request_dump(void);
+
+/* a 32-bit TGA, px as RGBA in memory order, top row first */
+void kh_gpu3d_dump_tga(const char *path, const uint32_t *px, int w, int h);
+
+typedef struct {
+    uint32_t render_us, batches, textures_decoded, textures_live, skipped;
+    uint32_t fmt[8];      /* textures decoded per format */
+    uint32_t empty_src;   /* of them, read from all-zero texture VRAM */
+    uint32_t slots;       /* kh_tex_slots_mapped at the last frame */
+    uint32_t modes[4];    /* polygons drawn per mode: modulation, decal, toon/highlight, shadow */
+    uint32_t disp3dcnt;   /* of the last frame */
+    uint32_t texgen[4];   /* textured polygons per texture-coordinate generation mode */
+    uint32_t flat_st;     /* textured polygons whose vertices all have the same s,t */
+    uint32_t depth_equal; /* polygons drawn with the depth-equal test */
+    uint32_t tex_wanted, tex_none; /* polygons with a texture format; of them drawn without */
+    uint32_t prepare_us, burst_max; /* parallel texture decoding: time, most in one frame */
+    /* kh_gpu3d_prepare by step: entries hashed again and the time; decoding and uploads;
+     * the worst frame's steps and counts */
+    uint32_t hashed, hash_us, decode_us, upload_us;
+    uint32_t worst_hash_us, worst_decode_us, worst_upload_us, worst_hashed, worst_decoded;
+    uint32_t interpolated; /* frames shown after a halfway mix (60 fps interpolation) */
+    /* new frames by what came of their mix: done, dual 3D, the previous one shown once only,
+     * the previous one's own frame still to show, none before, 3D settings changed, nothing
+     * paired, a camera cut; and the vertices of the mixed ones, of them paired */
+    uint32_t mix_reason[8], mix_vertices, mix_paired;
+    /* of the paired vertices: in models whose texture coordinates moved (scrolling water,
+     * sky), paired by place alone; and the runs left to B because a nearer one took their A */
+    uint32_t mix_uv_moved, mix_runs_lost;
+    uint32_t mix_snapped; /* particle vertices left where B has them (a jump, or w <= 0) */
+} KhGpu3dStats;
+void kh_gpu3d_take_stats(KhGpu3dStats *out);
+/* a frame's 3D in one line of the log (the trace after an enemy's defeat, game.c) */
+void kh_gpu3d_describe(const KhGxFrame *f, char *out, int n);
+
+/* config debug = 3 (game.c): the 3D not drawn, the last picture kept */
+extern volatile int kh_gpu3d_test_skip;
+/* game.c: 1 for a moment after an enemy's defeat, translucent polygons
+ * over (nearly) the whole screen left out (the Possessor's dying veil, seen as a white flash) */
+extern volatile int kh_gpu3d_drop_veil;
+/* game.c, each display frame: active 1 for a moment after a defeat with a Possessor's overlay
+ * loaded: translucent polygons of IDs new since before the defeat (its
+ * burst) left out; inactive, the frame's translucent IDs go into the history. */
+void kh_gpu3d_burst_update(const KhGxFrame *f, int active);
+
+#endif

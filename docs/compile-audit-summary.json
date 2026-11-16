@@ -1,0 +1,2829 @@
+{
+  "modules": 108,
+  "owned_entries": 12330,
+  "unique_sources": 12330,
+  "missing": 0,
+  "probe_passed": 11836,
+  "probe_failed": 459,
+  "compiled_c_units": 12295,
+  "non_c_entries": 35,
+  "scope": "Unmodified EU units, isolated Vita GCC compilation; not a link or runtime test.",
+  "common_first_errors": [
+    {
+      "error": "expected declaration specifiers before '__declspec'",
+      "units": 110
+    },
+    {
+      "error": "expected '(' before 'void'",
+      "units": 65
+    },
+    {
+      "error": "nnsys/fnd.h: No such file or directory",
+      "units": 22
+    },
+    {
+      "error": "unknown type name 'NNSG2dCharaColorMode'",
+      "units": 21
+    },
+    {
+      "error": "expected '(' before 'u32'",
+      "units": 17
+    },
+    {
+      "error": "lvalue required as unary '&' operand",
+      "units": 15
+    },
+    {
+      "error": "unknown type name 'NNSG2dTextRect'; did you mean 'NNSG2dTextCanvas'?",
+      "units": 13
+    },
+    {
+      "error": "expected '(' before 'int'",
+      "units": 11
+    },
+    {
+      "error": "expected '(' before '{' token",
+      "units": 10
+    },
+    {
+      "error": "unknown type name 'NNSSndStrm'",
+      "units": 8
+    },
+    {
+      "error": "unknown type name 'NNSG2dAnimController'",
+      "units": 8
+    },
+    {
+      "error": "unknown type name 'NNSSndArcInfo'",
+      "units": 7
+    },
+    {
+      "error": "unknown type name 'NNSSndArc'",
+      "units": 6
+    },
+    {
+      "error": "expected '(' before 'double'",
+      "units": 5
+    },
+    {
+      "error": "ov002/MenuTouchState.h: No such file or directory",
+      "units": 5
+    }
+  ],
+  "failures": [
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/RLUnCompReadByCallbackWrite16bit.c",
+      "status": "failed",
+      "log": "build/audit/f91662350a3aa57b.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/asm_stubs/auto/RLUnCompReadByCallbackWrite16bit.c:2:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/LZ77UnCompReadNormalWrite8bit.c",
+      "status": "failed",
+      "log": "build/audit/596d2c204a491c81.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/asm_stubs/auto/LZ77UnCompReadNormalWrite8bit.c:2:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/SoftReset.c",
+      "status": "failed",
+      "log": "build/audit/47cbd8dcdd1aa46c.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/asm_stubs/auto/SoftReset.c:2:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/GetCRC16.c",
+      "status": "failed",
+      "log": "build/audit/fad32f26aa70a6bc.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/asm_stubs/auto/GetCRC16.c:5:5: error: expected '(' before 'u16'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/WaitByLoop.c",
+      "status": "failed",
+      "log": "build/audit/4201f6ac9a0e2474.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/asm_stubs/auto/WaitByLoop.c:2:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/IsDebugger.c",
+      "status": "failed",
+      "log": "build/audit/abf1fb8cad5827f6.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/asm_stubs/auto/IsDebugger.c:2:5: error: expected '(' before 'int'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/VBlankIntrWait.c",
+      "status": "failed",
+      "log": "build/audit/82aa379502b451f5.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/asm_stubs/auto/VBlankIntrWait.c:2:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/IntrWait.c",
+      "status": "failed",
+      "log": "build/audit/1080f052fadaf68f.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/asm_stubs/auto/IntrWait.c:4:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/LZ77UnCompReadByCallbackWrite16bit.c",
+      "status": "failed",
+      "log": "build/audit/2e6e14d855629ded.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/asm_stubs/auto/LZ77UnCompReadByCallbackWrite16bit.c:2:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/BitUnPack.c",
+      "status": "failed",
+      "log": "build/audit/92ecb8062a28014a.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/asm_stubs/auto/BitUnPack.c:4:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/RLUnCompReadNormalWrite8bit.c",
+      "status": "failed",
+      "log": "build/audit/79bd619715e316d5.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/asm_stubs/auto/RLUnCompReadNormalWrite8bit.c:2:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/CpuFastSet.c",
+      "status": "failed",
+      "log": "build/audit/ab0ba8c86e2405f7.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/asm_stubs/auto/CpuFastSet.c:4:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/HuffUnCompReadByCallback.c",
+      "status": "failed",
+      "log": "build/audit/1a47a535a665e5b5.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/asm_stubs/auto/HuffUnCompReadByCallback.c:2:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/Halt.c",
+      "status": "failed",
+      "log": "build/audit/9417adfea0e95e7c.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/asm_stubs/auto/Halt.c:2:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/Div.c",
+      "status": "failed",
+      "log": "build/audit/0ab54f87a80a8644.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/asm_stubs/auto/Div.c:4:5: error: expected '(' before 's32'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/Mod.c",
+      "status": "failed",
+      "log": "build/audit/d2988a9b0ed5e438.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/asm_stubs/auto/Mod.c:4:5: error: expected '(' before 's32'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/Sqrt.c",
+      "status": "failed",
+      "log": "build/audit/fbcea20dfcec2892.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/asm_stubs/auto/Sqrt.c:2:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/CpuSet.c",
+      "status": "failed",
+      "log": "build/audit/52ba73f839e4a494.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/asm_stubs/auto/CpuSet.c:4:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "src/asm_stubs/calls/Entry.c",
+      "status": "failed",
+      "log": "build/audit/7fcd1ca8c2ec6bea.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/asm/Entry_02000800.c:13:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/func_0200093c.c",
+      "status": "failed",
+      "log": "build/audit/b1d12833f70ea426.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/asm_stubs/auto/func_0200093c.c:4:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/init/asm_stubs/auto/MIi_UncompressBackward.c",
+      "status": "failed",
+      "log": "build/audit/26ee85de5b015677.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/init/asm_stubs/auto/MIi_UncompressBackward.c:57:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "src/asm_stubs/calls/INITi_DoAutoload.c",
+      "status": "failed",
+      "log": "build/audit/6950ced3c9294dd8.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/asm/INITi_DoAutoload_020009fc.c:4:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "src/calls/ClearTextArea.c",
+      "status": "failed",
+      "log": "build/audit/b4fe3bfebb0a4e57.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/font/ClearTextArea_02001584.c:18:19: error: invalid use of incomplete typedef 'NNSiG2dCharCanvasVTable'"
+    },
+    {
+      "source": "libs/nitro/os/calls/OS_WaitIrq.c",
+      "status": "failed",
+      "log": "build/audit/9d447a8ffa963875.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/os/calls/OS_SetIrqFunction.c",
+      "status": "failed",
+      "log": "build/audit/cd801897f997f00f.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nitro_os/OS_SetIrqFunction_02001d90.c:4:8: error: unknown type name 'OSiIrqSlot'"
+    },
+    {
+      "source": "libs/nitro/os/calls/OS_GetIrqFunction.c",
+      "status": "failed",
+      "log": "build/audit/3d2ab3053fa31af5.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nitro_os/OS_GetIrqFunction_02001e18.c:4:8: error: unknown type name 'OSiIrqSlot'"
+    },
+    {
+      "source": "libs/nitro/os/calls/OSi_DoUnlockByWord.c",
+      "status": "failed",
+      "log": "build/audit/afcf0fce82c9645a.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/os/calls/OSi_DoTryLockByWord.c",
+      "status": "failed",
+      "log": "build/audit/86770294ced767d4.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/OS_GetLockID.c",
+      "status": "failed",
+      "log": "build/audit/d9da233aab2dbd9b.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/asm_stubs/auto/OS_GetLockID.c:1:5: error: expected '(' before 'int'"
+    },
+    {
+      "source": "src/calls/OS_CreateThread.c",
+      "status": "failed",
+      "log": "build/audit/e188b1d43c57741f.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/os/calls/OS_SleepThread.c",
+      "status": "failed",
+      "log": "build/audit/3d94e7ffe32aee70.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/os/calls/OS_WakeupThread.c",
+      "status": "failed",
+      "log": "build/audit/cfc8b4f074b51541.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/os/calls/OS_WakeupThreadDirect.c",
+      "status": "failed",
+      "log": "build/audit/282e4fefdeacc924.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/os/calls/OS_RescheduleThread.c",
+      "status": "failed",
+      "log": "build/audit/136b25ab81c21acd.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/os/calls/OS_SetThreadPriority.c",
+      "status": "failed",
+      "log": "build/audit/b70bb8f4813a2f50.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/os/calls/OS_Sleep.c",
+      "status": "failed",
+      "log": "build/audit/f1f3fd7b329e1199.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/os/calls/OS_SetSwitchThreadCallback.c",
+      "status": "failed",
+      "log": "build/audit/fdb2a318ce62fa9f.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/os/calls/OS_DisableScheduler.c",
+      "status": "failed",
+      "log": "build/audit/4d9848a9133c0415.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/os/calls/OS_EnableScheduler.c",
+      "status": "failed",
+      "log": "build/audit/9143c8bdac49dd86.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/calls/OS_SaveContext.c",
+      "status": "failed",
+      "log": "build/audit/3e3421c851ef5737.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/asm_stubs/calls/OS_SaveContext.c:18:5: error: expected '(' before 'BOOL'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/calls/OS_LoadContext.c",
+      "status": "failed",
+      "log": "build/audit/27dd92a7ab987181.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/asm_stubs/calls/OS_LoadContext.c:18:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/calls/OS_SendMessage.c",
+      "status": "failed",
+      "log": "build/audit/3f4a77ef049bd5cb.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/os/calls/OS_ReceiveMessage.c",
+      "status": "failed",
+      "log": "build/audit/9a56251fa5818819.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/os/calls/OS_JamMessage.c",
+      "status": "failed",
+      "log": "build/audit/d87c44272110781f.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/os/calls/OS_LockMutex.c",
+      "status": "failed",
+      "log": "build/audit/e24cbe041654bde9.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/os/calls/OS_TryLockMutex.c",
+      "status": "failed",
+      "log": "build/audit/75b17c710e0faff6.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/os/calls/OSi_UnlockMutexCore.c",
+      "status": "failed",
+      "log": "build/audit/cbfda61578768647.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "src/auto/DC_FlushRange.c",
+      "status": "failed",
+      "log": "build/audit/cf31a802877c9d15.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/auto/DC_FlushRange.c:1:39: error: expected '(' before '{' token"
+    },
+    {
+      "source": "libs/nitro/os/calls/OS_AllocFromHeap.c",
+      "status": "failed",
+      "log": "build/audit/9c9482da6670792d.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/os/calls/OS_FreeToHeap.c",
+      "status": "failed",
+      "log": "build/audit/e93f8646b3795a4e.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/calls/OSi_ExceptionHandler.c",
+      "status": "failed",
+      "log": "build/audit/596cc2b445841c7b.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/asm_stubs/calls/OSi_ExceptionHandler.c:10:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/calls/OSi_GetAndDisplayContext.c",
+      "status": "failed",
+      "log": "build/audit/4c5735c00821dc40.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/asm_stubs/calls/OSi_GetAndDisplayContext.c:4:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/calls/OSi_SetExContext.c",
+      "status": "failed",
+      "log": "build/audit/bc9f5fce39303558.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/asm/OSi_SetExContext_02003da8.c:4:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/calls/OSi_DisplayExContext.c",
+      "status": "failed",
+      "log": "build/audit/ef2ed8c262f98675.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nitro_os/OSi_DisplayExContext_02003e28.c:22:13: error: expected '(' before '{' token"
+    },
+    {
+      "source": "libs/nitro/os/calls/OSi_CountUpTick.c",
+      "status": "failed",
+      "log": "build/audit/5d049e3b335cc079.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nitro_os/OSi_CountUpTick_02003f6c.c:15:21: error: 'REG_TM0CNT_L_ADDR' undeclared (first use in this function); did you mean 'REG_DIVCNT_ADDR'?"
+    },
+    {
+      "source": "libs/nitro/os/calls/OS_GetTick.c",
+      "status": "failed",
+      "log": "build/audit/9acab2d81305c22c.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/os/calls/OS_SetTick.c",
+      "status": "failed",
+      "log": "build/audit/de03a347bc3ba568.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/os/calls/OS_EndAlarm.c",
+      "status": "failed",
+      "log": "build/audit/a31a4c539b649ebb.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/os/calls/OS_SetAlarm.c",
+      "status": "failed",
+      "log": "build/audit/8aa29a88c8445bb3.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/os/calls/OS_CancelAlarm.c",
+      "status": "failed",
+      "log": "build/audit/21a3aead25916d69.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/calls/OSi_AlarmHandler.c",
+      "status": "failed",
+      "log": "build/audit/10debc1d706a034f.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/asm_stubs/calls/OSi_AlarmHandler.c:3:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/calls/OS_SetVAlarm.c",
+      "status": "failed",
+      "log": "build/audit/13eead7a6b57e5c8.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/os/calls/OSi_GetVFrame.c",
+      "status": "failed",
+      "log": "build/audit/fa4a6a92e5525167.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/os/auto/OS_RestoreInterrupts.c",
+      "status": "failed",
+      "log": "build/audit/82b86ec6a2fa297e.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/os/auto/OS_RestoreInterrupts_IrqAndFiq.c",
+      "status": "failed",
+      "log": "build/audit/d238adb6892821ad.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/os/calls/OSi_UnlockVram.c",
+      "status": "failed",
+      "log": "build/audit/49b4e321838b69b6.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/os/calls/OS_WaitEventEx.c",
+      "status": "failed",
+      "log": "build/audit/f1fba7875450cd6d.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/os/calls/OS_SignalEvent.c",
+      "status": "failed",
+      "log": "build/audit/6a0a54b2be8043a1.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/mi/calls/MI_WaitDma.c",
+      "status": "failed",
+      "log": "build/audit/79fa6aee58573a05.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/mi/calls/MI_StopDma.c",
+      "status": "failed",
+      "log": "build/audit/7212f4ce77a410d8.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/mi/calls/MIi_CheckDma0SourceAddress.c",
+      "status": "failed",
+      "log": "build/audit/6b0e304d4ceeb90d.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nitro_mi/MIi_CheckDma0SourceAddress_02005390.c:5:37: error: unknown type name 'MIDmaCallback'"
+    },
+    {
+      "source": "libs/nitro/mi/calls/MI_SendGXCommandAsync.c",
+      "status": "failed",
+      "log": "build/audit/0c202f8952570967.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/mi/asm_stubs/calls/MI_ReadUncompLZ8.c",
+      "status": "failed",
+      "log": "build/audit/4a3de6f5d9b563f9.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/mi/asm_stubs/calls/MI_ReadUncompLZ8.c:39:5: error: expected '(' before 's32'"
+    },
+    {
+      "source": "libs/nitro/mtx/asm_stubs/auto/MTX_Identity22_.c",
+      "status": "failed",
+      "log": "build/audit/acbd7022004beecb.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/mtx/asm_stubs/auto/MTX_Identity22_.c:1:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/mtx/asm_stubs/auto/MTX_Identity44_.c",
+      "status": "failed",
+      "log": "build/audit/82521b8c4575ac8a.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/mtx/asm_stubs/auto/MTX_Identity44_.c:1:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/mtx/asm_stubs/auto/MTX_Copy44To43_.c",
+      "status": "failed",
+      "log": "build/audit/9f2f736c61d58cf1.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/mtx/asm_stubs/auto/MTX_Copy44To43_.c:1:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/card/calls/CARDi_LockResource.c",
+      "status": "failed",
+      "log": "build/audit/8363ed763bbb6d52.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/card/calls/CARDi_UnlockResource.c",
+      "status": "failed",
+      "log": "build/audit/256f7f28006f8657.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/card/calls/CARDi_NotifyEvent.c",
+      "status": "failed",
+      "log": "build/audit/bc981c98511bc2a1.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/card/calls/CARDi_OldTypeTaskThread.c",
+      "status": "failed",
+      "log": "build/audit/fc85b320af7fe68b.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/card/calls/CARDi_WaitForTask.c",
+      "status": "failed",
+      "log": "build/audit/35eaab268815ed6b.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/card/calls/CARDi_EndTask.c",
+      "status": "failed",
+      "log": "build/audit/ba2023023d4ac09d.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/card/calls/CARDi_Request.c",
+      "status": "failed",
+      "log": "build/audit/9217604f0854a155.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/card/calls/CARDi_ReadRomWithDMA.c",
+      "status": "failed",
+      "log": "build/audit/12dd894dbec88264.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/card/calls/CARDi_ReadRom.c",
+      "status": "failed",
+      "log": "build/audit/fee0cbb8e9b9c103.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/card/calls/CARDi_CheckPulledOutCore.c",
+      "status": "failed",
+      "log": "build/audit/60e50a3d41d39770.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/gx/asm_stubs/auto/CP_SaveContext.c",
+      "status": "failed",
+      "log": "build/audit/97396314a61a19ed.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/gx/asm_stubs/auto/CP_SaveContext.c:14:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/gx/asm_stubs/auto/CPi_RestoreContext.c",
+      "status": "failed",
+      "log": "build/audit/846be54f364a0221.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/gx/asm_stubs/auto/CPi_RestoreContext.c:6:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/fs/calls/FSi_EndCommand.c",
+      "status": "failed",
+      "log": "build/audit/a9a527c422389060.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/fs/calls/FSi_WaitForArchiveCompletion.c",
+      "status": "failed",
+      "log": "build/audit/2077e891fa2e0c2f.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/fs/calls/FSi_NextCommand.c",
+      "status": "failed",
+      "log": "build/audit/cb67328a0f9a2ce1.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/fs/calls/FSi_ExecuteAsyncCommand.c",
+      "status": "failed",
+      "log": "build/audit/c9eed8fe73470589.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/fs/calls/FSi_ExecuteSyncCommand.c",
+      "status": "failed",
+      "log": "build/audit/06fd82d9b6f39107.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/fs/calls/FSi_SendCommand.c",
+      "status": "failed",
+      "log": "build/audit/67a767ea1fb4d8d3.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/fs/calls/FS_FindArchive.c",
+      "status": "failed",
+      "log": "build/audit/949fc8f70b5c802f.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/fs/calls/FS_RegisterArchiveName.c",
+      "status": "failed",
+      "log": "build/audit/ff465e0eac1b14d0.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/fs/calls/FS_SuspendArchive.c",
+      "status": "failed",
+      "log": "build/audit/a6f23ef034908759.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/fs/calls/FS_ResumeArchive.c",
+      "status": "failed",
+      "log": "build/audit/dd86b3db269788b2.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/fs/calls/FS_NotifyArchiveAsyncEnd.c",
+      "status": "failed",
+      "log": "build/audit/3440a04c3ed2b6eb.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/fs/calls/FS_WaitAsync.c",
+      "status": "failed",
+      "log": "build/audit/28846e7554ac14ab.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/fs/calls/FS_CancelFile.c",
+      "status": "failed",
+      "log": "build/audit/293a6003ce442789.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/fs/calls/FS_EndOverlay.c",
+      "status": "failed",
+      "log": "build/audit/cdd3c9ca3f5dbcb7.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/math/asm_stubs/auto/func_0200dc4c.c",
+      "status": "failed",
+      "log": "build/audit/8740a3ad40cc2171.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/math/asm_stubs/auto/func_0200dc4c.c:38:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "src/asm_stubs/calls/MATHi_SHA1ProcessBlock.c",
+      "status": "failed",
+      "log": "build/audit/e0a6f3d73d85c990.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/asm/func_0200ded0.c:3:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/pxi/calls/PXI_InitFifo.c",
+      "status": "failed",
+      "log": "build/audit/7a6375d6c3fc938e.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/pxi/calls/PXI_SetFifoRecvCallback.c",
+      "status": "failed",
+      "log": "build/audit/6b0aeeec3bfe17c2.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/pxi/calls/PXI_SendWordByFifo.c",
+      "status": "failed",
+      "log": "build/audit/bab211ee10817d79.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/pxi/calls/PXIi_HandlerRecvFifoNotEmpty.c",
+      "status": "failed",
+      "log": "build/audit/076ab3122720e996.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/rtc/calls/RTC_GetDateAsync.c",
+      "status": "failed",
+      "log": "build/audit/b8b66ea36c130007.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/rtc/calls/RTC_GetTimeAsync.c",
+      "status": "failed",
+      "log": "build/audit/6e5952d41af0c7f5.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/rtc/calls/RTC_GetDateTimeAsync.c",
+      "status": "failed",
+      "log": "build/audit/2a9c91f1b12935ba.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/rtc/calls/RtcCommonCallback.c",
+      "status": "failed",
+      "log": "build/audit/566637d4889ee1b2.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nitro_rtc/RtcCommonCallback_0200e5b8.c:9:5: error: unknown type name 'RTCWork'"
+    },
+    {
+      "source": "libs/nitro/rtc/calls/RTC_GetDayOfWeek.c",
+      "status": "failed",
+      "log": "build/audit/88a05599cae89845.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nitro_rtc/RTC_GetDayOfWeek_0200e934.c:5:1: error: unknown type name 'RTCWeek'"
+    },
+    {
+      "source": "libs/nitro/snd/calls/SND_RecvCommandReply.c",
+      "status": "failed",
+      "log": "build/audit/281e1f9bdef3ab62.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "src/calls/AppendReservedSoundCommand.c",
+      "status": "failed",
+      "log": "build/audit/408a03d9435067fa.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/snd/calls/SND_FlushCommand.c",
+      "status": "failed",
+      "log": "build/audit/e0a35b398235993b.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/snd/calls/SND_GetCurrentCommandTag.c",
+      "status": "failed",
+      "log": "build/audit/11351448b30a5a88.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "src/calls/sound_command_tag_reached.c",
+      "status": "failed",
+      "log": "build/audit/f4a44b27e328d034.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/snd/calls/SND_CountReservedCommand.c",
+      "status": "failed",
+      "log": "build/audit/992278618ba5f752.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "src/calls/CountReservedSoundCommands.c",
+      "status": "failed",
+      "log": "build/audit/ec48a8e80f6ba92c.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/pxi/calls/PxiFifoCallback.c",
+      "status": "failed",
+      "log": "build/audit/288543a8b75ecc70.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "src/calls/PopSoundCommand.c",
+      "status": "failed",
+      "log": "build/audit/8fb23aad63754481.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/snd/calls/IsCommandAvailable.c",
+      "status": "failed",
+      "log": "build/audit/03ae01f2080c0382.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "src/calls/TP_SetCalibrateParam.c",
+      "status": "failed",
+      "log": "build/audit/9db14b7a628843ca.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "src/calls/TP_RequestAutoSamplingStartAsync.c",
+      "status": "failed",
+      "log": "build/audit/258c287c821ce3b9.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "src/calls/TP_RequestAutoSamplingStopAsync.c",
+      "status": "failed",
+      "log": "build/audit/bdd5e77be32302c2.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "src/calls/TP_RequestSetStabilityAsync.c",
+      "status": "failed",
+      "log": "build/audit/fb5796e4c8045011.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "src/calls/TP_CalcCalibrateParam.c",
+      "status": "failed",
+      "log": "build/audit/e2e4488efab85063.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/spi/calls/PMi_TryToSendPxiData.c",
+      "status": "failed",
+      "log": "build/audit/fadcff9e58344d91.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/spi/calls/PMi_SetLED.c",
+      "status": "failed",
+      "log": "build/audit/0eae6ca776b9c229.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nitro_spi/PMi_SetLED_020104a0.c:7:10: fatal error: nitro/snd.h: No such file or directory"
+    },
+    {
+      "source": "libs/nitro/spi/calls/PM_SetBackLight.c",
+      "status": "failed",
+      "log": "build/audit/2674737204f31329.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nitro_spi/PM_SetBackLight_02010518.c:9:26: error: unknown type name 'PMLCDTarget'"
+    },
+    {
+      "source": "src/calls/PM_GoSleepMode.c",
+      "status": "failed",
+      "log": "build/audit/7477100d847adefd.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/spi/calls/PMi_InsertList.c",
+      "status": "failed",
+      "log": "build/audit/25b5efccc55b899c.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/spi/calls/PMi_DeleteList.c",
+      "status": "failed",
+      "log": "build/audit/bdfab81e93bfb9b2.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/spi/calls/PM_DeletePreSleepCallback.c",
+      "status": "failed",
+      "log": "build/audit/4487b8ad3ad68e2c.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nitro_spi/PM_DeletePreSleepCallback_02010b04.c:22:21: error: unknown type name 'PMSleepCallbackInfo'"
+    },
+    {
+      "source": "libs/nitro/spi/calls/PM_DeletePostSleepCallback.c",
+      "status": "failed",
+      "log": "build/audit/368752d4feaa173a.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nitro_spi/PM_DeletePreSleepCallback_02010b14.c:22:21: error: unknown type name 'PMSleepCallbackInfo'"
+    },
+    {
+      "source": "src/calls/WMi_InitCore.c",
+      "status": "failed",
+      "log": "build/audit/bc366485d5cfa3e1.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "src/calls/ShutdownWireless.c",
+      "status": "failed",
+      "log": "build/audit/dbcda708fb2ae799.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "src/calls/GetSessionChannel.c",
+      "status": "failed",
+      "log": "build/audit/8a0f422f6615a3bd.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "src/calls/GetSessionLinkState.c",
+      "status": "failed",
+      "log": "build/audit/863c892f23e4e841.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "src/calls/SetSessionCallback.c",
+      "status": "failed",
+      "log": "build/audit/35e6415502703794.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "src/calls/SetSlotEventHandler.c",
+      "status": "failed",
+      "log": "build/audit/2f8eb32b03b294fb.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "src/calls/AlarmCallback_02011848.c",
+      "status": "failed",
+      "log": "build/audit/e9b70989d3372efd.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_snd/AlarmCallback_02011834.c:6:26: error: unknown type name 'NNSSndStrm'"
+    },
+    {
+      "source": "src/calls/WM_StartMP.c",
+      "status": "failed",
+      "log": "build/audit/6e6494706c6b2c6c.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nitro_wm/WM_StartMP_02011b6c.c:37:21: error: 'WM_MP_TMP_PARAM_FREQUENCY' undeclared (first use in this function)"
+    },
+    {
+      "source": "src/calls/WmDataSharingReceiveCallback_Parent.c",
+      "status": "failed",
+      "log": "build/audit/46950db20d5f9b34.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "src/calls/WmDataSharingReceiveData.c",
+      "status": "failed",
+      "log": "build/audit/08d569072fa7752b.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "src/calls/WmDataSharingSendDataSet.c",
+      "status": "failed",
+      "log": "build/audit/4c2a8847301e018c.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "src/calls/CTRDGi_LockByProcessor.c",
+      "status": "failed",
+      "log": "build/audit/44efbe977df40610.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "src/calls/CTRDGi_UnlockByProcessor.c",
+      "status": "failed",
+      "log": "build/audit/9074c6f8f80a4d93.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "src/calls/CTRDG_Enable.c",
+      "status": "failed",
+      "log": "build/audit/eb9da37e3b192824.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "src/calls/CTRDGi_InitModuleInfo.c",
+      "status": "failed",
+      "log": "build/audit/9fa9e061569ad927.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nitro_ctrdg/CTRDGi_InitModuleInfo_020125c8.c:66:26: error: 'REG_OS_PAUSE_CHK_MASK' undeclared (first use in this function)"
+    },
+    {
+      "source": "src/calls/CTRDGi_InitTaskThread.c",
+      "status": "failed",
+      "log": "build/audit/b37d38883e85dc31.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "src/calls/JobQueue_WorkerLoop_02012808.c",
+      "status": "failed",
+      "log": "build/audit/9d6d1aa54cdb1af4.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nns/fnd/auto/PopMBlock.c",
+      "status": "failed",
+      "log": "build/audit/24378e0118fe3a84.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_fnd/PopMBlock_0201360c.c:3:10: fatal error: nnsys/fnd.h: No such file or directory"
+    },
+    {
+      "source": "libs/nns/fnd/calls/AllocatorAllocForSDKHeap.c",
+      "status": "failed",
+      "log": "build/audit/ca96c3db77967825.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_fnd/AllocatorFreeForSDKHeap_020136e0.c:4:10: fatal error: nnsys/fnd.h: No such file or directory"
+    },
+    {
+      "source": "libs/nns/fnd/calls/AllocatorFreeForSDKHeap.c",
+      "status": "failed",
+      "log": "build/audit/e702b73c58f1592f.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_fnd/AllocatorFreeForSDKHeap_020136fc.c:4:10: fatal error: nnsys/fnd.h: No such file or directory"
+    },
+    {
+      "source": "libs/nns/gfd/calls/NNS_GfdDumpFrmTexVramManager.c",
+      "status": "failed",
+      "log": "build/audit/08550795eef49e82.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_gfd/NNS_GfdDumpFrmTexVramManager_020137f8.c:10:53: error: unknown type name 'NNSGfdFrmTexVramDebugDumpCallBack'"
+    },
+    {
+      "source": "libs/nns/gfd/calls/NNS_GfdDumpFrmTexVramManagerEx.c",
+      "status": "failed",
+      "log": "build/audit/44d3016e48b1c284.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_gfd/NNS_GfdDumpFrmTexVramManagerEx_02013824.c:4:8: error: unknown type name 'NNSGfdFrmTexRegionState'; did you mean 'NNSGfdFrmTexVramState'?"
+    },
+    {
+      "source": "libs/nns/gfd/calls/NNS_GfdDumpFrmPlttVramManagerEx.c",
+      "status": "failed",
+      "log": "build/audit/53d691c1f1623a80.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_gfd/NNS_GfdDumpFrmPlttVramManagerEx_02013bac.c:6:8: error: unknown type name 'NNSGfdFrmPlttVramManager'"
+    },
+    {
+      "source": "libs/nns/gfd/calls/NNS_GfdSetFrmPlttVramState.c",
+      "status": "failed",
+      "log": "build/audit/1f42f536fb6d0f65.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_gfd/NNS_GfdSetFrmPlttVramState_02013d58.c:9:8: error: unknown type name 'NNSGfdFrmPlttVramManager'"
+    },
+    {
+      "source": "libs/nns/gfd/auto/IsVramTransferTaskQueueFull_.c",
+      "status": "failed",
+      "log": "build/audit/3e87a1cedb8c5570.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_gfd/IsVramTransferTaskQueueFull_02013db0.c:23:50: error: unknown type name 'NNSGfdVramTransferTaskQueue'"
+    },
+    {
+      "source": "libs/nns/gfd/auto/IsVramTransferTaskQueueEmpty_.c",
+      "status": "failed",
+      "log": "build/audit/0117e86f4291560f.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_gfd/IsVramTransferTaskQueueEmpty_02013dc8.c:23:51: error: unknown type name 'NNSGfdVramTransferTaskQueue'"
+    },
+    {
+      "source": "libs/nns/g2d/auto/NNS_G2dGetAnimSequenceByIdx.c",
+      "status": "failed",
+      "log": "build/audit/8df94dc446a06fbd.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_g2d/NNS_G2dGetAnimSequenceByIdx_02014ba8.c:7:45: error: unknown type name 'NNSG2dAnimBankData'"
+    },
+    {
+      "source": "libs/nns/g2d/auto/GetPtrOamArrayHead_.c",
+      "status": "failed",
+      "log": "build/audit/d71c052a3a8447e6.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_g2d/GetPtrOamArrayHead_02014bc0.c:7:42: error: unknown type name 'NNSG2dCellDataBank'"
+    },
+    {
+      "source": "libs/nns/g2d/calls/UnPackExtendedData_.c",
+      "status": "failed",
+      "log": "build/audit/75f49cab928751d9.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_g2d/UnpackExtendedData_02014bdc.c:7:39: error: unknown type name 'NNSG2dUserExCellAttrBank'"
+    },
+    {
+      "source": "libs/nns/g2d/calls/NNS_G2dSetAnimCtrlCurrentFrame.c",
+      "status": "failed",
+      "log": "build/audit/76d544e2abdc9b3e.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_g2d/NNS_G2dSetAnimCtrlCurrentFrame_0201517c.c:24:43: error: unknown type name 'NNSG2dAnimController'"
+    },
+    {
+      "source": "libs/nns/g2d/auto/NNS_G2dGetAnimCtrlCurrentFrame.c",
+      "status": "failed",
+      "log": "build/audit/ee1e8515c434ac1f.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_g2d/NNS_G2dGetAnimCtrlCurrentFrame_02015198.c:24:46: error: unknown type name 'NNSG2dAnimController'"
+    },
+    {
+      "source": "libs/nns/g2d/calls/NNS_G2dBindAnimCtrl.c",
+      "status": "failed",
+      "log": "build/audit/4eb6be4bff7d371c.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_g2d/NNS_G2dBindAnimCtrl_02015264.c:24:32: error: unknown type name 'NNSG2dAnimController'"
+    },
+    {
+      "source": "libs/nns/g2d/auto/NNS_G2dInitImageProxy.c",
+      "status": "failed",
+      "log": "build/audit/0ad0823fa7481c6c.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_g2d/NNS_G2dInitImageProxy_0201528c.c:68:20: error: static declaration of 'InitializeVRamLocation_' follows non-static declaration"
+    },
+    {
+      "source": "libs/nns/g2d/auto/NNS_G2dInitImagePaletteProxy.c",
+      "status": "failed",
+      "log": "build/audit/ff7b86f36e1bcc00.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_g2d/func_020152b8.c:47:20: error: static declaration of 'InitializeVRamLocation_' follows non-static declaration"
+    },
+    {
+      "source": "libs/nns/g2d/calls/NNS_G2dLoadImage1DMapping.c",
+      "status": "failed",
+      "log": "build/audit/645acc9d84da80ed.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_g2d/func_020152e4.c:106:20: error: static declaration of 'GX_SetOBJVRamModeChar' follows non-static declaration"
+    },
+    {
+      "source": "libs/nns/g2d/auto/NNSi_G2dSrtcSetSRTRotZ.c",
+      "status": "failed",
+      "log": "build/audit/96f90727e2de9c66.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_g2d/NNSi_G2dSrtcSetSRTRotZ_02015614.c:23:39: error: unknown type name 'NNSG2dSRTControl'"
+    },
+    {
+      "source": "libs/nns/g2d/auto/NNSi_G2dSrtcSetSRTScale.c",
+      "status": "failed",
+      "log": "build/audit/439e354b65d85780.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_g2d/NNSi_G2dSrtcSetSRTScale_02015630.c:23:39: error: unknown type name 'NNSG2dSRTControl'"
+    },
+    {
+      "source": "libs/nns/g2d/calls/NNSi_G2dSrtcInitControl.c",
+      "status": "failed",
+      "log": "build/audit/51381b84a801303d.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_g2d/NNSi_G2dSrtcInitControl_0201564c.c:25:34: error: unknown type name 'NNSG2dSRTControl'"
+    },
+    {
+      "source": "libs/nns/g2d/calls/ApplyCurrentAnimResult_.c",
+      "status": "failed",
+      "log": "build/audit/be59239b103a677e.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_g2d/TickCellAnimation_02015684.c:5:34: error: unknown type name 'NNSG2dCellAnimation'"
+    },
+    {
+      "source": "libs/nns/g2d/calls/NNS_G2dSetCellAnimationSequence.c",
+      "status": "failed",
+      "log": "build/audit/dd3739abec34c7a1.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_g2d/NNS_G2dSetCellAnimationSequence_0201579c.c:27:26: error: unknown type name 'NNSG2dAnimController'"
+    },
+    {
+      "source": "libs/nns/g2d/calls/NNS_G2dTickCellAnimation.c",
+      "status": "failed",
+      "log": "build/audit/91dc5195ed59db90.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_g2d/NNS_G2dTickCellAnimation_020157b4.c:27:20: error: unknown type name 'NNSG2dAnimController'"
+    },
+    {
+      "source": "libs/nns/g2d/calls/NNS_G2dSetCellAnimationCurrentFrame.c",
+      "status": "failed",
+      "log": "build/audit/9d6145037c502898.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_g2d/NNS_G2dTickCellAnimation_020157d4.c:27:20: error: unknown type name 'NNSG2dAnimController'"
+    },
+    {
+      "source": "src/calls/NNS_G2dMakeCellToOams.c",
+      "status": "failed",
+      "log": "build/audit/4f0688ed986621a1.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_g2d/NNS_G2dMakeCellToOams_020157fc.c:15:3: error: conflicting types for 'MtxFx22'; have 'struct MtxFx22'"
+    },
+    {
+      "source": "libs/nns/g2d/calls/GetBGExtPlttSlot.c",
+      "status": "failed",
+      "log": "build/audit/9ab7a5175b5d83d5.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_g2d/GetBGExtPlttSlot_0202aee4.c:21:1: error: unknown type name 'NNSG2dBGExtPlttSlot'"
+    },
+    {
+      "source": "libs/nns/g2d/calls/SetBGnControlToAffine.c",
+      "status": "failed",
+      "log": "build/audit/113df37641f49837.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_g2d/SetBGnControlToAffine_02015f64.c:7:32: error: unknown type name 'NNSG2dBGSelect'"
+    },
+    {
+      "source": "libs/nns/g2d/calls/SetBGnControlTo256x16Pltt.c",
+      "status": "failed",
+      "log": "build/audit/13082ac8e501d009.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_g2d/SetBGnControlToAffine_02015fe0.c:7:32: error: unknown type name 'NNSG2dBGSelect'"
+    },
+    {
+      "source": "libs/nns/g2d/calls/SetBGControlAffine.c",
+      "status": "failed",
+      "log": "build/audit/d8ac12787a1b26c7.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_g2d/SetBGControlAffine_0201609c.c:7:8: error: unknown type name 'GXBGAreaOver'"
+    },
+    {
+      "source": "libs/nns/g2d/calls/SetBGControl256x16Pltt.c",
+      "status": "failed",
+      "log": "build/audit/5d8008fc6a7a99cb.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_g2d/SetBGControlAffine_020160dc.c:7:8: error: unknown type name 'GXBGAreaOver'"
+    },
+    {
+      "source": "libs/nns/g2d/calls/NNSi_G2dFontGetTextHeight.c",
+      "status": "failed",
+      "log": "build/audit/a3b4554498cb496a.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_g2d/NNSi_G2dFontGetTextHeight_02016b4c.c:6:5: error: unknown type name 'NNSG2dTextRect'; did you mean 'NNSG2dTextCanvas'?"
+    },
+    {
+      "source": "libs/nns/g2d/calls/GetCharIndex1D.c",
+      "status": "failed",
+      "log": "build/audit/2b814584a6201d8a.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nns/g2d/include/g2d_charcanvas_internal.h:43:9: error: expected '(' before '{' token"
+    },
+    {
+      "source": "libs/nns/g2d/calls/DrawGlyph1D.c",
+      "status": "failed",
+      "log": "build/audit/78e01aeffc275169.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_g2d/G2D_DrawGlyph1D_0201728c.c:37:113: error: unknown type name 'NNSG2dGlyph'; did you mean 'NNSG2dFontGlyph'?"
+    },
+    {
+      "source": "src/calls/NNS_G2dCharCanvasDrawChar.c",
+      "status": "failed",
+      "log": "build/audit/eddef46755d8bd8a.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_g2d/G2D_DrawCharGlyph_02017910.c:13:38: error: unknown type name 'NNSG2dGlyph'; did you mean 'NNSG2dFontGlyph'?"
+    },
+    {
+      "source": "libs/nns/g2d/calls/NNS_G2dCharCanvasInitForOBJ1D.c",
+      "status": "failed",
+      "log": "build/audit/a11f101308e0f5b4.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nns/g2d/include/g2d_charcanvas_internal.h:43:9: error: expected '(' before '{' token"
+    },
+    {
+      "source": "libs/nns/g2d/calls/NNSi_G2dTextCanvasDrawString.c",
+      "status": "failed",
+      "log": "build/audit/30efba9c6be0f207.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_g2d/G2D_DrawTextLine_02017be8.c:10:49: error: 'NNSG2dFont' has no member named 'cbCharSpliter'"
+    },
+    {
+      "source": "libs/nns/g2d/calls/NNSi_G2dTextCanvasDrawText.c",
+      "status": "failed",
+      "log": "build/audit/dd8ff06917b36af4.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_g2d/G2D_DrawAnchoredText_02017dec.c:9:8: error: unknown type name 'NNSG2dTextRect'; did you mean 'NNSG2dTextCanvas'?"
+    },
+    {
+      "source": "libs/nns/g2d/calls/NNSi_G2dGetUnpackedFont.c",
+      "status": "failed",
+      "log": "build/audit/3c552cdfc9c6b437.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_g2d/NNSi_G2dGetUnpackedFont_02018150.c:7:43: error: unknown type name 'NNSG2dBinaryFileHeader'"
+    },
+    {
+      "source": "libs/nns/g3d/calls/NNS_G3dGetCurrentMtx.c",
+      "status": "failed",
+      "log": "build/audit/ad074480dd22d4d1.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_g3d/func_02019d00.c:66:20: error: static declaration of 'G3_MtxMode' follows non-static declaration"
+    },
+    {
+      "source": "libs/nns/g3d/calls/NNS_G3dInit.c",
+      "status": "failed",
+      "log": "build/audit/add25ba1af88d5c8.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_g3d/func_02019e38.c:31:20: error: static declaration of 'G3X_SetFifoIntrCond' follows non-static declaration"
+    },
+    {
+      "source": "libs/nns/snd/calls/NNS_SndPlayerSetAllocatableChannel.c",
+      "status": "failed",
+      "log": "build/audit/af91b252a27168fe.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_snd/NNS_SndPlayerSetAllocatableChannel_0201d434.c:10:30: error: 'NNSSndPlayer' has no member named 'allocChBitFlag'"
+    },
+    {
+      "source": "libs/nns/snd/auto/NNS_SndHandleReleaseSeq.c",
+      "status": "failed",
+      "log": "build/audit/584fab7ce85f3779.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_snd/NNS_SndHandleReleaseSeq_0201d6a4.c:5:13: error: redefinition of 'NNS_SndHandleIsValid'"
+    },
+    {
+      "source": "libs/nns/snd/auto/NNS_SndPlayerSetInitialVolume.c",
+      "status": "failed",
+      "log": "build/audit/d209bf21128dc238.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_snd/NNS_SndPlayerSetInitialVolume_0201d72c.c:5:13: error: redefinition of 'NNS_SndHandleIsValid'"
+    },
+    {
+      "source": "libs/nns/snd/calls/NNS_SndStrmSetup.c",
+      "status": "failed",
+      "log": "build/audit/13962f8597737b02.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nns/snd/calls/AlarmCallback.c",
+      "status": "failed",
+      "log": "build/audit/001ac71b979142f1.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_snd/AlarmCallback_0201e3a8.c:6:26: error: unknown type name 'NNSSndStrm'"
+    },
+    {
+      "source": "libs/nns/snd/calls/EndSleep.c",
+      "status": "failed",
+      "log": "build/audit/d7f5e3e95cf7eeee.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nns/snd/calls/NNS_SndArcGetSeqInfo.c",
+      "status": "failed",
+      "log": "build/audit/0f6dfe37eceac786.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_snd/NNS_SndArcGetSeqInfo_0201ea00.c:6:5: error: unknown type name 'NNSSndArcInfo'"
+    },
+    {
+      "source": "libs/nns/snd/calls/NNS_SndArcGetSeqArcInfo.c",
+      "status": "failed",
+      "log": "build/audit/8a3b251bbbad6b23.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_snd/NNS_SndArcGetSeqArcInfo_0201ea64.c:6:5: error: unknown type name 'NNSSndArcInfo'"
+    },
+    {
+      "source": "libs/nns/snd/calls/NNS_SndArcGetBankInfo.c",
+      "status": "failed",
+      "log": "build/audit/30b8140c625029fb.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_snd/NNS_SndArcGetBankInfo_0201eac8.c:6:5: error: unknown type name 'NNSSndArcInfo'"
+    },
+    {
+      "source": "libs/nns/snd/calls/NNS_SndArcGetWaveArcInfo.c",
+      "status": "failed",
+      "log": "build/audit/24de407300237549.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_snd/NNS_SndArcGetWaveArcInfo_0201eb2c.c:6:5: error: unknown type name 'NNSSndArcInfo'"
+    },
+    {
+      "source": "libs/nns/snd/calls/NNS_SndArcGetStrmInfo.c",
+      "status": "failed",
+      "log": "build/audit/81e77e5df46c0589.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_snd/NNS_SndArcGetStrmInfo_0201eb90.c:6:5: error: unknown type name 'NNSSndArcInfo'"
+    },
+    {
+      "source": "libs/nns/snd/calls/NNS_SndArcGetPlayerInfo.c",
+      "status": "failed",
+      "log": "build/audit/3f8b158d5f892e14.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_snd/NNS_SndArcGetPlayerInfo_0201ebf4.c:6:5: error: unknown type name 'NNSSndArcInfo'"
+    },
+    {
+      "source": "libs/nns/snd/calls/NNS_SndArcGetStrmPlayerInfo.c",
+      "status": "failed",
+      "log": "build/audit/1370ae0dde13b7a5.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_snd/NNS_SndArcGetStrmPlayerInfo_0201ec58.c:6:5: error: unknown type name 'NNSSndArcInfo'"
+    },
+    {
+      "source": "libs/nns/snd/calls/NNS_SndArcGetFileOffset.c",
+      "status": "failed",
+      "log": "build/audit/656d4ea1779cbf7b.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_snd/NNS_SndArcGetFileOffset_0201ecec.c:6:5: error: unknown type name 'NNSSndArcFat'"
+    },
+    {
+      "source": "libs/nns/snd/calls/NNS_SndArcGetFileSize.c",
+      "status": "failed",
+      "log": "build/audit/2b46e581eaa81d7e.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_snd/NNS_SndArcGetFileSize_0201ed14.c:6:5: error: unknown type name 'NNSSndArcFat'"
+    },
+    {
+      "source": "libs/nns/snd/calls/NNS_SndArcGetFileAddress.c",
+      "status": "failed",
+      "log": "build/audit/fb6466e7e609922d.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_snd/NNS_SndArcGetFileAddress_0201ee28.c:6:5: error: unknown type name 'NNSSndArcFat'"
+    },
+    {
+      "source": "libs/nns/snd/calls/NNS_SndHeapDestroy.c",
+      "status": "failed",
+      "log": "build/audit/d01f14df000bf22e.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_snd/NNS_SndHeapDestroy_0201f018.c:7:28: error: unknown type name 'NNSFndHeapHandle'; did you mean 'NNSSndHeapHandle'?"
+    },
+    {
+      "source": "libs/nns/snd/calls/NNS_SndArcLoadSeq.c",
+      "status": "failed",
+      "log": "build/audit/53ef9046b1417115.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_snd/NNS_SndArcLoadSeq_0201f318.c:5:1: error: unknown type name 'NNSSndArcLoadResult'"
+    },
+    {
+      "source": "libs/nns/snd/calls/NNS_SndArcLoadSeqArc.c",
+      "status": "failed",
+      "log": "build/audit/a8bd03252288f13e.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_snd/NNS_SndArcLoadSeq_0201f348.c:5:1: error: unknown type name 'NNSSndArcLoadResult'"
+    },
+    {
+      "source": "libs/nns/snd/calls/NNS_SndArcLoadBank.c",
+      "status": "failed",
+      "log": "build/audit/9717f1ce8c8064cb.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_snd/NNS_SndArcLoadSeq_0201f378.c:5:1: error: unknown type name 'NNSSndArcLoadResult'"
+    },
+    {
+      "source": "libs/nns/snd/calls/LoadSeq.c",
+      "status": "failed",
+      "log": "build/audit/fc78821d3bdec4a6.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_snd/LoadSeq_0201f6f4.c:6:1: error: unknown type name 'NNSSndArc'"
+    },
+    {
+      "source": "libs/nns/snd/calls/LoadSeqArc.c",
+      "status": "failed",
+      "log": "build/audit/2a10346178f01da3.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_snd/LoadSeq_0201f760.c:6:1: error: unknown type name 'NNSSndArc'"
+    },
+    {
+      "source": "libs/nns/snd/calls/LoadBank.c",
+      "status": "failed",
+      "log": "build/audit/d86cc1afcb0fcbf1.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_snd/LoadSeq_0201f7cc.c:6:1: error: unknown type name 'NNSSndArc'"
+    },
+    {
+      "source": "libs/nns/snd/calls/LoadWaveArc.c",
+      "status": "failed",
+      "log": "build/audit/17da1bff7fa6de5b.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_snd/LoadSeq_0201f838.c:6:1: error: unknown type name 'NNSSndArc'"
+    },
+    {
+      "source": "libs/nns/snd/calls/DisposeCallback.c",
+      "status": "failed",
+      "log": "build/audit/f15406be62dc5da7.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nns/snd/calls/BankDisposeCallback.c",
+      "status": "failed",
+      "log": "build/audit/95b45a2fdcac9272.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_snd/BankDisposeCallback_0201fa4c.c:7:41: error: unknown type name 'NNSSndArc'"
+    },
+    {
+      "source": "libs/nns/snd/calls/WaveArcDisposeCallback.c",
+      "status": "failed",
+      "log": "build/audit/0ffd4e545e5cf3ab.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_snd/BankDisposeCallback_0201fa7c.c:7:41: error: unknown type name 'NNSSndArc'"
+    },
+    {
+      "source": "libs/nns/snd/calls/RemoveCommandByPlayer.c",
+      "status": "failed",
+      "log": "build/audit/0d64b9e2f787ce58.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nns/snd/calls/ReadCommandBuffer.c",
+      "status": "failed",
+      "log": "build/audit/f4c52d69af6ee0e8.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nns/snd/calls/AllocCommandBuffer.c",
+      "status": "failed",
+      "log": "build/audit/fd89b0e4a6b6d152.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nns/snd/calls/FreeCommandBuffer.c",
+      "status": "failed",
+      "log": "build/audit/c35fb589666c36a2.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nns/snd/calls/StrmCallback_2.c",
+      "status": "failed",
+      "log": "build/audit/9b0cf7e0a7c56e5c.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_snd/StrmCallback_02020b9c.c:3:10: fatal error: nnsys/fnd.h: No such file or directory"
+    },
+    {
+      "source": "libs/nns/snd/calls/NNSi_SndArcStrm_MakeWaveData.c",
+      "status": "failed",
+      "log": "build/audit/40a96e0853f76280.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_snd/MakeStreamWaveData_02020e14.c:277:54: error: lvalue required as increment operand"
+    },
+    {
+      "source": "libs/nns/snd/calls/OpenFileStream.c",
+      "status": "failed",
+      "log": "build/audit/9fc9aa3b0d5272a2.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_snd/OpenFileStream_02021684.c:7:5: error: unknown type name 'FSFile'"
+    },
+    {
+      "source": "libs/nns/snd/calls/StrmThread.c",
+      "status": "failed",
+      "log": "build/audit/e2ff4d332b805071.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_snd/StrmThread_02021820.c:7:5: error: unknown type name 'NNSSndStrmPlayer'; did you mean 'NNSSndSeqPlayer'?"
+    },
+    {
+      "source": "libs/msl/c/auto/strcpy.c",
+      "status": "failed",
+      "log": "build/audit/6fcaf5a63f27db62.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_msl_c/strcpy_02021e60.c:35:5: error: lvalue required as decrement operand"
+    },
+    {
+      "source": "libs/msl/c/calls/strcmp.c",
+      "status": "failed",
+      "log": "build/audit/2f2985cdf896498e.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_msl_c/strcmp_02021fa8.c:40:16: error: lvalue required as increment operand"
+    },
+    {
+      "source": "src/asm_stubs/calls/_dmul.c",
+      "status": "failed",
+      "log": "build/audit/5f7f37b3a2b2d6c1.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/asm/_dmul_020231d4.c:3:5: error: expected '(' before 'double'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_d2f.c",
+      "status": "failed",
+      "log": "build/audit/acc8ea934308d72e.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/asm/func_02023538.c:3:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_dflt.c",
+      "status": "failed",
+      "log": "build/audit/d9ed7c5d074c25dc.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/asm/_dflt_0202363c.c:2:5: error: expected '(' before 'double'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_dgr.c",
+      "status": "failed",
+      "log": "build/audit/1ba6d1d6c4293049.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/asm/_dgr_0202367c.c:2:5: error: expected '(' before 'int'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_dleq.c",
+      "status": "failed",
+      "log": "build/audit/8b2661de906648bb.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/asm/_dleq_02023714.c:2:5: error: expected '(' before 'int'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_fgeq.c",
+      "status": "failed",
+      "log": "build/audit/b7e1993ef63af78f.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/asm/_fgeq_020237b8.c:2:5: error: expected '(' before 'int'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_fgr.c",
+      "status": "failed",
+      "log": "build/audit/f2f4f59d0a13e698.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/asm/_fgr_02023814.c:2:5: error: expected '(' before 'int'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_fleq.c",
+      "status": "failed",
+      "log": "build/audit/8d083105535f1023.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/asm/_fleq_02023870.c:2:5: error: expected '(' before 'int'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_fls.c",
+      "status": "failed",
+      "log": "build/audit/b5b47df88716834f.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/asm/_fls_020238d8.c:2:5: error: expected '(' before 'int'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_feq.c",
+      "status": "failed",
+      "log": "build/audit/67140403630e197f.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/asm/_feq_02023934.c:2:5: error: expected '(' before 'int'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_f2d.c",
+      "status": "failed",
+      "log": "build/audit/72a9050043c47705.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/asm/_f2d_0202399c.c:2:5: error: expected '(' before 'double'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_ll_sfrom_f.c",
+      "status": "failed",
+      "log": "build/audit/bdffad2a87e31f36.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/asm_stubs/calls/_ll_sfrom_f.c:2:5: error: expected '(' before 'long'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_fflt.c",
+      "status": "failed",
+      "log": "build/audit/6ad7ac92f78806b3.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/asm/_fflt_02023a98.c:2:5: error: expected '(' before 'float'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_ffltu.c",
+      "status": "failed",
+      "log": "build/audit/612c3c69027cd4f4.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/asm/_ffltu_02023ae0.c:2:5: error: expected '(' before 'float'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_ffix.c",
+      "status": "failed",
+      "log": "build/audit/40748cc872943592.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/asm/_ffix_020241ac.c:2:5: error: expected '(' before 'int'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_ffixu.c",
+      "status": "failed",
+      "log": "build/audit/c50b5298084fd189.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/asm/_ffixu_020241e0.c:2:5: error: expected '(' before 'unsigned'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_dfix.c",
+      "status": "failed",
+      "log": "build/audit/e71df343abea4e78.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/asm_stubs/calls/_dfix.c:2:5: error: expected '(' before 'int'"
+    },
+    {
+      "source": "src/asm_stubs/calls/MSL_Sqrt.c",
+      "status": "failed",
+      "log": "build/audit/5b328c755a607850.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/asm/sqrt_0202426c.c:4:5: error: expected '(' before 'double'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_fmul.c",
+      "status": "failed",
+      "log": "build/audit/49eb999b6c65492a.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/asm/_fmul_02024408.c:3:5: error: expected '(' before 'float'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_fdiv.c",
+      "status": "failed",
+      "log": "build/audit/c99799f086c8a92d.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/asm/_fdiv_02024a9c.c:3:5: error: expected '(' before 'float'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_ddiv.c",
+      "status": "failed",
+      "log": "build/audit/7c375fa63ac08598.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/asm/_ddiv_02024e6c.c:3:5: error: expected '(' before 'double'"
+    },
+    {
+      "source": "src/calls/GetBGExtPlttSlot_0202aef8.c",
+      "status": "failed",
+      "log": "build/audit/556afdbd09016fae.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_g2d/GetBGExtPlttSlot_0202aee4.c:21:1: error: unknown type name 'NNSG2dBGExtPlttSlot'"
+    },
+    {
+      "source": "src/calls/AllocLoaderRequest.c",
+      "status": "failed",
+      "log": "build/audit/6423a38a900345bd.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "src/calls/ReleaseLoaderRequest.c",
+      "status": "failed",
+      "log": "build/audit/ffc2e79d7cabdf02.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "src/calls/NNSi_G3dFuncSbc_BB.c",
+      "status": "failed",
+      "log": "build/audit/fd1c26a28541c6d1.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_g3d/NNSi_G3dFuncSbc_BB_02039da4.c:5:85: error: conflicting types for 'MtxFx43'; have 'struct <anonymous>'"
+    },
+    {
+      "source": "src/calls/NNSi_G3dFuncSbc_ENVMAP.c",
+      "status": "failed",
+      "log": "build/audit/6eecbdf74d4fb04d.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_g3d/NNSi_G3dFuncSbc_ENVMAP_0203a2f4.c:156:47: error: 'REG_G3_TEXIMAGE_PARAM_TGEN_MASK' undeclared (first use in this function)"
+    },
+    {
+      "source": "src/calls/NNSi_G3dFuncSbc_PRJMAP.c",
+      "status": "failed",
+      "log": "build/audit/00559a5d11986caf.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_g3d/NNSi_G3dFuncSbc_PRJMAP_0203a574.c:213:47: error: 'REG_G3_TEXIMAGE_PARAM_TGEN_MASK' undeclared (first use in this function)"
+    },
+    {
+      "source": "src/calls/TestBoxAgainstCylinder.c",
+      "status": "failed",
+      "log": "build/audit/047a1783e51994eb.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/spatial_queries/TestBoxAgainstCylinder_0203b704.c:307:49: error: lvalue required as unary '&' operand"
+    },
+    {
+      "source": "src/calls/TestCylinderAgainstPolygon.c",
+      "status": "failed",
+      "log": "build/audit/9d8c63ac4e893c74.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/spatial_queries/TestCylinderAgainstPolygon_0203c6bc.c:341:48: error: lvalue required as unary '&' operand"
+    },
+    {
+      "source": "src/calls/TestSphereAgainstSegment.c",
+      "status": "failed",
+      "log": "build/audit/9b6485c412ec1e6a.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/spatial_queries/TestSphereAgainstSegment_0203f2e8.c:85:43: error: lvalue required as unary '&' operand"
+    },
+    {
+      "source": "src/calls/TestSphereAgainstCylinder.c",
+      "status": "failed",
+      "log": "build/audit/c157b96daa78c814.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/spatial_queries/TestSphereAgainstCylinder_0203f658.c:73:58: error: lvalue required as unary '&' operand"
+    },
+    {
+      "source": "src/calls/ScaleAndOffsetFx32Pair.c",
+      "status": "failed",
+      "log": "build/audit/002fb8061c1ea875.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/math/ScaleAndOffsetFx32Pair_02040b44.c:11:33: error: lvalue required as unary '&' operand"
+    },
+    {
+      "source": "src/calls/TestSegmentAgainstCylinder.c",
+      "status": "failed",
+      "log": "build/audit/9facc8f58f1da902.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/calls/TestSegmentAgainstCylinder.c:63:49: error: lvalue required as unary '&' operand"
+    },
+    {
+      "source": "src/calls/TestCylinderAgainstCylinder.c",
+      "status": "failed",
+      "log": "build/audit/20f830e1ca2d7135.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/spatial_queries/TestCylinderAgainstCylinder_020410a0.c:94:56: error: lvalue required as unary '&' operand"
+    },
+    {
+      "source": "src/calls/SweepSphereAgainstCylinder.c",
+      "status": "failed",
+      "log": "build/audit/50753ea6759cc9a5.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/calls/SweepSphereAgainstCylinder.c:195:38: error: lvalue required as unary '&' operand"
+    },
+    {
+      "source": "src/calls/SweepSphereAgainstPolygon.c",
+      "status": "failed",
+      "log": "build/audit/9650f606f8537537.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/spatial_queries/SweepSphereAgainstPolygon_02042f54.c:163:14: error: lvalue required as unary '&' operand"
+    },
+    {
+      "source": "src/calls/SweepBoxAgainstCylinder.c",
+      "status": "failed",
+      "log": "build/audit/d39de05049317dff.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/spatial_queries/SweepBoxAgainstCylinder_020434d0.c:567:60: error: lvalue required as unary '&' operand"
+    },
+    {
+      "source": "src/calls/SweepCylinderAgainstCylinder.c",
+      "status": "failed",
+      "log": "build/audit/71096515ba2132d7.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/spatial_queries/SweepCylinderAgainstCylinder_020449b4.c:230:58: error: lvalue required as unary '&' operand"
+    },
+    {
+      "source": "src/calls/SweepCylinderAgainstPolygon.c",
+      "status": "failed",
+      "log": "build/audit/70a7a5c9002d483a.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/spatial_queries/SweepCylinderAgainstPolygon_020456c0.c:483:28: error: lvalue required as unary '&' operand"
+    },
+    {
+      "source": "src/calls/SweepObbAgainstSegment.c",
+      "status": "failed",
+      "log": "build/audit/05ed201f07b98aaf.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/spatial_queries/SweepObbAgainstSegment_02047dc4.c:62:56: error: lvalue required as unary '&' operand"
+    },
+    {
+      "source": "src/calls/SweepSegmentAgainstCylinder.c",
+      "status": "failed",
+      "log": "build/audit/f07d4495350a7405.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/spatial_queries/SweepSegmentAgainstCylinder_02048468.c:171:104: error: lvalue required as unary '&' operand"
+    },
+    {
+      "source": "src/calls/StartSoundStreamAtOffset.c",
+      "status": "failed",
+      "log": "build/audit/bac41ca875508971.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/audio/StartSoundStreamAtOffset_0204df50.c:6:5: error: unknown type name 'NNSSndStrmHandle'; did you mean 'NNSSndHandle'?"
+    },
+    {
+      "source": "src/calls/UpdateDisplayObjectListImmediate.c",
+      "status": "failed",
+      "log": "build/audit/d490406400dc6c1b.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/arm9/library_nns_snd/AlarmCallback_0204f12c.c:6:26: error: unknown type name 'NNSSndStrm'"
+    },
+    {
+      "source": "libs/nitro/init/data/strings/cardi_backup_assert.c",
+      "status": "failed",
+      "log": "build/audit/2f48b82205447b40.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/init/data/strings/cardi_backup_assert.c:6:5: error: parameter 'cardi_backup_assert' is initialized"
+    },
+    {
+      "source": "libs/nitro/init/data/strings/gMobiClipLibraryTag.c",
+      "status": "failed",
+      "log": "build/audit/5dfac60d8c0837f7.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/init/data/strings/gMobiClipLibraryTag.c:6:5: error: parameter 'gMobiClipLibraryTag' is initialized"
+    },
+    {
+      "source": "libs/nitro/init/data/tables/BuildInfo.c",
+      "status": "failed",
+      "log": "build/audit/b4734a442cba4eaa.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/init/data/tables/BuildInfo.c:21:1: error: parameter 'BuildInfo' is initialized"
+    },
+    {
+      "source": "libs/nitro/init/data/tables/SDK_ModuleParamsBlock.c",
+      "status": "failed",
+      "log": "build/audit/616a9ffec633939d.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/init/data/tables/SDK_ModuleParamsBlock.c:6:1: error: parameter 'SDK_ModuleParamsBlock' is initialized"
+    },
+    {
+      "source": "libs/nitro/math/data/tables/MATHi_SHA1RoundConstants.c",
+      "status": "failed",
+      "log": "build/audit/aafe4223435e4f7c.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/math/data/tables/MATHi_SHA1RoundConstants.c:6:1: error: parameter 'MATHi_SHA1RoundConstants' is initialized"
+    },
+    {
+      "source": "src/data/tables/gBillboardMatrixDataAlignment.c",
+      "status": "failed",
+      "log": "build/audit/5a960c0d2fa0027f.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/data/tables/gBillboardMatrixDataAlignment.c:6:1: error: parameter 'gBillboardMatrixDataAlignment' is initialized"
+    },
+    {
+      "source": "src/data/tables/gPathSeparatorDataAlignment.c",
+      "status": "failed",
+      "log": "build/audit/169d14756e5adf2e.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/data/tables/gPathSeparatorDataAlignment.c:6:1: error: parameter 'gPathSeparatorDataAlignment' is initialized"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/calls/OS_IrqHandler.c",
+      "status": "failed",
+      "log": "build/audit/898b884b5f0a7c4d.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/asm_stubs/calls/OS_IrqHandler.c:5:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "src/asm_stubs/calls/OS_IrqHandler_ThreadSwitch.c",
+      "status": "failed",
+      "log": "build/audit/b86ad6cd502336cb.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/itcm/asm/OS_IrqHandler_ThreadSwitch_01ff81b0.c:7:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/calls/OSi_DoBoot.c",
+      "status": "failed",
+      "log": "build/audit/6eee7535cdadd465.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/itcm/asm/func_01ff833c.c:5:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/func_01ff840c.c",
+      "status": "failed",
+      "log": "build/audit/806a892c788bfb3a.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/asm_stubs/auto/func_01ff840c.c:4:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/calls/OSi_ReloadRomData.c",
+      "status": "failed",
+      "log": "build/audit/7a8f0da2dfd190d8.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/itcm/library_nitro_os/OSi_ReloadRomData_01ff8420.c:7:9: error: expected '(' before '{' token"
+    },
+    {
+      "source": "src/calls/Boot_ReadRom.c",
+      "status": "failed",
+      "log": "build/audit/1396b5c01eb0b470.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/itcm/shared_variants/func_01ff84e0.c:2:10: fatal error: nitro/card.h: No such file or directory"
+    },
+    {
+      "source": "libs/nitro/mi/calls/MIi_DmaSetParameters.c",
+      "status": "failed",
+      "log": "build/audit/b15a12abd674a902.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/os/os_interrupt_state.h:14:35: error: expected declaration specifiers before '__declspec'"
+    },
+    {
+      "source": "libs/nitro/mi/asm_stubs/auto/MIi_CpuClear32.c",
+      "status": "failed",
+      "log": "build/audit/382189e8d2fdccb9.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/mi/asm_stubs/auto/MIi_CpuClear32.c:3:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/mi/asm_stubs/auto/MIi_CpuCopy32.c",
+      "status": "failed",
+      "log": "build/audit/6b7f95bb172410a1.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/mi/asm_stubs/auto/MIi_CpuCopy32.c:4:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/mi/asm_stubs/auto/MIi_CpuSend32.c",
+      "status": "failed",
+      "log": "build/audit/ba59e1213da1ae96.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/mi/asm_stubs/auto/MIi_CpuSend32.c:4:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/mi/asm_stubs/auto/MIi_CpuClearFast.c",
+      "status": "failed",
+      "log": "build/audit/adbeb9560a67f777.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/mi/asm_stubs/auto/MIi_CpuClearFast.c:4:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/mi/asm_stubs/auto/MIi_CpuCopyFast.c",
+      "status": "failed",
+      "log": "build/audit/bedc64b31b9e8da7.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/mi/asm_stubs/auto/MIi_CpuCopyFast.c:4:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/mi/auto/MI_Copy36B.c",
+      "status": "failed",
+      "log": "build/audit/04f9e91a9bc7b897.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/mi/auto/MI_Copy36B.c:7:21: error: expected ';' before 'void'"
+    },
+    {
+      "source": "libs/nitro/mi/auto/MI_Copy48B.c",
+      "status": "failed",
+      "log": "build/audit/40d373a7a8556023.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/mi/auto/MI_Copy48B.c:7:21: error: expected ';' before 'void'"
+    },
+    {
+      "source": "libs/nitro/mi/auto/MI_Copy64B.c",
+      "status": "failed",
+      "log": "build/audit/1cb06c0212ec92f5.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/mi/auto/MI_Copy64B.c:11:21: error: expected ';' before 'void'"
+    },
+    {
+      "source": "src/asm_stubs/calls/func_01ff88c4.c",
+      "status": "failed",
+      "log": "build/audit/35c13449dbe660c9.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/itcm/asm/func_01ff88c4.c:3:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "src/asm_stubs/calls/func_01ff8ad8.c",
+      "status": "failed",
+      "log": "build/audit/31c45816de2091b1.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/itcm/asm/func_01ff8ad8.c:8:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "src/asm_stubs/calls/func_01ff8b7c.c",
+      "status": "failed",
+      "log": "build/audit/90fcde519cbc8556.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/asm_stubs/calls/func_01ff8b7c.c:5:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "src/asm_stubs/calls/func_01ff8bb8.c",
+      "status": "failed",
+      "log": "build/audit/521917b675808c53.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/asm_stubs/calls/func_01ff8bb8.c:5:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "src/asm_stubs/calls/func_01ff8c50.c",
+      "status": "failed",
+      "log": "build/audit/3116ea4c019766be.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/asm_stubs/calls/func_01ff8c50.c:5:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "src/asm_stubs/calls/func_01ff8ce8.c",
+      "status": "failed",
+      "log": "build/audit/1f540d874f3cca4d.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/asm_stubs/calls/func_01ff8ce8.c:5:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "src/asm_stubs/calls/func_01ff8d80.c",
+      "status": "failed",
+      "log": "build/audit/817dc01f288d1a27.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/asm_stubs/calls/func_01ff8d80.c:4:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "src/asm_stubs/calls/func_01ff8dc8.c",
+      "status": "failed",
+      "log": "build/audit/9def0545b3a83642.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/itcm/asm/func_01ff8dc8.c:9:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "src/asm_stubs/calls/func_01ff8e84.c",
+      "status": "failed",
+      "log": "build/audit/0cd25941ac61e8e5.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/asm_stubs/calls/func_01ff8e84.c:5:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "src/asm_stubs/calls/func_01ff8ec0.c",
+      "status": "failed",
+      "log": "build/audit/dd788958fc440cc3.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/asm_stubs/calls/func_01ff8ec0.c:5:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "src/asm_stubs/calls/func_01ff8f5c.c",
+      "status": "failed",
+      "log": "build/audit/f2b5f7757038cfab.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/asm_stubs/calls/func_01ff8f5c.c:5:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "src/asm_stubs/calls/func_01ff8ff8.c",
+      "status": "failed",
+      "log": "build/audit/ee5cb783d97cd02b.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/asm_stubs/calls/func_01ff8ff8.c:5:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "src/asm_stubs/calls/func_01ff9094.c",
+      "status": "failed",
+      "log": "build/audit/96ecf6319fbbaf0f.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/asm_stubs/calls/func_01ff9094.c:4:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/mi/asm_stubs/auto/MI_Zero36B.c",
+      "status": "failed",
+      "log": "build/audit/66da4561d60e6ca3.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/mi/asm_stubs/auto/MI_Zero36B.c:1:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/mtx/asm_stubs/auto/MTX_Identity33_.c",
+      "status": "failed",
+      "log": "build/audit/27ce76ad44fbc564.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/mtx/asm_stubs/auto/MTX_Identity33_.c:1:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "src/calls/MTX_Copy33To43.c",
+      "status": "failed",
+      "log": "build/audit/2d819b18adbb8064.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/calls/MTX_Copy33To43.c:7:21: error: expected ';' before 'void'"
+    },
+    {
+      "source": "libs/nitro/mtx/asm_stubs/auto/MTX_Identity43_.c",
+      "status": "failed",
+      "log": "build/audit/e9d81c3055676b77.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/mtx/asm_stubs/auto/MTX_Identity43_.c:1:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/mtx/asm_stubs/auto/MTX_Copy43To44_.c",
+      "status": "failed",
+      "log": "build/audit/61a2eb378556e95f.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/mtx/asm_stubs/auto/MTX_Copy43To44_.c:1:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/mtx/asm_stubs/auto/MTX_RotX43_.c",
+      "status": "failed",
+      "log": "build/audit/65bc19aad4c4937e.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/mtx/asm_stubs/auto/MTX_RotX43_.c:11:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/mtx/asm_stubs/auto/MTX_RotY43_.c",
+      "status": "failed",
+      "log": "build/audit/f83eb0067ae27d5a.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/mtx/asm_stubs/auto/MTX_RotY43_.c:1:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/gx/asm_stubs/auto/GX_SendFifo48B.c",
+      "status": "failed",
+      "log": "build/audit/118f1f9b1b84f179.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nitro/gx/asm_stubs/auto/GX_SendFifo48B.c:2:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "src/calls/VEC_NormalizeLength.c",
+      "status": "failed",
+      "log": "build/audit/0f5d7543f62aabf6.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/itcm/library_nitro_fx/VEC_Normalize_01ffaff4.c:15:5: error: 'REG_DIVCNT' undeclared (first use in this function); did you mean 'REG_DIVCNT_ADDR'?"
+    },
+    {
+      "source": "src/calls/NormalizeVecPair.c",
+      "status": "failed",
+      "log": "build/audit/842b5ef966697d08.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/itcm/library_nitro_fx/NormalizeVecPair_01ffcf74.c:18:5: error: 'REG_DIVCNT' undeclared (first use in this function); did you mean 'REG_DIVCNT_ADDR'?"
+    },
+    {
+      "source": "src/calls/NNSi_G3dAnmBlendJntItcm.c",
+      "status": "failed",
+      "log": "build/audit/96184cde036f4989.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/itcm/library_nns_g3d/NNSi_G3dAnmBlendJnt_01ffda04.c:72:5: error: 'REG_DIVCNT' undeclared (first use in this function); did you mean 'REG_DIVCNT_ADDR'?"
+    },
+    {
+      "source": "libs/nns/g3d/data/tables/gTexMtxAltBuilders.c",
+      "status": "failed",
+      "log": "build/audit/3fee2cf76964b6c1.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nns/g3d/data/tables/gTexMtxAltBuilders.c:17:1: error: parameter 'gTexMtxAltBuilders' is initialized"
+    },
+    {
+      "source": "libs/nns/g3d/data/tables/gTexMtxMode2Builders.c",
+      "status": "failed",
+      "log": "build/audit/d9063e9f1999943b.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nns/g3d/data/tables/gTexMtxMode2Builders.c:17:1: error: parameter 'gTexMtxMode2Builders' is initialized"
+    },
+    {
+      "source": "src/overlays/ov000/calls/ReleaseTitlePanelResources.c",
+      "status": "failed",
+      "log": "build/audit/6e16f6cd306393c1.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov000/library_nns_g2d/NNS_G2dSetCellAnimationSequence_02062908.c:27:26: error: unknown type name 'NNSG2dAnimController'"
+    },
+    {
+      "source": "src/overlays/ov001/calls/DrawSpriteFrameQuadWithDepthUpdate.c",
+      "status": "failed",
+      "log": "build/audit/28be7f235f591195.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov001/library_nns_snd/AlarmCallback_0206ad1c.c:6:26: error: unknown type name 'NNSSndStrm'"
+    },
+    {
+      "source": "src/overlays/ov001/calls/InitSessionCallbackList.c",
+      "status": "failed",
+      "log": "build/audit/25fd0300d4e118a0.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov001/shared_engine/InitSessionCallbackList_0206c66c.c:2:10: fatal error: nnsys/fnd.h: No such file or directory"
+    },
+    {
+      "source": "src/overlays/ov001/calls/RunSessionCallbacks.c",
+      "status": "failed",
+      "log": "build/audit/d76f3d71d581172d.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov001/shared_engine/RunSessionCallbacks_0206c684.c:2:10: fatal error: nnsys/fnd.h: No such file or directory"
+    },
+    {
+      "source": "src/overlays/ov001/calls/CreateSessionTask.c",
+      "status": "failed",
+      "log": "build/audit/cd0c9695be03f5ca.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov001/shared_engine/CreateSessionTask_0206c6dc.c:2:10: fatal error: nnsys/fnd.h: No such file or directory"
+    },
+    {
+      "source": "src/overlays/ov001/calls/RegisterSessionCallback.c",
+      "status": "failed",
+      "log": "build/audit/fe0129c45849026b.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov001/shared_engine/RegisterSessionCallback_0206c704.c:2:10: fatal error: nnsys/fnd.h: No such file or directory"
+    },
+    {
+      "source": "src/overlays/ov001/calls/ConfigureFieldBgLayers.c",
+      "status": "failed",
+      "log": "build/audit/c1ea1d1be91a708f.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov001/field_manager/ConfigureFieldBgLayers_0206e818.c:23:34: error: 'REG_BG3CNT_ADDR' undeclared (first use in this function); did you mean 'REG_DIVCNT_ADDR'?"
+    },
+    {
+      "source": "src/overlays/ov001/calls/OpenMessageWindowLayers.c",
+      "status": "failed",
+      "log": "build/audit/aed49263e9f5da34.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov001/field_manager/OpenMessageWindowLayers_0207a1d0.c:27:34: error: 'REG_BG0CNT_ADDR' undeclared (first use in this function); did you mean 'REG_DIVCNT_ADDR'?"
+    },
+    {
+      "source": "src/overlays/ov001/calls/ApplyPartRotationAndCaptureNodeCallback.c",
+      "status": "failed",
+      "log": "build/audit/25bcbed12d0e2488.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov001/library_nns_g2d/NNS_G2dSetCellAnimationSequence_02089834.c:27:26: error: unknown type name 'NNSG2dAnimController'"
+    },
+    {
+      "source": "src/overlays/ov001/calls/SetModelMaterialPolygonId.c",
+      "status": "failed",
+      "log": "build/audit/5d17a9668a30ea20.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov001/shared_engine/SetModelMaterialPolygonId_0208f5fc.c:10:14: error: redefinition of 'NNS_G3dGetResDataByIdx'"
+    },
+    {
+      "source": "src/overlays/ov001/calls/ReleaseStageSlotLock1.c",
+      "status": "failed",
+      "log": "build/audit/432305147b141481.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov001/library_nns_snd/AlarmCallback_0209b5b8.c:6:26: error: unknown type name 'NNSSndStrm'"
+    },
+    {
+      "source": "src/overlays/ov001/calls/AddStageSlotLock1.c",
+      "status": "failed",
+      "log": "build/audit/5d853b322951d0c4.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov001/library_nns_snd/AlarmCallback_0209b638.c:6:26: error: unknown type name 'NNSSndStrm'"
+    },
+    {
+      "source": "src/overlays/ov001/data/tables/gFieldMenuPalettes.c",
+      "status": "failed",
+      "log": "build/audit/8076549d36633335.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov001/data/tables/gFieldMenuPalettes.c:31:1: error: parameter 'gFieldMenuPaletteDataAlignment' is initialized"
+    },
+    {
+      "source": "src/overlays/ov002/calls/DrawPanelTextOutlined.c",
+      "status": "failed",
+      "log": "build/audit/8ecad705ead907a8.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov002/panel_state/DrawPanelTextOutlined_02061e34.c:22:8: error: unknown type name 'NNSG2dTextRect'; did you mean 'NNSG2dTextCanvas'?"
+    },
+    {
+      "source": "src/overlays/ov002/calls/MeasurePanelTextPrimary.c",
+      "status": "failed",
+      "log": "build/audit/066a9ef6ef3b45d9.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov002/panel_state/MeasurePanelTextPrimary_020627e8.c:16:8: error: unknown type name 'NNSG2dTextRect'; did you mean 'NNSG2dTextCanvas'?"
+    },
+    {
+      "source": "src/overlays/ov002/calls/MeasurePanelTextSecondary.c",
+      "status": "failed",
+      "log": "build/audit/1cfe4848ec215cff.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov002/panel_state/MeasurePanelTextSecondary_02062890.c:16:8: error: unknown type name 'NNSG2dTextRect'; did you mean 'NNSG2dTextCanvas'?"
+    },
+    {
+      "source": "src/overlays/ov002/calls/UpdateMenuTouch.c",
+      "status": "failed",
+      "log": "build/audit/c050792f4aeffd99.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov002/panel_state/UpdateMenuTouch_0206671c.c:2:10: fatal error: ov002/MenuTouchState.h: No such file or directory"
+    },
+    {
+      "source": "src/overlays/ov002/calls/GetMenuTouchDisplacement.c",
+      "status": "failed",
+      "log": "build/audit/8b8b9066aac96b90.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov002/panel_state/GetMenuTouchDisplacement_02066a90.c:2:10: fatal error: ov002/MenuTouchState.h: No such file or directory"
+    },
+    {
+      "source": "src/overlays/ov002/calls/GetMenuTouchHeld.c",
+      "status": "failed",
+      "log": "build/audit/a2a2c68117354d40.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov002/panel_state/GetMenuTouchHeld_02066b2c.c:2:10: fatal error: ov002/MenuTouchState.h: No such file or directory"
+    },
+    {
+      "source": "src/overlays/ov002/calls/GetMenuTouchPressed.c",
+      "status": "failed",
+      "log": "build/audit/fdd025558a0215e6.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov002/panel_state/GetMenuTouchPressed_02066b84.c:2:10: fatal error: ov002/MenuTouchState.h: No such file or directory"
+    },
+    {
+      "source": "src/overlays/ov002/calls/GetMenuCursorPosition.c",
+      "status": "failed",
+      "log": "build/audit/fa6bcc4f48a1f6c6.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov002/panel_state/GetMenuCursorPosition_02066bdc.c:2:10: fatal error: ov002/MenuTouchState.h: No such file or directory"
+    },
+    {
+      "source": "src/overlays/ov002/calls/StampContextDateTime.c",
+      "status": "failed",
+      "log": "build/audit/adbf4dc277abb75f.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov002/unclassified_helpers/StampContextDateTime_02067564.c:18:51: error: unknown type name 'RTCDate'"
+    },
+    {
+      "source": "src/overlays/ov003/calls/MoviePlayer_SetupDisplay.c",
+      "status": "failed",
+      "log": "build/audit/064fed53ea3d65a3.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov003/video_playback/MoviePlayer_SetupDisplay_02063ae0.c:12:41: error: unknown type name 'GXDispMode'"
+    },
+    {
+      "source": "src/overlays/ov004/calls/LoadScrollTextBackground.c",
+      "status": "failed",
+      "log": "build/audit/2b6ddd8b4cad0856.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov004/scroll_text/LoadScrollTextBackground_02063414.c:2:10: fatal error: game/scroll_bg.h: No such file or directory"
+    },
+    {
+      "source": "src/ov004/data/Rodata_ov004_02063bf0.c",
+      "status": "failed",
+      "log": "build/audit/9758ede0bad535fd.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/ov004/data/Rodata_ov004_02063bf0.c:3:50: error: '#include' nested depth 200 exceeds maximum of 200 (use '-fmax-include-depth=DEPTH' to increase the maximum)"
+    },
+    {
+      "source": "src/overlays/ov011/calls/FieldObject_FindEscapeHeading.c",
+      "status": "failed",
+      "log": "build/audit/58ed511304a76ce9.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov011/actor_animation/FieldObject_FindEscapeHeading_020a09b0.c:3:10: fatal error: ov011/SpawnCollisionOwner.h: No such file or directory"
+    },
+    {
+      "source": "src/overlays/ov013/calls/DrawContextEntrySummary.c",
+      "status": "failed",
+      "log": "build/audit/1c52c66a27977c18.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov013/panel_state/DrawContextEntrySummary_0206eb18.c:37:8: error: unknown type name 'NNSG2dTextRect'; did you mean 'NNSG2dTextCanvas'?"
+    },
+    {
+      "source": "src/overlays/ov014/calls/HitTestCategoryPanel.c",
+      "status": "failed",
+      "log": "build/audit/30db86ef8a3d1784.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov014/panel_state/HitTestCategoryPanel_0206f42c.c:2:10: fatal error: ov014/PanelTouchOffsets.h: No such file or directory"
+    },
+    {
+      "source": "src/ov014/data/Rodata_ov014_0206f860.c",
+      "status": "failed",
+      "log": "build/audit/908d724e09cad8e6.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/ov014/data/Rodata_ov014_0206f860.c:2:50: error: '#include' nested depth 200 exceeds maximum of 200 (use '-fmax-include-depth=DEPTH' to increase the maximum)"
+    },
+    {
+      "source": "src/overlays/ov015/calls/UpdatePanelShareState.c",
+      "status": "failed",
+      "log": "build/audit/495e017bd4ebf2c4.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov015/panel_state/UpdatePanelShareState_02071100.c:2:10: fatal error: ov027/WidgetPoint.h: No such file or directory"
+    },
+    {
+      "source": "src/overlays/ov015/calls/WH_StateInStartScan.c",
+      "status": "failed",
+      "log": "build/audit/84d03c24f54c577c.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov015/calls/WH_StateInStartScan.c:24:9: error: expected '(' before '{' token"
+    },
+    {
+      "source": "src/overlays/ov017/calls/DiscardKind4MessageNodesKeepingPinned.c",
+      "status": "failed",
+      "log": "build/audit/73454cec98d26dbd.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov017/library_nns_snd/AlarmCallback_020a2e64.c:6:26: error: unknown type name 'NNSSndStrm'"
+    },
+    {
+      "source": "src/overlays/ov021/calls/GetFieldDirectionActiveAndPollSubMode.c",
+      "status": "failed",
+      "log": "build/audit/f0a491ad1d2b5345.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov021/library_nns_snd/AlarmCallback_020a7504.c:6:26: error: unknown type name 'NNSSndStrm'"
+    },
+    {
+      "source": "src/overlays/ov021/calls/UnpackExtendedData.c",
+      "status": "failed",
+      "log": "build/audit/72dbba4c8a84ede9.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov021/library_nns_g2d/UnpackExtendedData_020a8234.c:7:39: error: unknown type name 'NNSG2dUserExCellAttrBank'; did you mean 'NNSi_G2dUnpackUserExCellAttrBank'?"
+    },
+    {
+      "source": "src/overlays/ov021/calls/FindEntryGroupById.c",
+      "status": "failed",
+      "log": "build/audit/232974073848f28d.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov021/object_state/FindEntryGroupById_020a8810.c:2:10: fatal error: nnsys/fnd.h: No such file or directory"
+    },
+    {
+      "source": "src/overlays/ov021/calls/InitializeEntryGroupRegistry.c",
+      "status": "failed",
+      "log": "build/audit/21794a323f613a19.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov021/unclassified_helpers/func_ov021_020a88f8.c:2:10: fatal error: nnsys/fnd.h: No such file or directory"
+    },
+    {
+      "source": "src/overlays/ov021/calls/CreateEntryGroup.c",
+      "status": "failed",
+      "log": "build/audit/d0b91192c61ea4c1.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov021/unclassified_helpers/func_ov021_020a89a8.c:2:10: fatal error: nnsys/fnd.h: No such file or directory"
+    },
+    {
+      "source": "src/overlays/ov021/calls/DestroyEntryGroup.c",
+      "status": "failed",
+      "log": "build/audit/b2ec3dfa0bcf4d17.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov021/unclassified_helpers/func_ov021_020a8a68.c:2:10: fatal error: nnsys/fnd.h: No such file or directory"
+    },
+    {
+      "source": "src/overlays/ov021/calls/DrawAllGroupSlots.c",
+      "status": "failed",
+      "log": "build/audit/bc2178199d9c7f81.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov021/animation/DrawAllGroupSlots_020a8b44.c:2:10: fatal error: nnsys/fnd.h: No such file or directory"
+    },
+    {
+      "source": "src/overlays/ov021/calls/StopEntrySoundsByOwner.c",
+      "status": "failed",
+      "log": "build/audit/54547e71faac8041.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov021/object_state/StopEntrySoundsByOwner_020a8b9c.c:2:10: fatal error: nnsys/fnd.h: No such file or directory"
+    },
+    {
+      "source": "src/overlays/ov021/calls/AreActorEntriesFinished.c",
+      "status": "failed",
+      "log": "build/audit/11be59a9403e465e.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov021/unclassified_helpers/func_ov021_020a8c20.c:2:10: fatal error: nnsys/fnd.h: No such file or directory"
+    },
+    {
+      "source": "src/overlays/ov021/calls/InitializeEntryGroupSlot.c",
+      "status": "failed",
+      "log": "build/audit/9d9f6a1b79a940fe.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov021/unclassified_helpers/func_ov021_020a8ca0.c:2:10: fatal error: nnsys/fnd.h: No such file or directory"
+    },
+    {
+      "source": "src/overlays/ov021/calls/UpdateAllGroupSlots.c",
+      "status": "failed",
+      "log": "build/audit/61d40307aadaec2c.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov021/object_state/UpdateAllGroupSlots_020a8f74.c:2:10: fatal error: nnsys/fnd.h: No such file or directory"
+    },
+    {
+      "source": "src/overlays/ov021/calls/InitMemberGroup.c",
+      "status": "failed",
+      "log": "build/audit/09fa78940aa81a07.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov021/object_state/InitMemberGroup_020ad5c8.c:2:10: fatal error: nnsys/fnd.h: No such file or directory"
+    },
+    {
+      "source": "src/overlays/ov034/calls/SetupResultsDisplay.c",
+      "status": "failed",
+      "log": "build/audit/b10cdda36859aaeb.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov034/display/SetupResultsDisplay_020bdc94.c:1:10: fatal error: ov034/ResultsScreen.h: No such file or directory"
+    },
+    {
+      "source": "src/overlays/ov036/calls/DrawTextWindow.c",
+      "status": "failed",
+      "log": "build/audit/ec7916ccccb55cae.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov036/panel_state/DrawTextWindow_020bebcc.c:34:8: error: unknown type name 'NNSG2dTextRect'; did you mean 'NNSG2dTextCanvas'?"
+    },
+    {
+      "source": "src/overlays/ov036/calls/LayoutTextWindow.c",
+      "status": "failed",
+      "log": "build/audit/30c72f71bacc43ff.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov036/text_rendering/LayoutTextWindow_020c03e0.c:102:8: error: unknown type name 'NNSG2dTextRect'; did you mean 'NNSG2dTextCanvas'?"
+    },
+    {
+      "source": "src/overlays/ov059/calls/Actor_Draw.c",
+      "status": "failed",
+      "log": "build/audit/0cab2faf0e91f95b.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov059/unclassified_helpers/Actor_Draw_020cbde0.c:49:46: error: 'NNS_G3D_RENDEROBJ_FLAG_RECORD' undeclared (first use in this function); did you mean 'NNS_G3D_RENDEROBJ_FLAG_HINT_OBSOLETE'?"
+    },
+    {
+      "source": "src/overlays/ov059/calls/Actor_InitNodeCaptureCallback.c",
+      "status": "failed",
+      "log": "build/audit/23d2d9ef57c4ed06.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov059/unclassified_helpers/Actor_InitNodeCaptureCallback_020cd254.c:22:59: error: unknown type name 'NNSG3dSbcCallBackTiming'; did you mean 'NNSG3dSbcCallBackFunc'?"
+    },
+    {
+      "source": "src/overlays/ov059/calls/Actor_CaptureNodeMatrix.c",
+      "status": "failed",
+      "log": "build/audit/237ffbb05c4ef112.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/libs/nns/g3d/g3d_glbstate_internal.h:15:3: error: conflicting types for 'MtxFx33'; have 'union MtxFx33_'"
+    },
+    {
+      "source": "src/overlays/ov073/calls/HandleSlotListInput.c",
+      "status": "failed",
+      "log": "build/audit/652a5be63feddfb8.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov073/status_menu/HandleSlotListInput_020c032c.c:95:19: error: 'REG_POWCNT_ADDR' undeclared (first use in this function); did you mean 'REG_DIVCNT_ADDR'?"
+    },
+    {
+      "source": "src/overlays/ov075/calls/ItemPicker_DrawRows.c",
+      "status": "failed",
+      "log": "build/audit/15bda0f99969f309.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov075/unclassified_helpers/ItemPicker_DrawRows_020cdf88.c:145:30: error: invalid use of incomplete typedef 'NNSiG2dCharCanvasVTable'"
+    },
+    {
+      "source": "src/overlays/ov075/calls/DrawItemPickerHeader.c",
+      "status": "failed",
+      "log": "build/audit/d4632868c60a2a18.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov075/unclassified_helpers/DrawItemPickerHeader_020ce440.c:30:119: error: unknown type name 'NNSG2dCharaColorMode'"
+    },
+    {
+      "source": "src/overlays/ov075/calls/DrawSelectedEntryName.c",
+      "status": "failed",
+      "log": "build/audit/ad859a73e3d10da6.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov075/unclassified_helpers/DrawSelectedEntryName_020ce5c4.c:30:119: error: unknown type name 'NNSG2dCharaColorMode'"
+    },
+    {
+      "source": "src/overlays/ov075/calls/MeasureOv075TextRect.c",
+      "status": "failed",
+      "log": "build/audit/491ed4c4807b1584.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov075/unclassified_helpers/func_ov075_020cf2e8.c:8:1: error: unknown type name 'NNSG2dTextRect'; did you mean 'NNSG2dTextCanvas'?"
+    },
+    {
+      "source": "src/overlays/ov075/calls/MeasureOv075MessageTiles.c",
+      "status": "failed",
+      "log": "build/audit/226d0776781e0728.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov075/unclassified_helpers/MeasureMessageTiles_020cf368.c:20:8: error: unknown type name 'NNSG2dTextRect'; did you mean 'NNSG2dTextCanvas'?"
+    },
+    {
+      "source": "src/overlays/ov075/calls/DrawCenteredDialogText.c",
+      "status": "failed",
+      "log": "build/audit/44186578771497a1.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov075/unclassified_helpers/DrawCenteredDialogText_020cf918.c:15:119: error: unknown type name 'NNSG2dCharaColorMode'"
+    },
+    {
+      "source": "src/overlays/ov075/calls/DrawOv075DialogText.c",
+      "status": "failed",
+      "log": "build/audit/2a0d8f073e6d4734.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov075/unclassified_helpers/DrawDialogText_020cfa50.c:16:119: error: unknown type name 'NNSG2dCharaColorMode'"
+    },
+    {
+      "source": "src/overlays/ov075/calls/ItemPickerPanel_Create.c",
+      "status": "failed",
+      "log": "build/audit/e14e8c130f2d2e90.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov075/unclassified_helpers/func_ov075_020cfbfc.c:79:48: error: unknown type name 'NNSG2dCharaColorMode'"
+    },
+    {
+      "source": "src/overlays/ov076/calls/SlotMenu_DrawPanelLabel.c",
+      "status": "failed",
+      "log": "build/audit/7d44aaaec66dcdcf.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov076/unclassified_helpers/SlotMenu_DrawPanelLabel_020c7edc.c:35:119: error: unknown type name 'NNSG2dCharaColorMode'"
+    },
+    {
+      "source": "src/overlays/ov076/calls/ItemPicker_DrawRows_020c9db8.c",
+      "status": "failed",
+      "log": "build/audit/70dc17ff6a374809.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov076/unclassified_helpers/ItemPicker_DrawRows_020c9d98.c:145:30: error: invalid use of incomplete typedef 'NNSiG2dCharCanvasVTable'"
+    },
+    {
+      "source": "src/overlays/ov076/calls/ItemScreen_DrawItemPrompt.c",
+      "status": "failed",
+      "log": "build/audit/30f081c35926a989.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov076/unclassified_helpers/ItemScreen_DrawItemPrompt_020ca250.c:33:119: error: unknown type name 'NNSG2dCharaColorMode'"
+    },
+    {
+      "source": "src/overlays/ov076/calls/ItemList_DrawSelectedName.c",
+      "status": "failed",
+      "log": "build/audit/4bd84bb5fe9afaaf.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov076/unclassified_helpers/ItemList_DrawSelectedName_020ca3d4.c:30:119: error: unknown type name 'NNSG2dCharaColorMode'"
+    },
+    {
+      "source": "src/overlays/ov076/calls/MeasureOv076TextRect.c",
+      "status": "failed",
+      "log": "build/audit/beac681748526955.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov076/unclassified_helpers/func_ov076_020cb238.c:8:1: error: unknown type name 'NNSG2dTextRect'; did you mean 'NNSG2dTextCanvas'?"
+    },
+    {
+      "source": "src/overlays/ov076/calls/MenuPanel_MeasureMessage.c",
+      "status": "failed",
+      "log": "build/audit/a3f7bd0973e7b8c3.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov076/unclassified_helpers/MenuPanel_MeasureMessage_020cb2b8.c:17:119: error: unknown type name 'NNSG2dCharaColorMode'"
+    },
+    {
+      "source": "src/overlays/ov076/calls/MessageWindow_DrawText.c",
+      "status": "failed",
+      "log": "build/audit/151fc696473fbfb4.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov076/unclassified_helpers/MessageWindow_DrawText_020cb868.c:15:119: error: unknown type name 'NNSG2dCharaColorMode'"
+    },
+    {
+      "source": "src/overlays/ov076/calls/MessageWindow_DrawLines.c",
+      "status": "failed",
+      "log": "build/audit/eecbd23e851db8f4.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov076/unclassified_helpers/MessageWindow_DrawLines_020cb9a0.c:16:119: error: unknown type name 'NNSG2dCharaColorMode'"
+    },
+    {
+      "source": "src/overlays/ov076/calls/MenuPanel_Create.c",
+      "status": "failed",
+      "log": "build/audit/23f4049d5a8a42a7.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov076/unclassified_helpers/MenuPanel_Create_020cbccc.c:79:48: error: unknown type name 'NNSG2dCharaColorMode'"
+    },
+    {
+      "source": "src/overlays/ov077/calls/DrawPartySlotLabel.c",
+      "status": "failed",
+      "log": "build/audit/f8cb12e13cd83f98.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov077/unclassified_helpers/DrawPartySlotLabel_020c5a4c.c:39:119: error: unknown type name 'NNSG2dCharaColorMode'"
+    },
+    {
+      "source": "src/overlays/ov077/calls/ItemPicker_DrawRows_020c6dec.c",
+      "status": "failed",
+      "log": "build/audit/151f4908c61becb9.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov077/unclassified_helpers/ItemPicker_DrawRows_020c6dcc.c:145:30: error: invalid use of incomplete typedef 'NNSiG2dCharCanvasVTable'"
+    },
+    {
+      "source": "src/overlays/ov077/calls/DrawItemNameHeader.c",
+      "status": "failed",
+      "log": "build/audit/6d4c595056bd3474.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov077/unclassified_helpers/DrawItemNameHeader_020c7284.c:31:49: error: unknown type name 'NNSG2dCharaColorMode'"
+    },
+    {
+      "source": "src/overlays/ov077/calls/DrawItemNameUseHeader.c",
+      "status": "failed",
+      "log": "build/audit/0203acfc2120d9d1.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov077/unclassified_helpers/DrawItemNameUseHeader_020c7408.c:31:49: error: unknown type name 'NNSG2dCharaColorMode'"
+    },
+    {
+      "source": "src/overlays/ov077/calls/MeasureOv077TextRect.c",
+      "status": "failed",
+      "log": "build/audit/ca8002ba50bc0250.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov077/unclassified_helpers/func_ov077_020c826c.c:8:1: error: unknown type name 'NNSG2dTextRect'; did you mean 'NNSG2dTextCanvas'?"
+    },
+    {
+      "source": "src/overlays/ov077/calls/MeasureOv077MessageTiles.c",
+      "status": "failed",
+      "log": "build/audit/6dd97a9d44d18412.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov077/unclassified_helpers/MeasureMessageTiles_020c82ec.c:20:8: error: unknown type name 'NNSG2dTextRect'; did you mean 'NNSG2dTextCanvas'?"
+    },
+    {
+      "source": "src/overlays/ov077/calls/DrawPanelTextBlock.c",
+      "status": "failed",
+      "log": "build/audit/680bc83a61396553.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov077/unclassified_helpers/DrawPanelTextBlock_020c889c.c:16:49: error: unknown type name 'NNSG2dCharaColorMode'"
+    },
+    {
+      "source": "src/overlays/ov077/calls/DrawOv077DialogText.c",
+      "status": "failed",
+      "log": "build/audit/108644da88eb95c8.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov077/unclassified_helpers/DrawDialogText_020c89d4.c:16:119: error: unknown type name 'NNSG2dCharaColorMode'"
+    },
+    {
+      "source": "src/overlays/ov077/calls/ItemListPanel_Create.c",
+      "status": "failed",
+      "log": "build/audit/c134985b10fe692b.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov077/unclassified_helpers/func_ov077_020c8d00.c:79:48: error: unknown type name 'NNSG2dCharaColorMode'"
+    },
+    {
+      "source": "src/overlays/ov078/calls/DrawLayoutLine.c",
+      "status": "failed",
+      "log": "build/audit/297729cc61bb4671.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov078/unclassified_helpers/DrawLayoutLine_020c4c2c.c:24:49: error: unknown type name 'NNSG2dCharaColorMode'"
+    },
+    {
+      "source": "src/overlays/ov081/calls/InitEntryTables.c",
+      "status": "failed",
+      "log": "build/audit/258af9e9e94312b1.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov081/calls/InitEntryTables.c:40:9: error: lvalue required as unary '&' operand"
+    },
+    {
+      "source": "src/overlays/ov081/calls/DrawBgTextLabel.c",
+      "status": "failed",
+      "log": "build/audit/966255462317af8e.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov081/unclassified_helpers/DrawBgTextLabel_020c5530.c:19:49: error: unknown type name 'NNSG2dCharaColorMode'"
+    },
+    {
+      "source": "src/overlays/ov082/calls/DrawEntryRowText.c",
+      "status": "failed",
+      "log": "build/audit/3b46e87c3680bfd4.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov082/unclassified_helpers/DrawEntryRowText_020bf08c.c:10:49: error: unknown type name 'NNSG2dCharaColorMode'"
+    },
+    {
+      "source": "src/overlays/ov093/calls/ResetObjManagerLists_020c0310.c",
+      "status": "failed",
+      "log": "build/audit/418867cd7428b605.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov093/unclassified_helpers/ResetObjManagerLists_020c02f0.c:2:10: fatal error: nnsys/fnd.h: No such file or directory"
+    },
+    {
+      "source": "src/overlays/ov097/calls/ReleaseSlotPools.c",
+      "status": "failed",
+      "log": "build/audit/cb470da1484ab473.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov097/panel_state/ReleaseSlotPools_020bff44.c:2:10: fatal error: nnsys/fnd.h: No such file or directory"
+    },
+    {
+      "source": "src/overlays/ov097/calls/InitSlotPools.c",
+      "status": "failed",
+      "log": "build/audit/d5f7ab2568dae7df.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov097/panel_state/InitSlotPools_020bff74.c:2:10: fatal error: nnsys/fnd.h: No such file or directory"
+    },
+    {
+      "source": "src/overlays/ov099/calls/DrawEntryStatsPanels.c",
+      "status": "failed",
+      "log": "build/audit/84150b38d0f156ef.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov099/panel_state/DrawEntryStatsPanels_020bf818.c:125:49: error: 'f32' undeclared (first use in this function); did you mean 'fx32'?"
+    },
+    {
+      "source": "src/overlays/ov099/calls/ResetObjManagerLists_020c081c.c",
+      "status": "failed",
+      "log": "build/audit/23734b1af057b0d7.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov099/unclassified_helpers/ResetObjManagerLists_020c07fc.c:2:10: fatal error: nnsys/fnd.h: No such file or directory"
+    },
+    {
+      "source": "src/overlays/ov099/calls/InitScrollList_020c0b5c.c",
+      "status": "failed",
+      "log": "build/audit/3f2105edaa2b5f21.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov099/panel_state/InitScrollList_020c0b3c.c:5:30: error: 'f32' undeclared (first use in this function); did you mean 'fx32'?"
+    },
+    {
+      "source": "src/overlays/ov099/calls/UpdateScrollList.c",
+      "status": "failed",
+      "log": "build/audit/9268198f8e41ed36.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/src/ov099/panel_state/UpdateScrollList_020c11b4.c:6:30: error: 'f32' undeclared (first use in this function); did you mean 'fx32'?"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/__DSProt_DetectFlashcart.c",
+      "status": "failed",
+      "log": "build/audit/0cf75a7a9ae5b0cf.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/asm_stubs/calls/__DSProt_DetectFlashcart.c:3:5: error: expected '(' before 'u32'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/__DSProt_DetectNotFlashcart.c",
+      "status": "failed",
+      "log": "build/audit/762e5c14f7e873ec.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/asm_stubs/calls/__DSProt_DetectNotFlashcart.c:3:5: error: expected '(' before 'u32'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/__DSProt_DetectEmulator.c",
+      "status": "failed",
+      "log": "build/audit/76283b86762ba35b.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/asm_stubs/calls/__DSProt_DetectEmulator.c:3:5: error: expected '(' before 'u32'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/__DSProt_DetectNotEmulator.c",
+      "status": "failed",
+      "log": "build/audit/b4d52edc589dc55e.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/asm_stubs/calls/__DSProt_DetectNotEmulator.c:3:5: error: expected '(' before 'u32'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/__DSProt_DetectDummy.c",
+      "status": "failed",
+      "log": "build/audit/a11e1f99f916d4c8.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/asm_stubs/calls/__DSProt_DetectDummy.c:3:5: error: expected '(' before 'u32'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/__DSProt_DetectNotDummy.c",
+      "status": "failed",
+      "log": "build/audit/411b3ec57d5247d5.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/asm_stubs/calls/__DSProt_DetectNotDummy.c:3:5: error: expected '(' before 'u32'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/__sinit_ov104_020d2028.c",
+      "status": "failed",
+      "log": "build/audit/a6f72f5e2c676ee0.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/asm_stubs/calls/__sinit_ov104_020d2028.c:3:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/RunEncrypted_Integrity_MACOwner_IsBad.c",
+      "status": "failed",
+      "log": "build/audit/4c71f8e612251554.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/asm_stubs/calls/RunEncrypted_Integrity_MACOwner_IsBad.c:3:5: error: expected '(' before 'u32'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/RunEncrypted_Integrity_MACOwner_IsGood.c",
+      "status": "failed",
+      "log": "build/audit/b8e19c89385cdf33.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/asm_stubs/calls/RunEncrypted_Integrity_MACOwner_IsGood.c:3:5: error: expected '(' before 'u32'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/RunEncrypted_Integrity_ROMTest_IsBad.c",
+      "status": "failed",
+      "log": "build/audit/1c312195c1b27ae7.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/asm_stubs/calls/RunEncrypted_Integrity_ROMTest_IsBad.c:3:5: error: expected '(' before 'u32'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/RunEncrypted_Integrity_ROMTest_IsGood.c",
+      "status": "failed",
+      "log": "build/audit/5e2e85433efa9152.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/asm_stubs/calls/RunEncrypted_Integrity_ROMTest_IsGood.c:3:5: error: expected '(' before 'u32'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/__sinit_ov104_020d25d0.c",
+      "status": "failed",
+      "log": "build/audit/681833b2265bbd17.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/asm_stubs/calls/__sinit_ov104_020d25d0.c:3:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "src/overlays/ov104/calls/Encryptor_DecodeFunctionTable.c",
+      "status": "failed",
+      "log": "build/audit/cf55b7855acb598c.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/calls/Encryptor_DecodeFunctionTable.c:10:9: error: expected '(' before '{' token"
+    },
+    {
+      "source": "src/overlays/ov104/calls/Encryptor_DecryptFunction.c",
+      "status": "failed",
+      "log": "build/audit/f88ed20b7750e2ad.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/calls/dsprot_encryptor.h:19:9: error: expected '(' before '{' token"
+    },
+    {
+      "source": "src/overlays/ov104/calls/Encryptor_EncryptFunction.c",
+      "status": "failed",
+      "log": "build/audit/3a5615782beadcbc.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/calls/dsprot_encryptor.h:19:9: error: expected '(' before '{' token"
+    },
+    {
+      "source": "src/overlays/ov104/calls/Encryptor_DecryptionWrapperFragment.c",
+      "status": "failed",
+      "log": "build/audit/2a5e129dfda70b56.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/calls/dsprot_encryptor.h:19:9: error: expected '(' before '{' token"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/__sinit_ov104_020d2958.c",
+      "status": "failed",
+      "log": "build/audit/3b3ef0cce7a1d0e0.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/asm_stubs/calls/__sinit_ov104_020d2958.c:3:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/RunEncrypted_MACOwner_IsBad.c",
+      "status": "failed",
+      "log": "build/audit/d78b9d24066b27a3.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/asm_stubs/calls/RunEncrypted_MACOwner_IsBad.c:3:5: error: expected '(' before 'u32'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/RunEncrypted_MACOwner_IsGood.c",
+      "status": "failed",
+      "log": "build/audit/8540ab0af4c7ae3b.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/asm_stubs/calls/RunEncrypted_MACOwner_IsGood.c:3:5: error: expected '(' before 'u32'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/RunEncrypted_ROMUtil_CRC32.c",
+      "status": "failed",
+      "log": "build/audit/8253e1d39263f2df.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/asm_stubs/calls/RunEncrypted_ROMUtil_CRC32.c:3:5: error: expected '(' before 'u32'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/RunEncrypted_ROMTest_IsBad.c",
+      "status": "failed",
+      "log": "build/audit/f02350eceb72bf13.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/asm_stubs/calls/RunEncrypted_ROMTest_IsBad.c:3:5: error: expected '(' before 'u32'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/RunEncrypted_ROMTest_IsGood.c",
+      "status": "failed",
+      "log": "build/audit/e6a331791bbc8bd8.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/asm_stubs/calls/RunEncrypted_ROMTest_IsGood.c:3:5: error: expected '(' before 'u32'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/RunEncrypted_Dummy_IsBad.c",
+      "status": "failed",
+      "log": "build/audit/98abf1d9e8146ce8.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/asm_stubs/calls/RunEncrypted_Dummy_IsBad.c:3:5: error: expected '(' before 'u32'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/RunEncrypted_Dummy_IsGood.c",
+      "status": "failed",
+      "log": "build/audit/c4917ac3befee577.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/asm_stubs/calls/RunEncrypted_Dummy_IsGood.c:3:5: error: expected '(' before 'u32'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/__sinit_ov104_020d31fc.c",
+      "status": "failed",
+      "log": "build/audit/93c48afcfe319718.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/asm_stubs/calls/__sinit_ov104_020d31fc.c:3:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/__sinit_ov104_020d36b4.c",
+      "status": "failed",
+      "log": "build/audit/721e68abef37b115.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/asm_stubs/calls/__sinit_ov104_020d36b4.c:3:5: error: expected '(' before 'void'"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtCipherFunctions.c",
+      "status": "failed",
+      "log": "build/audit/61cc493e4d4520be.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/data/gDSProtCipherFunctions.c:16:1: error: parameter 'gDSProtCipherFunctions' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtDetectDummyContext.c",
+      "status": "failed",
+      "log": "build/audit/7a4f972e992bed82.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/data/gDSProtDetectDummyContext.c:7:1: error: parameter 'gDSProtDetectDummyContext' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtDetectEmulatorContext.c",
+      "status": "failed",
+      "log": "build/audit/5dcea420a2576d57.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/data/gDSProtDetectEmulatorContext.c:7:1: error: parameter 'gDSProtDetectEmulatorContext' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtDetectFlashcartContext.c",
+      "status": "failed",
+      "log": "build/audit/1ccd015aa488f3c4.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/data/gDSProtDetectFlashcartContext.c:7:1: error: parameter 'gDSProtDetectFlashcartContext' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtDetectNotDummyContext.c",
+      "status": "failed",
+      "log": "build/audit/5b2368eba388cbaa.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/data/gDSProtDetectNotDummyContext.c:7:1: error: parameter 'gDSProtDetectNotDummyContext' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtDetectNotEmulatorContext.c",
+      "status": "failed",
+      "log": "build/audit/bdac8f78afbaa1a6.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/data/gDSProtDetectNotEmulatorContext.c:7:1: error: parameter 'gDSProtDetectNotEmulatorContext' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtDetectNotFlashcartContext.c",
+      "status": "failed",
+      "log": "build/audit/77ce380d0db40337.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/data/gDSProtDetectNotFlashcartContext.c:7:1: error: parameter 'gDSProtDetectNotFlashcartContext' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtDetectionFunctions.c",
+      "status": "failed",
+      "log": "build/audit/e940c0b14458a725.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/data/gDSProtDetectionFunctions.c:20:1: error: parameter 'gDSProtDetectionFunctions' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtDummyIsBadContext.c",
+      "status": "failed",
+      "log": "build/audit/5d9a54fbd9db060e.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/data/gDSProtDummyIsBadContext.c:7:1: error: parameter 'gDSProtDummyIsBadContext' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtDummyIsGoodContext.c",
+      "status": "failed",
+      "log": "build/audit/512488197fef5231.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/data/gDSProtDummyIsGoodContext.c:7:1: error: parameter 'gDSProtDummyIsGoodContext' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtEncryptionFunctions.c",
+      "status": "failed",
+      "log": "build/audit/43d5c38d65788904.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/data/gDSProtEncryptionFunctions.c:10:1: error: parameter 'gDSProtEncryptionFunctions' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtInitializers.c",
+      "status": "failed",
+      "log": "build/audit/11f8aacf79d985c9.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/data/gDSProtInitializers.c:11:1: error: parameter 'gDSProtInitializers' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtIntegrityFunctions.c",
+      "status": "failed",
+      "log": "build/audit/2be36ffa0866b95e.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/data/gDSProtIntegrityFunctions.c:11:1: error: parameter 'gDSProtIntegrityFunctions' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtIntegrityMACOwnerIsBadContext.c",
+      "status": "failed",
+      "log": "build/audit/0f2cd5f44c912af0.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/data/gDSProtIntegrityMACOwnerIsBadContext.c:7:1: error: parameter 'gDSProtIntegrityMACOwnerIsBadContext' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtIntegrityMACOwnerIsGoodContext.c",
+      "status": "failed",
+      "log": "build/audit/a32eb1ec9e2bd0dd.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/data/gDSProtIntegrityMACOwnerIsGoodContext.c:7:1: error: parameter 'gDSProtIntegrityMACOwnerIsGoodContext' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtIntegrityROMTestIsBadContext.c",
+      "status": "failed",
+      "log": "build/audit/7814e819a84b6832.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/data/gDSProtIntegrityROMTestIsBadContext.c:7:1: error: parameter 'gDSProtIntegrityROMTestIsBadContext' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtIntegrityROMTestIsGoodContext.c",
+      "status": "failed",
+      "log": "build/audit/6be341ca85e9d8c2.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/data/gDSProtIntegrityROMTestIsGoodContext.c:7:1: error: parameter 'gDSProtIntegrityROMTestIsGoodContext' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtMACOwnerIsBadContext.c",
+      "status": "failed",
+      "log": "build/audit/5dd1ae75a40bdae4.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/data/gDSProtMACOwnerIsBadContext.c:7:1: error: parameter 'gDSProtMACOwnerIsBadContext' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtMACOwnerIsGoodContext.c",
+      "status": "failed",
+      "log": "build/audit/28a6b3ec1a3b09a7.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/data/gDSProtMACOwnerIsGoodContext.c:7:1: error: parameter 'gDSProtMACOwnerIsGoodContext' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtROMTestIsBadContext.c",
+      "status": "failed",
+      "log": "build/audit/e527c6d455e1ff29.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/data/gDSProtROMTestIsBadContext.c:7:1: error: parameter 'gDSProtROMTestIsBadContext' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtROMTestIsGoodContext.c",
+      "status": "failed",
+      "log": "build/audit/1b50f19e788884da.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/data/gDSProtROMTestIsGoodContext.c:7:1: error: parameter 'gDSProtROMTestIsGoodContext' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtROMUtilCRC32Context.c",
+      "status": "failed",
+      "log": "build/audit/e24f671a23d3be30.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/data/gDSProtROMUtilCRC32Context.c:7:1: error: parameter 'gDSProtROMUtilCRC32Context' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtRuntimeFunctions.c",
+      "status": "failed",
+      "log": "build/audit/770eb454df904d12.log",
+      "first_error": "/Users/galetech/Documents/KH DAYS VITA/kh-recoded-decomp/eu/src/overlays/ov104/data/gDSProtRuntimeFunctions.c:14:1: error: parameter 'gDSProtRuntimeFunctions' is initialized"
+    }
+  ]
+}
