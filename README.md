@@ -13,7 +13,8 @@ A decompilação ARM9 do Re:coded precisa ser ligada e adaptada ao runtime Vita.
 - Renderizadores e áudio do Days preservados; integração com o Re:coded pendente.
 - No diagnóstico, controles/touch, layout e menu podem ser exercitados. Resolução
   3D, áudio e velocidade só terão efeito no jogo quando o runtime estiver ligado.
-- Nenhuma execução no aparelho foi validada nesta etapa.
+- Logs fornecidos pelo usuário confirmaram a chegada ao diagnóstico no Vita e a
+  aceitação da ROM. O jogo ainda não foi executado.
 
 ## Compilar o diagnóstico
 
@@ -48,6 +49,9 @@ Não sobrescreve uma cópia existente. A auditoria usa os `delinks.txt` europeus
 respeitando a propriedade nativa dos fontes e os wrappers regionais.
 O probe compila unidades isoladas: não testa link, ABI entre chamadas ou gameplay.
 `--with-game` falha explicitamente enquanto essa integração não estiver pronta.
+
+A integração de ABI, BSS/DTCM e o primeiro link relocável estão documentados em
+[integração nativa](docs/NATIVE_INTEGRATION.md).
 
 Ver [análise e plano](docs/PORTING_ANALYSIS.md) e [validação](docs/VALIDATION.md).
 `reference/days/` preserva documentação, patch e ferramentas específicas do Days

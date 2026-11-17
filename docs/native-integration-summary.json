@@ -1,0 +1,1381 @@
+{
+  "status": "partial-native-link-not-bootable",
+  "compile_counts": {
+    "compiled": 11685,
+    "failed": 256,
+    "backend": 80,
+    "generated-bss": 279,
+    "non-c-pending": 30
+  },
+  "backend_errors": [],
+  "partial_link_returncode": 0,
+  "unresolved_count": 330,
+  "unresolved": [
+    "ARM9_CTOR_START",
+    "Actor_CaptureNodeMatrix",
+    "Actor_Draw",
+    "Actor_InitNodeCaptureCallback",
+    "AddStageSlotLock1",
+    "AlarmCallback",
+    "AlarmCallback_02011848",
+    "AllocatorAllocForSDKHeap",
+    "AllocatorFreeForSDKHeap",
+    "ApplyPartRotationAndCaptureNodeCallback",
+    "CTRDGi_InitModuleInfo",
+    "ConfigureFieldBgLayers",
+    "DC_FlushRange",
+    "DiscardKind4MessageNodesKeepingPinned",
+    "DrawEntryStatsPanels",
+    "DrawSpriteFrameQuadWithDepthUpdate",
+    "FX_MUL",
+    "GetBGExtPlttSlot",
+    "GetBGExtPlttSlot_0202aef8",
+    "GetCharIndex1D",
+    "GetFieldDirectionActiveAndPollSubMode",
+    "GetPtrOamArrayHead_",
+    "HandleSlotListInput",
+    "InitEntryTables",
+    "InitScrollList_020c0b5c",
+    "InitializeMovieDecodeContext",
+    "ItemScreen_DrawHintText",
+    "LoadBank",
+    "LoadSeq",
+    "LoadSeqArc",
+    "LoadStageModels",
+    "LoadWaveArc",
+    "MATHi_SHA1ProcessBlock",
+    "MI_ReadUncompLZ8",
+    "MIi_CheckDma0SourceAddress",
+    "MIi_CpuClear32",
+    "MSL_Sqrt",
+    "MTX_Copy33To43",
+    "MobiClip_AudioTransformDecode",
+    "MobiClip_BlitRows",
+    "MobiClip_DeblockFrame",
+    "MobiClip_FastAudioDecode",
+    "MoviePlayer_SetupDisplay",
+    "NNS_G2dCharCanvasInitForOBJ1D",
+    "NNS_G2dGetAnimCtrlCurrentFrame",
+    "NNS_G2dGetAnimSequenceByIdx",
+    "NNS_G2dInitImagePaletteProxy",
+    "NNS_G2dInitImageProxy",
+    "NNS_G2dLoadImage1DMapping",
+    "NNS_G2dMakeCellToOams",
+    "NNS_G2dSetCellAnimationCurrentFrame",
+    "NNS_G2dSetCellAnimationSequence",
+    "NNS_G2dTickCellAnimation",
+    "NNS_G3dGetCurrentMtx",
+    "NNS_G3dInit",
+    "NNS_GfdDumpFrmPlttVramManagerEx",
+    "NNS_GfdDumpFrmTexVramManager",
+    "NNS_GfdSetFrmPlttVramState",
+    "NNS_SndArcGetBankInfo",
+    "NNS_SndArcGetFileAddress",
+    "NNS_SndArcGetFileSize",
+    "NNS_SndArcGetPlayerInfo",
+    "NNS_SndArcGetSeqArcInfo",
+    "NNS_SndArcGetSeqInfo",
+    "NNS_SndArcGetStrmInfo",
+    "NNS_SndArcGetStrmPlayerInfo",
+    "NNS_SndArcGetWaveArcInfo",
+    "NNS_SndArcLoadBank",
+    "NNS_SndArcLoadSeq",
+    "NNS_SndArcLoadSeqArc",
+    "NNS_SndHandleReleaseSeq",
+    "NNS_SndHeapDestroy",
+    "NNS_SndPlayerSetAllocatableChannel",
+    "NNS_SndPlayerSetInitialVolume",
+    "NNSi_G2dFontGetTextHeight",
+    "NNSi_G2dGetUnpackedFont",
+    "NNSi_G2dSrtcInitControl",
+    "NNSi_G2dTextCanvasDrawString",
+    "NNSi_G3dAnmBlendJntItcm",
+    "NNSi_G3dFuncSbc_BB",
+    "NNSi_G3dFuncSbc_ENVMAP",
+    "NNSi_G3dFuncSbc_PRJMAP",
+    "NormalizeVecPair",
+    "OS_SetTick",
+    "OS_UnlockCartridge_0x02001704",
+    "OS_WaitIrq",
+    "OSi_DoBoot",
+    "OSi_ReloadRomData",
+    "OVERLAY_0_ID",
+    "OVERLAY_104_ID",
+    "OVERLAY_21_ID",
+    "OVERLAY_22_ID",
+    "OVERLAY_24_ID",
+    "OVERLAY_25_ID",
+    "OVERLAY_26_ID",
+    "OVERLAY_27_ID",
+    "OVERLAY_39_ID",
+    "OVERLAY_3_ID",
+    "OVERLAY_40_ID",
+    "OVERLAY_41_ID",
+    "OVERLAY_45_ID",
+    "OVERLAY_51_ID",
+    "OVERLAY_52_ID",
+    "OVERLAY_56_ID",
+    "OVERLAY_58_ID",
+    "OpenFileStream",
+    "OpenMessageWindowLayers",
+    "PM_DeletePostSleepCallback",
+    "PM_DeletePreSleepCallback",
+    "PM_SetBackLight",
+    "PMi_SetLED",
+    "PXIi_HandlerRecvFifoNotEmpty",
+    "ReleaseStageSlotLock1",
+    "ReleaseTitlePanelResources",
+    "RtcCommonCallback",
+    "RunEncrypted_Dummy_IsBad",
+    "RunEncrypted_Dummy_IsGood",
+    "RunEncrypted_Integrity_MACOwner_IsBad",
+    "RunEncrypted_Integrity_MACOwner_IsGood",
+    "RunEncrypted_Integrity_ROMTest_IsBad",
+    "RunEncrypted_Integrity_ROMTest_IsGood",
+    "RunEncrypted_MACOwner_IsBad",
+    "RunEncrypted_MACOwner_IsGood",
+    "RunEncrypted_ROMTest_IsBad",
+    "RunEncrypted_ROMTest_IsGood",
+    "RunEncrypted_ROMUtil_CRC32",
+    "ScaleAndOffsetFx32Pair",
+    "SetBGControl256x16Pltt",
+    "SetBGControlAffine",
+    "SetModelMaterialPolygonId",
+    "SlotMenu_DrawHintText",
+    "SlotMenu_DrawRecordLabel",
+    "StampContextDateTime",
+    "StartSoundStreamAtOffset",
+    "StrmCallback_2",
+    "StrmThread",
+    "SweepBoxAgainstCylinder",
+    "SweepCylinderAgainstCylinder",
+    "SweepCylinderAgainstPolygon",
+    "SweepObbAgainstSegment",
+    "SweepSegmentAgainstCylinder",
+    "SweepSphereAgainstCylinder",
+    "SweepSphereAgainstPolygon",
+    "TestBoxAgainstCylinder",
+    "TestCylinderAgainstCylinder",
+    "TestCylinderAgainstPolygon",
+    "TestSegmentAgainstCylinder",
+    "TestSphereAgainstCylinder",
+    "TestSphereAgainstSegment",
+    "UnPackExtendedData_",
+    "UnpackExtendedData",
+    "UpdateDisplayObjectListImmediate",
+    "UpdateScrollList",
+    "VEC_NormalizeLength",
+    "WH_StateInStartScan",
+    "WM_StartMP",
+    "_Unwind_Backtrace",
+    "_Unwind_VRS_Get",
+    "__DSProt_DetectDummy",
+    "__DSProt_DetectEmulator",
+    "__DSProt_DetectFlashcart",
+    "__DSProt_DetectNotDummy",
+    "__DSProt_DetectNotEmulator",
+    "__DSProt_DetectNotFlashcart",
+    "__aeabi_f2lz",
+    "__aeabi_idiv",
+    "__aeabi_idivmod",
+    "__aeabi_l2f",
+    "__aeabi_ldivmod",
+    "__aeabi_uidiv",
+    "__aeabi_uidivmod",
+    "__aeabi_uldivmod",
+    "__aeabi_unwind_cpp_pr0",
+    "__aeabi_unwind_cpp_pr1",
+    "__schedule_barrier",
+    "__sinit_ov104_020d2028",
+    "__sinit_ov104_020d25d0",
+    "__sinit_ov104_020d2958",
+    "__sinit_ov104_020d31fc",
+    "__sinit_ov104_020d36b4",
+    "_d2f",
+    "_dflt",
+    "_dsub",
+    "_fadd",
+    "_ffix",
+    "_fflt",
+    "_fmul",
+    "_fsub",
+    "_ll_sdiv",
+    "_ll_udiv",
+    "_s32_div_f",
+    "_u32_div_f",
+    "_ull_mod",
+    "calloc",
+    "createMovieStream",
+    "data_02053640",
+    "data_020536c0",
+    "data_02053740",
+    "data_02053780",
+    "data_02053800",
+    "data_02053900",
+    "data_02053980",
+    "data_020539c0",
+    "data_02053ac0",
+    "data_02053b40",
+    "data_02053b80",
+    "data_ov001_020a0101",
+    "data_ov013_020749f4",
+    "data_ov013_02074a74",
+    "data_ov015_0207a40f",
+    "decodeMovieAdpcmSamples",
+    "eu2_DrawTextAnchored",
+    "eu_data_ov014_0206f8e0",
+    "eu_data_ov093_020c3cd4",
+    "eu_data_ov093_020c3cf4",
+    "eu_data_ov093_020c3d14",
+    "eu_data_ov093_020c3d34",
+    "eu_data_ov093_020c3d54",
+    "eu_data_ov093_020c3d74",
+    "eu_data_ov093_020c3d94",
+    "eu_func_ov027_020b9098",
+    "fclose",
+    "fopen",
+    "fread",
+    "free",
+    "fsi_rom_archive_name",
+    "fsi_rom_root_path",
+    "func_01ff88c4",
+    "func_01ff8ad8",
+    "func_01ff8dc8",
+    "func_0200dc4c",
+    "func_020bd17c",
+    "func_020bd2a4",
+    "func_020cf02c",
+    "func_ov021_020a89c8",
+    "func_ov021_020a8cc0",
+    "fwrite",
+    "gCameraLayerIdsByMode",
+    "gFieldMenuAlternateRamps",
+    "gFieldMenuFadeRamps",
+    "gFieldMenuModeBackgroundPalettes",
+    "gFieldMenuModeHighlightPalettes",
+    "gFieldMenuNormalRamps",
+    "gFieldMenuStateRamps",
+    "gMarkerResetConfig",
+    "gMovieDecodeTableBlob",
+    "gMovieDecoderCodeBlob",
+    "gPanelEntryStateHandler",
+    "gPanelTouchProbeOffsets",
+    "gRecordPanelMainBgConfig",
+    "gScrollTextBackgroundTransfers",
+    "gScrollTextInitialScript",
+    "gScrollTextRollingScript",
+    "gTexMtxAltBuilders",
+    "gTexMtxMode2Builders",
+    "gWirelessThemes",
+    "kh_ds_gba_slot",
+    "kh_ds_io",
+    "kh_ds_io_hi",
+    "kh_ds_oam",
+    "kh_ds_palette",
+    "kh_gx3d_is_port",
+    "kh_gx_cmd",
+    "kh_hw_sync_disp",
+    "kh_hw_sync_div",
+    "kh_hw_sync_gxstat",
+    "kh_hw_sync_sqrt",
+    "kh_hw_sync_timers",
+    "kh_io_fifo_write32",
+    "kh_is_code",
+    "kh_log_verbose",
+    "kh_timers_next_event_us",
+    "kh_timers_update",
+    "kh_vita_uncomp_done",
+    "kh_vram_bg_a",
+    "kh_vram_bg_b",
+    "kh_vram_lcdc",
+    "kh_vram_obj_a",
+    "kh_vram_obj_b",
+    "log_flush",
+    "log_printf",
+    "malloc",
+    "memalign",
+    "memcmp",
+    "memcpy",
+    "memmove",
+    "memset",
+    "queueNextMovieFrame",
+    "releaseMovieDecodeContext",
+    "rom_header",
+    "rom_read",
+    "sLnkTexBlockPool",
+    "sLnkTexCompressedUsedList",
+    "sLnkTexUsedList",
+    "sSha1PaddingZeros",
+    "sceAppMgrLoadExec",
+    "sceIoClose",
+    "sceIoGetstat",
+    "sceIoLseek",
+    "sceIoOpen",
+    "sceIoRead",
+    "sceIoRemove",
+    "sceIoRename",
+    "sceIoWrite",
+    "sceKernelClearEventFlag",
+    "sceKernelCreateEventFlag",
+    "sceKernelCreateMutex",
+    "sceKernelCreateSema",
+    "sceKernelCreateThread",
+    "sceKernelDelayThread",
+    "sceKernelExitDeleteThread",
+    "sceKernelExitProcess",
+    "sceKernelGetProcessTimeWide",
+    "sceKernelGetThreadId",
+    "sceKernelGetThreadInfo",
+    "sceKernelLockMutex",
+    "sceKernelSetEventFlag",
+    "sceKernelSignalSema",
+    "sceKernelStartThread",
+    "sceKernelUnlockMutex",
+    "sceKernelWaitEventFlag",
+    "sceKernelWaitSema",
+    "sceRtcGetCurrentClockLocalTime",
+    "sceRtcGetDayOfWeek",
+    "snd7_pxi",
+    "snprintf",
+    "strcmp",
+    "strcpy",
+    "strdup",
+    "threadstat_add"
+  ],
+  "failed_units": [
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/RLUnCompReadByCallbackWrite16bit.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/LZ77UnCompReadNormalWrite8bit.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/SoftReset.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/GetCRC16.c",
+      "error": "expected '(' before 'u16'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/IsDebugger.c",
+      "error": "expected '(' before 'int'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/VBlankIntrWait.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/IntrWait.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/LZ77UnCompReadByCallbackWrite16bit.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/BitUnPack.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/RLUnCompReadNormalWrite8bit.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/CpuFastSet.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/HuffUnCompReadByCallback.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/Halt.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/Div.c",
+      "error": "expected '(' before 's32'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/Mod.c",
+      "error": "expected '(' before 's32'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/Sqrt.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "src/asm_stubs/calls/Entry.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/func_0200093c.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "src/asm_stubs/calls/INITi_DoAutoload.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/calls/OS_WaitIrq.c",
+      "error": "'OSi_IrqCheckFlags' undeclared (first use in this function)"
+    },
+    {
+      "source": "src/auto/DC_FlushRange.c",
+      "error": "expected '(' before '{' token"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/calls/OSi_GetAndDisplayContext.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/calls/OSi_SetExContext.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/calls/OSi_DisplayExContext.c",
+      "error": "expected '(' before '{' token"
+    },
+    {
+      "source": "libs/nitro/os/calls/OSi_CountUpTick.c",
+      "error": "'REG_TM0CNT_L_ADDR' undeclared (first use in this function); did you mean 'REG_DIVCNT_ADDR'?"
+    },
+    {
+      "source": "libs/nitro/os/calls/OS_SetTick.c",
+      "error": "'REG_IF' undeclared (first use in this function)"
+    },
+    {
+      "source": "libs/nitro/mi/calls/MIi_CheckDma0SourceAddress.c",
+      "error": "unknown type name 'MIDmaCallback'"
+    },
+    {
+      "source": "libs/nitro/mi/asm_stubs/calls/MI_ReadUncompLZ8.c",
+      "error": "expected '(' before 's32'"
+    },
+    {
+      "source": "libs/nitro/math/asm_stubs/auto/func_0200dc4c.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "src/asm_stubs/calls/MATHi_SHA1ProcessBlock.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/pxi/calls/PXIi_HandlerRecvFifoNotEmpty.c",
+      "error": "'REG_PXI_FIFO_CNT_ERR_MASK' undeclared (first use in this function)"
+    },
+    {
+      "source": "libs/nitro/rtc/calls/RtcCommonCallback.c",
+      "error": "unknown type name 'RTCWork'"
+    },
+    {
+      "source": "libs/nitro/rtc/calls/RTC_GetDayOfWeek.c",
+      "error": "unknown type name 'RTCWeek'"
+    },
+    {
+      "source": "libs/nitro/spi/calls/PMi_SetLED.c",
+      "error": "unknown type name 'PMLEDStatus'; did you mean 'WMStatus'?"
+    },
+    {
+      "source": "libs/nitro/spi/calls/PM_SetBackLight.c",
+      "error": "unknown type name 'PMLCDTarget'"
+    },
+    {
+      "source": "libs/nitro/spi/calls/PM_DeletePreSleepCallback.c",
+      "error": "unknown type name 'PMSleepCallbackInfo'"
+    },
+    {
+      "source": "libs/nitro/spi/calls/PM_DeletePostSleepCallback.c",
+      "error": "unknown type name 'PMSleepCallbackInfo'"
+    },
+    {
+      "source": "src/calls/AlarmCallback_02011848.c",
+      "error": "unknown type name 'NNSSndStrm'"
+    },
+    {
+      "source": "src/calls/WM_StartMP.c",
+      "error": "'WM_MP_TMP_PARAM_FREQUENCY' undeclared (first use in this function)"
+    },
+    {
+      "source": "src/calls/CTRDGi_InitModuleInfo.c",
+      "error": "'REG_OS_PAUSE_CHK_MASK' undeclared (first use in this function)"
+    },
+    {
+      "source": "libs/nns/fnd/calls/AllocatorAllocForSDKHeap.c",
+      "error": "unknown type name 'OSArenaId'"
+    },
+    {
+      "source": "libs/nns/fnd/calls/AllocatorFreeForSDKHeap.c",
+      "error": "unknown type name 'OSArenaId'"
+    },
+    {
+      "source": "libs/nns/gfd/calls/NNS_GfdDumpFrmTexVramManager.c",
+      "error": "unknown type name 'NNSGfdFrmTexVramDebugDumpCallBack'"
+    },
+    {
+      "source": "libs/nns/gfd/calls/NNS_GfdDumpFrmTexVramManagerEx.c",
+      "error": "unknown type name 'NNSGfdFrmTexRegionState'; did you mean 'NNSGfdFrmTexVramState'?"
+    },
+    {
+      "source": "libs/nns/gfd/calls/NNS_GfdDumpFrmPlttVramManagerEx.c",
+      "error": "unknown type name 'NNSGfdFrmPlttVramManager'"
+    },
+    {
+      "source": "libs/nns/gfd/calls/NNS_GfdSetFrmPlttVramState.c",
+      "error": "unknown type name 'NNSGfdFrmPlttVramManager'"
+    },
+    {
+      "source": "libs/nns/g2d/auto/NNS_G2dGetAnimSequenceByIdx.c",
+      "error": "unknown type name 'NNSG2dAnimBankData'"
+    },
+    {
+      "source": "libs/nns/g2d/auto/GetPtrOamArrayHead_.c",
+      "error": "unknown type name 'NNSG2dCellDataBank'"
+    },
+    {
+      "source": "libs/nns/g2d/calls/UnPackExtendedData_.c",
+      "error": "unknown type name 'NNSG2dUserExCellAttrBank'"
+    },
+    {
+      "source": "libs/nns/g2d/calls/NNS_G2dSetAnimCtrlCurrentFrame.c",
+      "error": "unknown type name 'NNSG2dAnimController'"
+    },
+    {
+      "source": "libs/nns/g2d/auto/NNS_G2dGetAnimCtrlCurrentFrame.c",
+      "error": "unknown type name 'NNSG2dAnimController'"
+    },
+    {
+      "source": "libs/nns/g2d/calls/NNS_G2dBindAnimCtrl.c",
+      "error": "unknown type name 'NNSG2dAnimController'"
+    },
+    {
+      "source": "libs/nns/g2d/auto/NNS_G2dInitImageProxy.c",
+      "error": "static declaration of 'InitializeVRamLocation_' follows non-static declaration"
+    },
+    {
+      "source": "libs/nns/g2d/auto/NNS_G2dInitImagePaletteProxy.c",
+      "error": "static declaration of 'InitializeVRamLocation_' follows non-static declaration"
+    },
+    {
+      "source": "libs/nns/g2d/calls/NNS_G2dLoadImage1DMapping.c",
+      "error": "static declaration of 'GX_SetOBJVRamModeChar' follows non-static declaration"
+    },
+    {
+      "source": "libs/nns/g2d/auto/NNSi_G2dSrtcSetSRTRotZ.c",
+      "error": "unknown type name 'NNSG2dSRTControl'"
+    },
+    {
+      "source": "libs/nns/g2d/auto/NNSi_G2dSrtcSetSRTScale.c",
+      "error": "unknown type name 'NNSG2dSRTControl'"
+    },
+    {
+      "source": "libs/nns/g2d/calls/NNSi_G2dSrtcInitControl.c",
+      "error": "unknown type name 'NNSG2dSRTControl'"
+    },
+    {
+      "source": "libs/nns/g2d/calls/ApplyCurrentAnimResult_.c",
+      "error": "unknown type name 'NNSG2dCellAnimation'"
+    },
+    {
+      "source": "libs/nns/g2d/calls/NNS_G2dSetCellAnimationSequence.c",
+      "error": "unknown type name 'NNSG2dAnimController'"
+    },
+    {
+      "source": "libs/nns/g2d/calls/NNS_G2dTickCellAnimation.c",
+      "error": "unknown type name 'NNSG2dAnimController'"
+    },
+    {
+      "source": "libs/nns/g2d/calls/NNS_G2dSetCellAnimationCurrentFrame.c",
+      "error": "unknown type name 'NNSG2dAnimController'"
+    },
+    {
+      "source": "src/calls/NNS_G2dMakeCellToOams.c",
+      "error": "conflicting types for 'MtxFx22'; have 'struct MtxFx22'"
+    },
+    {
+      "source": "libs/nns/g2d/calls/GetBGExtPlttSlot.c",
+      "error": "unknown type name 'NNSG2dBGExtPlttSlot'"
+    },
+    {
+      "source": "libs/nns/g2d/calls/SetBGnControlToAffine.c",
+      "error": "unknown type name 'NNSG2dBGSelect'"
+    },
+    {
+      "source": "libs/nns/g2d/calls/SetBGnControlTo256x16Pltt.c",
+      "error": "unknown type name 'NNSG2dBGSelect'"
+    },
+    {
+      "source": "libs/nns/g2d/calls/SetBGControlAffine.c",
+      "error": "unknown type name 'GXBGAreaOver'"
+    },
+    {
+      "source": "libs/nns/g2d/calls/SetBGControl256x16Pltt.c",
+      "error": "unknown type name 'GXBGAreaOver'"
+    },
+    {
+      "source": "libs/nns/g2d/calls/NNSi_G2dFontGetTextHeight.c",
+      "error": "'NNSG2dFont' has no member named 'cbCharSpliter'"
+    },
+    {
+      "source": "libs/nns/g2d/calls/GetCharIndex1D.c",
+      "error": "expected '(' before '{' token"
+    },
+    {
+      "source": "libs/nns/g2d/calls/NNS_G2dCharCanvasInitForOBJ1D.c",
+      "error": "expected '(' before '{' token"
+    },
+    {
+      "source": "libs/nns/g2d/calls/NNSi_G2dTextCanvasDrawString.c",
+      "error": "'NNSG2dFont' has no member named 'cbCharSpliter'"
+    },
+    {
+      "source": "libs/nns/g2d/calls/NNSi_G2dGetUnpackedFont.c",
+      "error": "unknown type name 'NNSG2dBinaryFileHeader'"
+    },
+    {
+      "source": "libs/nns/g3d/calls/NNS_G3dGetCurrentMtx.c",
+      "error": "static declaration of 'G3_MtxMode' follows non-static declaration"
+    },
+    {
+      "source": "libs/nns/g3d/calls/NNS_G3dInit.c",
+      "error": "static declaration of 'G3X_SetFifoIntrCond' follows non-static declaration"
+    },
+    {
+      "source": "libs/nns/snd/calls/NNS_SndPlayerSetAllocatableChannel.c",
+      "error": "'NNSSndPlayer' has no member named 'allocChBitFlag'"
+    },
+    {
+      "source": "libs/nns/snd/auto/NNS_SndHandleReleaseSeq.c",
+      "error": "redefinition of 'NNS_SndHandleIsValid'"
+    },
+    {
+      "source": "libs/nns/snd/auto/NNS_SndPlayerSetInitialVolume.c",
+      "error": "redefinition of 'NNS_SndHandleIsValid'"
+    },
+    {
+      "source": "libs/nns/snd/calls/AlarmCallback.c",
+      "error": "unknown type name 'NNSSndStrm'"
+    },
+    {
+      "source": "libs/nns/snd/calls/NNS_SndArcGetSeqInfo.c",
+      "error": "unknown type name 'NNSSndArcInfo'"
+    },
+    {
+      "source": "libs/nns/snd/calls/NNS_SndArcGetSeqArcInfo.c",
+      "error": "unknown type name 'NNSSndArcInfo'"
+    },
+    {
+      "source": "libs/nns/snd/calls/NNS_SndArcGetBankInfo.c",
+      "error": "unknown type name 'NNSSndArcInfo'"
+    },
+    {
+      "source": "libs/nns/snd/calls/NNS_SndArcGetWaveArcInfo.c",
+      "error": "unknown type name 'NNSSndArcInfo'"
+    },
+    {
+      "source": "libs/nns/snd/calls/NNS_SndArcGetStrmInfo.c",
+      "error": "unknown type name 'NNSSndArcInfo'"
+    },
+    {
+      "source": "libs/nns/snd/calls/NNS_SndArcGetPlayerInfo.c",
+      "error": "unknown type name 'NNSSndArcInfo'"
+    },
+    {
+      "source": "libs/nns/snd/calls/NNS_SndArcGetStrmPlayerInfo.c",
+      "error": "unknown type name 'NNSSndArcInfo'"
+    },
+    {
+      "source": "libs/nns/snd/calls/NNS_SndArcGetFileOffset.c",
+      "error": "unknown type name 'NNSSndArcFat'"
+    },
+    {
+      "source": "libs/nns/snd/calls/NNS_SndArcGetFileSize.c",
+      "error": "unknown type name 'NNSSndArcFat'"
+    },
+    {
+      "source": "libs/nns/snd/calls/NNS_SndArcGetFileAddress.c",
+      "error": "unknown type name 'NNSSndArcFat'"
+    },
+    {
+      "source": "libs/nns/snd/calls/NNS_SndHeapDestroy.c",
+      "error": "unknown type name 'NNSFndHeapHandle'; did you mean 'NNSSndHeapHandle'?"
+    },
+    {
+      "source": "libs/nns/snd/calls/NNS_SndArcLoadSeq.c",
+      "error": "unknown type name 'NNSSndArcLoadResult'"
+    },
+    {
+      "source": "libs/nns/snd/calls/NNS_SndArcLoadSeqArc.c",
+      "error": "unknown type name 'NNSSndArcLoadResult'"
+    },
+    {
+      "source": "libs/nns/snd/calls/NNS_SndArcLoadBank.c",
+      "error": "unknown type name 'NNSSndArcLoadResult'"
+    },
+    {
+      "source": "libs/nns/snd/calls/LoadSeq.c",
+      "error": "unknown type name 'NNSSndArc'"
+    },
+    {
+      "source": "libs/nns/snd/calls/LoadSeqArc.c",
+      "error": "unknown type name 'NNSSndArc'"
+    },
+    {
+      "source": "libs/nns/snd/calls/LoadBank.c",
+      "error": "unknown type name 'NNSSndArc'"
+    },
+    {
+      "source": "libs/nns/snd/calls/LoadWaveArc.c",
+      "error": "unknown type name 'NNSSndArc'"
+    },
+    {
+      "source": "libs/nns/snd/calls/BankDisposeCallback.c",
+      "error": "unknown type name 'NNSSndArc'"
+    },
+    {
+      "source": "libs/nns/snd/calls/WaveArcDisposeCallback.c",
+      "error": "unknown type name 'NNSSndArc'"
+    },
+    {
+      "source": "libs/nns/snd/calls/StrmCallback_2.c",
+      "error": "unknown type name 'OSThreadQueue'"
+    },
+    {
+      "source": "libs/nns/snd/calls/NNSi_SndArcStrm_MakeWaveData.c",
+      "error": "lvalue required as increment operand"
+    },
+    {
+      "source": "libs/nns/snd/calls/OpenFileStream.c",
+      "error": "unknown type name 'FSFile'"
+    },
+    {
+      "source": "libs/nns/snd/calls/StrmThread.c",
+      "error": "unknown type name 'NNSSndStrmPlayer'; did you mean 'NNSSndSeqPlayer'?"
+    },
+    {
+      "source": "libs/msl/c/auto/strcpy.c",
+      "error": "lvalue required as decrement operand"
+    },
+    {
+      "source": "libs/msl/c/calls/strcmp.c",
+      "error": "lvalue required as increment operand"
+    },
+    {
+      "source": "src/asm_stubs/calls/_dmul.c",
+      "error": "expected '(' before 'double'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_d2f.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_dflt.c",
+      "error": "expected '(' before 'double'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_dgr.c",
+      "error": "expected '(' before 'int'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_dleq.c",
+      "error": "expected '(' before 'int'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_fgeq.c",
+      "error": "expected '(' before 'int'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_fgr.c",
+      "error": "expected '(' before 'int'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_fleq.c",
+      "error": "expected '(' before 'int'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_fls.c",
+      "error": "expected '(' before 'int'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_feq.c",
+      "error": "expected '(' before 'int'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_f2d.c",
+      "error": "expected '(' before 'double'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_ll_sfrom_f.c",
+      "error": "expected '(' before 'long'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_fflt.c",
+      "error": "expected '(' before 'float'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_ffltu.c",
+      "error": "expected '(' before 'float'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_ffix.c",
+      "error": "expected '(' before 'int'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_ffixu.c",
+      "error": "expected '(' before 'unsigned'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_dfix.c",
+      "error": "expected '(' before 'int'"
+    },
+    {
+      "source": "src/asm_stubs/calls/MSL_Sqrt.c",
+      "error": "expected '(' before 'double'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_fmul.c",
+      "error": "expected '(' before 'float'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_fdiv.c",
+      "error": "expected '(' before 'float'"
+    },
+    {
+      "source": "src/asm_stubs/calls/_ddiv.c",
+      "error": "expected '(' before 'double'"
+    },
+    {
+      "source": "src/calls/GetBGExtPlttSlot_0202aef8.c",
+      "error": "unknown type name 'NNSG2dBGExtPlttSlot'"
+    },
+    {
+      "source": "src/calls/NNSi_G3dFuncSbc_BB.c",
+      "error": "conflicting types for 'MtxFx43'; have 'struct <anonymous>'"
+    },
+    {
+      "source": "src/calls/NNSi_G3dFuncSbc_ENVMAP.c",
+      "error": "'REG_G3_TEXIMAGE_PARAM_TGEN_MASK' undeclared (first use in this function)"
+    },
+    {
+      "source": "src/calls/NNSi_G3dFuncSbc_PRJMAP.c",
+      "error": "'REG_G3_TEXIMAGE_PARAM_TGEN_MASK' undeclared (first use in this function)"
+    },
+    {
+      "source": "src/calls/TestBoxAgainstCylinder.c",
+      "error": "lvalue required as unary '&' operand"
+    },
+    {
+      "source": "src/calls/TestCylinderAgainstPolygon.c",
+      "error": "lvalue required as unary '&' operand"
+    },
+    {
+      "source": "src/calls/TestSphereAgainstSegment.c",
+      "error": "lvalue required as unary '&' operand"
+    },
+    {
+      "source": "src/calls/TestSphereAgainstCylinder.c",
+      "error": "lvalue required as unary '&' operand"
+    },
+    {
+      "source": "src/calls/ScaleAndOffsetFx32Pair.c",
+      "error": "lvalue required as unary '&' operand"
+    },
+    {
+      "source": "src/calls/TestSegmentAgainstCylinder.c",
+      "error": "lvalue required as unary '&' operand"
+    },
+    {
+      "source": "src/calls/TestCylinderAgainstCylinder.c",
+      "error": "lvalue required as unary '&' operand"
+    },
+    {
+      "source": "src/calls/SweepSphereAgainstCylinder.c",
+      "error": "lvalue required as unary '&' operand"
+    },
+    {
+      "source": "src/calls/SweepSphereAgainstPolygon.c",
+      "error": "lvalue required as unary '&' operand"
+    },
+    {
+      "source": "src/calls/SweepBoxAgainstCylinder.c",
+      "error": "lvalue required as unary '&' operand"
+    },
+    {
+      "source": "src/calls/SweepCylinderAgainstCylinder.c",
+      "error": "lvalue required as unary '&' operand"
+    },
+    {
+      "source": "src/calls/SweepCylinderAgainstPolygon.c",
+      "error": "lvalue required as unary '&' operand"
+    },
+    {
+      "source": "src/calls/SweepObbAgainstSegment.c",
+      "error": "lvalue required as unary '&' operand"
+    },
+    {
+      "source": "src/calls/SweepSegmentAgainstCylinder.c",
+      "error": "lvalue required as unary '&' operand"
+    },
+    {
+      "source": "src/calls/StartSoundStreamAtOffset.c",
+      "error": "unknown type name 'NNSSndStrmHandle'; did you mean 'NNSSndHandle'?"
+    },
+    {
+      "source": "src/calls/UpdateDisplayObjectListImmediate.c",
+      "error": "unknown type name 'NNSSndStrm'"
+    },
+    {
+      "source": "libs/nitro/init/data/strings/cardi_backup_assert.c",
+      "error": "parameter 'cardi_backup_assert' is initialized"
+    },
+    {
+      "source": "libs/nitro/init/data/strings/gMobiClipLibraryTag.c",
+      "error": "parameter 'gMobiClipLibraryTag' is initialized"
+    },
+    {
+      "source": "libs/nitro/init/data/tables/BuildInfo.c",
+      "error": "parameter 'BuildInfo' is initialized"
+    },
+    {
+      "source": "libs/nitro/init/data/tables/SDK_ModuleParamsBlock.c",
+      "error": "parameter 'SDK_ModuleParamsBlock' is initialized"
+    },
+    {
+      "source": "libs/nitro/math/data/tables/MATHi_SHA1RoundConstants.c",
+      "error": "parameter 'MATHi_SHA1RoundConstants' is initialized"
+    },
+    {
+      "source": "src/data/tables/gBillboardMatrixDataAlignment.c",
+      "error": "parameter 'gBillboardMatrixDataAlignment' is initialized"
+    },
+    {
+      "source": "src/data/tables/gPathSeparatorDataAlignment.c",
+      "error": "parameter 'gPathSeparatorDataAlignment' is initialized"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/calls/OS_IrqHandler.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "src/asm_stubs/calls/OS_IrqHandler_ThreadSwitch.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/calls/OSi_DoBoot.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/auto/func_01ff840c.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "libs/nitro/os/asm_stubs/calls/OSi_ReloadRomData.c",
+      "error": "expected '(' before '{' token"
+    },
+    {
+      "source": "src/calls/Boot_ReadRom.c",
+      "error": "unknown type name 'OSThreadQueue'"
+    },
+    {
+      "source": "libs/nitro/mi/asm_stubs/auto/MIi_CpuClear32.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "src/asm_stubs/calls/func_01ff88c4.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "src/asm_stubs/calls/func_01ff8ad8.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "src/asm_stubs/calls/func_01ff8b7c.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "src/asm_stubs/calls/func_01ff8bb8.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "src/asm_stubs/calls/func_01ff8c50.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "src/asm_stubs/calls/func_01ff8ce8.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "src/asm_stubs/calls/func_01ff8d80.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "src/asm_stubs/calls/func_01ff8dc8.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "src/asm_stubs/calls/func_01ff8e84.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "src/asm_stubs/calls/func_01ff8ec0.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "src/asm_stubs/calls/func_01ff8f5c.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "src/asm_stubs/calls/func_01ff8ff8.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "src/asm_stubs/calls/func_01ff9094.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "src/calls/MTX_Copy33To43.c",
+      "error": "expected ';' before 'void'"
+    },
+    {
+      "source": "src/calls/VEC_NormalizeLength.c",
+      "error": "'REG_DIVCNT' undeclared (first use in this function); did you mean 'REG_DIVCNT_ADDR'?"
+    },
+    {
+      "source": "src/calls/NormalizeVecPair.c",
+      "error": "'REG_DIVCNT' undeclared (first use in this function); did you mean 'REG_DIVCNT_ADDR'?"
+    },
+    {
+      "source": "src/calls/NNSi_G3dAnmBlendJntItcm.c",
+      "error": "'REG_DIVCNT' undeclared (first use in this function); did you mean 'REG_DIVCNT_ADDR'?"
+    },
+    {
+      "source": "libs/nns/g3d/data/tables/gTexMtxAltBuilders.c",
+      "error": "parameter 'gTexMtxAltBuilders' is initialized"
+    },
+    {
+      "source": "libs/nns/g3d/data/tables/gTexMtxMode2Builders.c",
+      "error": "parameter 'gTexMtxMode2Builders' is initialized"
+    },
+    {
+      "source": "src/overlays/ov000/calls/ReleaseTitlePanelResources.c",
+      "error": "unknown type name 'NNSG2dAnimController'"
+    },
+    {
+      "source": "src/overlays/ov001/calls/DrawSpriteFrameQuadWithDepthUpdate.c",
+      "error": "unknown type name 'NNSSndStrm'"
+    },
+    {
+      "source": "src/overlays/ov001/calls/ConfigureFieldBgLayers.c",
+      "error": "'REG_BG3CNT_ADDR' undeclared (first use in this function); did you mean 'REG_DIVCNT_ADDR'?"
+    },
+    {
+      "source": "src/overlays/ov001/calls/OpenMessageWindowLayers.c",
+      "error": "'REG_BG0CNT_ADDR' undeclared (first use in this function); did you mean 'REG_DIVCNT_ADDR'?"
+    },
+    {
+      "source": "src/overlays/ov001/calls/ApplyPartRotationAndCaptureNodeCallback.c",
+      "error": "unknown type name 'NNSG2dAnimController'"
+    },
+    {
+      "source": "src/overlays/ov001/calls/SetModelMaterialPolygonId.c",
+      "error": "redefinition of 'NNS_G3dGetResDataByIdx'"
+    },
+    {
+      "source": "src/overlays/ov001/calls/ReleaseStageSlotLock1.c",
+      "error": "unknown type name 'NNSSndStrm'"
+    },
+    {
+      "source": "src/overlays/ov001/calls/AddStageSlotLock1.c",
+      "error": "unknown type name 'NNSSndStrm'"
+    },
+    {
+      "source": "src/overlays/ov001/data/tables/gFieldMenuPalettes.c",
+      "error": "parameter 'gFieldMenuPaletteDataAlignment' is initialized"
+    },
+    {
+      "source": "src/overlays/ov002/calls/StampContextDateTime.c",
+      "error": "unknown type name 'RTCDate'"
+    },
+    {
+      "source": "src/overlays/ov003/calls/MoviePlayer_SetupDisplay.c",
+      "error": "unknown type name 'GXDispMode'"
+    },
+    {
+      "source": "src/ov004/data/Rodata_ov004_02063bf0.c",
+      "error": "'#include' nested depth 200 exceeds maximum of 200 (use '-fmax-include-depth=DEPTH' to increase the maximum)"
+    },
+    {
+      "source": "src/ov014/data/Rodata_ov014_0206f860.c",
+      "error": "'#include' nested depth 200 exceeds maximum of 200 (use '-fmax-include-depth=DEPTH' to increase the maximum)"
+    },
+    {
+      "source": "src/overlays/ov015/calls/WH_StateInStartScan.c",
+      "error": "expected '(' before '{' token"
+    },
+    {
+      "source": "src/overlays/ov017/calls/DiscardKind4MessageNodesKeepingPinned.c",
+      "error": "unknown type name 'NNSSndStrm'"
+    },
+    {
+      "source": "src/overlays/ov021/calls/GetFieldDirectionActiveAndPollSubMode.c",
+      "error": "unknown type name 'NNSSndStrm'"
+    },
+    {
+      "source": "src/overlays/ov021/calls/UnpackExtendedData.c",
+      "error": "unknown type name 'NNSG2dUserExCellAttrBank'; did you mean 'NNSi_G2dUnpackUserExCellAttrBank'?"
+    },
+    {
+      "source": "src/overlays/ov059/calls/Actor_Draw.c",
+      "error": "'NNS_G3D_RENDEROBJ_FLAG_RECORD' undeclared (first use in this function); did you mean 'NNS_G3D_RENDEROBJ_FLAG_HINT_OBSOLETE'?"
+    },
+    {
+      "source": "src/overlays/ov059/calls/Actor_InitNodeCaptureCallback.c",
+      "error": "unknown type name 'NNSG3dSbcCallBackTiming'; did you mean 'NNSG3dSbcCallBackFunc'?"
+    },
+    {
+      "source": "src/overlays/ov059/calls/Actor_CaptureNodeMatrix.c",
+      "error": "conflicting types for 'MtxFx33'; have 'union MtxFx33_'"
+    },
+    {
+      "source": "src/overlays/ov073/calls/HandleSlotListInput.c",
+      "error": "'REG_POWCNT_ADDR' undeclared (first use in this function); did you mean 'REG_DIVCNT_ADDR'?"
+    },
+    {
+      "source": "src/overlays/ov076/calls/SlotMenu_DrawRecordLabel.c",
+      "error": "redeclaration of 'enum NNSG2dCharaColorMode'"
+    },
+    {
+      "source": "src/overlays/ov076/calls/SlotMenu_DrawHintText.c",
+      "error": "redeclaration of 'enum NNSG2dCharaColorMode'"
+    },
+    {
+      "source": "src/overlays/ov077/calls/ItemScreen_DrawHintText.c",
+      "error": "redeclaration of 'enum NNSG2dCharaColorMode'"
+    },
+    {
+      "source": "src/overlays/ov081/calls/InitEntryTables.c",
+      "error": "lvalue required as unary '&' operand"
+    },
+    {
+      "source": "src/overlays/ov099/calls/DrawEntryStatsPanels.c",
+      "error": "'f32' undeclared (first use in this function); did you mean 'fx32'?"
+    },
+    {
+      "source": "src/overlays/ov099/calls/InitScrollList_020c0b5c.c",
+      "error": "'f32' undeclared (first use in this function); did you mean 'fx32'?"
+    },
+    {
+      "source": "src/overlays/ov099/calls/UpdateScrollList.c",
+      "error": "'f32' undeclared (first use in this function); did you mean 'fx32'?"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/__DSProt_DetectFlashcart.c",
+      "error": "expected '(' before 'u32'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/__DSProt_DetectNotFlashcart.c",
+      "error": "expected '(' before 'u32'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/__DSProt_DetectEmulator.c",
+      "error": "expected '(' before 'u32'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/__DSProt_DetectNotEmulator.c",
+      "error": "expected '(' before 'u32'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/__DSProt_DetectDummy.c",
+      "error": "expected '(' before 'u32'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/__DSProt_DetectNotDummy.c",
+      "error": "expected '(' before 'u32'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/__sinit_ov104_020d2028.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/RunEncrypted_Integrity_MACOwner_IsBad.c",
+      "error": "expected '(' before 'u32'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/RunEncrypted_Integrity_MACOwner_IsGood.c",
+      "error": "expected '(' before 'u32'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/RunEncrypted_Integrity_ROMTest_IsBad.c",
+      "error": "expected '(' before 'u32'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/RunEncrypted_Integrity_ROMTest_IsGood.c",
+      "error": "expected '(' before 'u32'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/__sinit_ov104_020d25d0.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "src/overlays/ov104/calls/Encryptor_DecodeFunctionTable.c",
+      "error": "expected '(' before '{' token"
+    },
+    {
+      "source": "src/overlays/ov104/calls/Encryptor_DecryptFunction.c",
+      "error": "expected '(' before '{' token"
+    },
+    {
+      "source": "src/overlays/ov104/calls/Encryptor_EncryptFunction.c",
+      "error": "expected '(' before '{' token"
+    },
+    {
+      "source": "src/overlays/ov104/calls/Encryptor_DecryptionWrapperFragment.c",
+      "error": "expected '(' before '{' token"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/__sinit_ov104_020d2958.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/RunEncrypted_MACOwner_IsBad.c",
+      "error": "expected '(' before 'u32'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/RunEncrypted_MACOwner_IsGood.c",
+      "error": "expected '(' before 'u32'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/RunEncrypted_ROMUtil_CRC32.c",
+      "error": "expected '(' before 'u32'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/RunEncrypted_ROMTest_IsBad.c",
+      "error": "expected '(' before 'u32'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/RunEncrypted_ROMTest_IsGood.c",
+      "error": "expected '(' before 'u32'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/RunEncrypted_Dummy_IsBad.c",
+      "error": "expected '(' before 'u32'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/RunEncrypted_Dummy_IsGood.c",
+      "error": "expected '(' before 'u32'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/__sinit_ov104_020d31fc.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "src/overlays/ov104/asm_stubs/calls/__sinit_ov104_020d36b4.c",
+      "error": "expected '(' before 'void'"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtCipherFunctions.c",
+      "error": "parameter 'gDSProtCipherFunctions' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtDetectDummyContext.c",
+      "error": "parameter 'gDSProtDetectDummyContext' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtDetectEmulatorContext.c",
+      "error": "parameter 'gDSProtDetectEmulatorContext' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtDetectFlashcartContext.c",
+      "error": "parameter 'gDSProtDetectFlashcartContext' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtDetectNotDummyContext.c",
+      "error": "parameter 'gDSProtDetectNotDummyContext' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtDetectNotEmulatorContext.c",
+      "error": "parameter 'gDSProtDetectNotEmulatorContext' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtDetectNotFlashcartContext.c",
+      "error": "parameter 'gDSProtDetectNotFlashcartContext' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtDetectionFunctions.c",
+      "error": "parameter 'gDSProtDetectionFunctions' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtDummyIsBadContext.c",
+      "error": "parameter 'gDSProtDummyIsBadContext' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtDummyIsGoodContext.c",
+      "error": "parameter 'gDSProtDummyIsGoodContext' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtEncryptionFunctions.c",
+      "error": "parameter 'gDSProtEncryptionFunctions' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtInitializers.c",
+      "error": "parameter 'gDSProtInitializers' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtIntegrityFunctions.c",
+      "error": "parameter 'gDSProtIntegrityFunctions' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtIntegrityMACOwnerIsBadContext.c",
+      "error": "parameter 'gDSProtIntegrityMACOwnerIsBadContext' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtIntegrityMACOwnerIsGoodContext.c",
+      "error": "parameter 'gDSProtIntegrityMACOwnerIsGoodContext' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtIntegrityROMTestIsBadContext.c",
+      "error": "parameter 'gDSProtIntegrityROMTestIsBadContext' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtIntegrityROMTestIsGoodContext.c",
+      "error": "parameter 'gDSProtIntegrityROMTestIsGoodContext' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtMACOwnerIsBadContext.c",
+      "error": "parameter 'gDSProtMACOwnerIsBadContext' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtMACOwnerIsGoodContext.c",
+      "error": "parameter 'gDSProtMACOwnerIsGoodContext' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtROMTestIsBadContext.c",
+      "error": "parameter 'gDSProtROMTestIsBadContext' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtROMTestIsGoodContext.c",
+      "error": "parameter 'gDSProtROMTestIsGoodContext' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtROMUtilCRC32Context.c",
+      "error": "parameter 'gDSProtROMUtilCRC32Context' is initialized"
+    },
+    {
+      "source": "src/overlays/ov104/data/gDSProtRuntimeFunctions.c",
+      "error": "parameter 'gDSProtRuntimeFunctions' is initialized"
+    }
+  ],
+  "checks": [
+    "ARM32 ABI assertions",
+    "482 BSS/DTCM symbol offsets",
+    "4 DTCM initializer sizes",
+    "105 overlay constructor banks",
+    "IRQ callback BSS offsets",
+    "overlay DATA/BSS restore, overlap, constructors/destructors, unload",
+    "shared RAM mirrors",
+    "22 real Re:coded IRQ registration/query paths"
+  ]
+}

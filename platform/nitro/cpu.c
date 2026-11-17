@@ -34,15 +34,15 @@
 /* ---- decomp symbols -------------------------------------------------------------------- */
 
 typedef void (*IrqFn)(void);
-extern IrqFn data_027e0000[22];                  /* OS_IRQTable, at the start of DTCM */
+extern IrqFn SDK_AUTOLOAD_DTCM_START[22];                  /* OS_IRQTable, at the start of DTCM */
 /* OSi_IrqThreadQueue: the queue OS_WaitIrq sleeps on (OS_InitIrqTable clears it) */
-extern struct { void *head, *tail; } data_027e006c;
+extern struct { void *head, *tail; } gIrqWaitThreadQueue;
 extern struct {
     uint16_t isNeedRescheduling;
     uint16_t irqDepth;
     uint8_t *current; /* OSThread * */
     uint8_t *list;    /* by priority, through OSThread.next */
-} data_02044330;                                 /* OSi_ThreadInfo */
+} OSi_ThreadInfo;                                 /* OSi_ThreadInfo */
 
 extern void OSi_RescheduleThread(void);
 extern void OS_WakeupThread(void *queue);
@@ -194,8 +194,8 @@ static void run_handlers(void)
         if (live) {
             int bit = __builtin_ctz(live);
             kh_irq_ack(1u << bit);
-            if (bit < 22 && data_027e0000[bit])
-                data_027e0000[bit]();
+            if (bit < 22 && SDK_AUTOLOAD_DTCM_START[bit])
+                SDK_AUTOLOAD_DTCM_START[bit]();
         } else if (s_task_deferred) {
             run_deferred(take_deferred(&s_task_deferred));
         } else {
@@ -203,8 +203,8 @@ static void run_handlers(void)
         }
         kh_cpu_irqs_delivered++;
         /* OS_IrqHandler_ThreadSwitch: threads waiting in OS_WaitIrq become ready */
-        if (data_027e006c.head)
-            OS_WakeupThread(&data_027e006c);
+        if (gIrqWaitThreadQueue.head)
+            OS_WakeupThread(&gIrqWaitThreadQueue);
     }
     s_irq_thread = -1;
 }
@@ -212,8 +212,8 @@ static void run_handlers(void)
 /* The reschedule the DS did on return from the interrupt, on the thread that was interrupted. */
 static void reschedule_if_needed(void)
 {
-    if (data_02044330.isNeedRescheduling && !(kh_cpsr_if & 0x80)) {
-        data_02044330.isNeedRescheduling = 0;
+    if (OSi_ThreadInfo.isNeedRescheduling && !(kh_cpsr_if & 0x80)) {
+        OSi_ThreadInfo.isNeedRescheduling = 0;
         kh_cpu_switches++;
         OSi_RescheduleThread();
     }
@@ -281,7 +281,7 @@ void OS_Halt(void)
     const uint64_t t0 = sceKernelGetProcessTimeWide();
     for (;;) {
         uint32_t timeout = kh_timers_next_event_us();
-        if (deliverable() || data_02044330.isNeedRescheduling) {
+        if (deliverable() || OSi_ThreadInfo.isNeedRescheduling) {
             kh_cpu_halt_us += sceKernelGetProcessTimeWide() - t0;
             kh_cpu_poll();
             return;
@@ -309,7 +309,7 @@ void kh_cpu_wait_irq(uint32_t max_us)
     kh_cpu_wait_stats[0]++;
     if (deliverable()) {
         kh_cpu_wait_stats[2]++;
-    } else if (data_02044330.isNeedRescheduling) {
+    } else if (OSi_ThreadInfo.isNeedRescheduling) {
         kh_cpu_wait_stats[3]++;
     } else {
         sceKernelClearEventFlag(s_event, 0);
@@ -664,16 +664,16 @@ void kh_cpu_log_state(void)
         "resched %d deferred %d task %d",
         (unsigned)s_pending, (unsigned)KH_IO32(REG_IE), KH_IO16(REG_IME) & 1,
         (unsigned)kh_cpsr_if, s_irq_busy, (unsigned)s_owner, (unsigned)s_irq_thread,
-        data_02044330.isNeedRescheduling, s_deferred != NULL, s_task_deferred != NULL);
+        OSi_ThreadInfo.isNeedRescheduling, s_deferred != NULL, s_task_deferred != NULL);
     /* the SDK's threads, highest priority first (OSThread: state +0x64, next +0x68, id +0x6c,
      * priority +0x70, queue +0x78; the context's pc+4 at +0x40: the entry, as the port does not
      * save registers on a switch) */
-    for (t = data_02044330.list; t && n < 16; t = *(uint8_t *const *)(t + 0x68), n++) {
+    for (t = OSi_ThreadInfo.list; t && n < 16; t = *(uint8_t *const *)(t + 0x68), n++) {
         const KhThread *k = find_ctx(t);
         LOG("cpu:   thread %p id %u prio %u state %u queue %p%s entry %08x host %08x%s",
             (void *)t, (unsigned)*(const uint32_t *)(t + 0x6c),
             (unsigned)*(const uint32_t *)(t + 0x70), (unsigned)*(const uint32_t *)(t + 0x64),
-            *(void *const *)(t + 0x78), t == data_02044330.current ? " (current)" : "",
+            *(void *const *)(t + 0x78), t == OSi_ThreadInfo.current ? " (current)" : "",
             (unsigned)(*(const uint32_t *)(t + 0x40) - 4), k ? (unsigned)k->host : 0u,
             k && k->host == s_owner ? " (baton)" : "");
         {

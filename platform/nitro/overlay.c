@@ -1,4 +1,4 @@
-/* Overlays on the port: all 303 are linked in, so "loading" one only has to do what reloading
+/* Overlays on the port: all 105 are linked in, so "loading" one only has to do what reloading
  * its image did to its state, and the game must be handed host addresses where it expects the
  * overlay's load address.
  *
@@ -23,27 +23,13 @@
 extern uint32_t OS_DisableInterrupts(void);
 extern uint32_t OS_RestoreInterrupts(uint32_t state);
 
-/* FSOverlayInfo (include/nitro/fs.h) */
-typedef struct {
-    uint32_t id;
-    uintptr_t ram_address;
-    uint32_t ram_size;
-    uint32_t bss_size;
-    uintptr_t sinit_init;
-    uintptr_t sinit_init_end;
-    uint32_t file_id;
-    uint32_t flags;
-    uint32_t target;
-    uint32_t file_offset, file_length;
-} FSOverlayInfo;
-
 /* __global_destructor_chain: {next, destructor, object} nodes (MSL's __register_global_object) */
 typedef struct DtorNode {
     struct DtorNode *next;
     void (*fn)(void *);
     void *obj;
 } DtorNode;
-extern DtorNode *data_0204bd80;
+extern DtorNode *__global_destructor_chain;
 
 static uint8_t **s_data_snapshot;
 
@@ -112,22 +98,36 @@ static size_t range_len(const KhRange *r)
     return r->start ? (size_t)(r->end - r->start) : 0;
 }
 
-void kh_overlays_snapshot(void)
+int kh_overlays_snapshot(void)
 {
     int i;
     size_t total = 0;
+    if (s_data_snapshot && s_loaded_seq) return 1;
     s_data_snapshot = calloc(kh_overlay_count, sizeof(*s_data_snapshot));
     s_loaded_seq = calloc(kh_overlay_count, sizeof(*s_loaded_seq));
+    if (!s_data_snapshot || !s_loaded_seq) goto fail;
     for (i = 0; i < kh_overlay_count; i++) {
         const KhRange *r = &kh_overlays[i].host[KH_OV_DATA];
         size_t n = range_len(r);
         if (!n)
             continue;
         s_data_snapshot[i] = malloc(n);
+        if (!s_data_snapshot[i]) goto fail;
         memcpy(s_data_snapshot[i], r->start, n);
         total += n;
     }
     LOG("overlay: .data snapshot of %d overlays, %u bytes", kh_overlay_count, (unsigned)total);
+    return 1;
+fail:
+    if (s_data_snapshot) {
+        for (i = 0; i < kh_overlay_count; i++) free(s_data_snapshot[i]);
+    }
+    free(s_data_snapshot);
+    free(s_loaded_seq);
+    s_data_snapshot = NULL;
+    s_loaded_seq = NULL;
+    LOG("overlay: cannot allocate initial state snapshots");
+    return 0;
 }
 
 static void reset_state(const KhOverlay *ov)
@@ -155,6 +155,7 @@ int FS_LoadOverlayImage(FSOverlayInfo *ovi)
         LOG("overlay: load of unknown overlay %u", (unsigned)ovi->id);
         return 0;
     }
+    if (!s_data_snapshot || !s_loaded_seq) return 0;
     reset_state(ov);
     mark_loaded(ov);
     LOG("overlay: load ov%03u", (unsigned)ovi->id);
@@ -190,15 +191,15 @@ void FS_EndOverlay(FSOverlayInfo *ovi)
     for (;;) {
         DtorNode *collected = NULL, *last = NULL, *prev = NULL, *node, *next;
         uint32_t irq = OS_DisableInterrupts();
-        for (node = data_0204bd80; node; node = next) {
+        for (node = __global_destructor_chain; node; node = next) {
             next = node->next;
             if ((!node->obj && inside(ov, (uintptr_t)node->fn)) || inside(ov, (uintptr_t)node->obj)) {
                 if (last)
                     last->next = node;
                 else
                     collected = node;
-                if (data_0204bd80 == node)
-                    data_0204bd80 = next;
+                if (__global_destructor_chain == node)
+                    __global_destructor_chain = next;
                 node->next = NULL;
                 last = node;
                 if (prev)
@@ -208,8 +209,10 @@ void FS_EndOverlay(FSOverlayInfo *ovi)
             }
         }
         OS_RestoreInterrupts(irq);
-        if (!collected)
+        if (!collected) {
+            if (s_loaded_seq) s_loaded_seq[ov->id] = 0;
             return;
+        }
         for (node = collected; node; node = next) {
             next = node->next;
             if (node->fn)

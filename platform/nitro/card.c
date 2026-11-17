@@ -21,7 +21,7 @@
 
 typedef void (*CARDCallback)(void *arg);
 
-extern uint32_t data_02046b00; /* CARD's ROM base offset (common->src bias) */
+extern uint32_t sCardRomState; /* Re:coded CARDRomState.romBase is the first u32 (card_rom_internal.h). */
 
 volatile uint32_t kh_card_reads;
 
@@ -35,7 +35,7 @@ void CARDi_ReadRom(uint32_t dma, const void *src, void *dst, uint32_t len, CARDC
                    void *arg, int async)
 {
     KH_PROBE("CARDi_ReadRom");
-    uint32_t off = (uint32_t)(uintptr_t)src + data_02046b00;
+    uint32_t off = (uint32_t)(uintptr_t)src + sCardRomState;
     int n;
     (void)dma;
 

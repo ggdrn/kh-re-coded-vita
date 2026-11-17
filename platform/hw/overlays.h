@@ -1,4 +1,4 @@
-/* The game's 303 overlays. On the port all of them are linked in at once; "loading" one resets
+/* The game's 105 overlays. On the port all of them are linked in at once; "loading" one resets
  * its .bss (and later its .data) and runs its static initializer, as FS_LoadOverlay did, and its
  * FSOverlayInfo reports `entry` as the load address. */
 #ifndef KH_HW_OVERLAYS_H

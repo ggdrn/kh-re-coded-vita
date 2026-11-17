@@ -76,6 +76,7 @@ extern void kh_vram_sync_cleanup(int *unused);
      KH__IN(a, 0x06800000, 0xa4000) ? KH__AT(kh_vram_lcdc, KH__A(a) - 0x06800000u) :          \
      KH__IN(a, 0x07000000, 0x01000000) ? KH__AT(kh_ds_oam, KH__A(a) & 0x7ffu) :               \
      KH__IN(a, 0x027ff000, 0x1000) ? KH__AT(kh_ds_shared_area, KH__A(a) - 0x027ff000u) :      \
+     KH__IN(a, 0x02fff000, 0x1000) ? KH__AT(kh_ds_shared_area, KH__A(a) - 0x02fff000u) :      \
      KH__IN(a, 0x027e0000, 0x4000) ? KH__AT(kh_ds_dtcm, KH__A(a) - 0x027e0000u) :             \
      KH__IN(a, 0x08000000, 0x02010000) ? KH__AT(kh_ds_gba_slot, KH__A(a) & 0x1ffffu) :        \
      KH__IN(a, 0xffff0000, 0x8000) ? KH__AT(kh_ds_bios9, KH__A(a) & 0xffu) :                  \

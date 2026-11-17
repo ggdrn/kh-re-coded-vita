@@ -2,7 +2,7 @@
  *
  * The ARM9 sends 32-bit words tagged by subsystem (sound, power management, RTC, touch panel,
  * card backup, ...). The ARM7 replies through the same FIFO, and the ARM9 dispatches each reply
- * to the callback registered for its tag (PXI_SetFifoRecvCallback, data_02046288). The port
+ * to the callback registered for its tag (PXI_SetFifoRecvCallback, FifoRecvCallbackTable). The port
  * replaces the FIFO functions and answers here: a reply runs that callback on the running
  * NitroSDK thread in IRQ mode, as the IPC receive interrupt did.
  *
@@ -28,8 +28,8 @@
 
 typedef void (*PXIFifoCallback)(int tag, uint32_t data, int err);
 
-extern PXIFifoCallback data_02046288[32]; /* the ARM9's FifoRecvCallbackTable */
-extern uint16_t data_02046284;            /* PXI_InitFifo's "done" flag */
+extern PXIFifoCallback FifoRecvCallbackTable[32]; /* the ARM9's FifoRecvCallbackTable */
+extern uint16_t FifoCtrlInit;            /* PXI_InitFifo's "done" flag */
 
 /* OSSystemWork.pxiHandleChecker[proc] (0x027ffc00 + 0x388): one bit per tag with a handler */
 #define PXI_CHECKER_ARM9 0x027fff88u
@@ -43,8 +43,8 @@ static const char *const s_tag_names[32] = {
 static void deliver(void *tag, void *data, void *err)
 {
     int t = (int)(uintptr_t)tag;
-    if (data_02046288[t])
-        data_02046288[t](t, (uint32_t)(uintptr_t)data, (int)(uintptr_t)err);
+    if (FifoRecvCallbackTable[t])
+        FifoRecvCallbackTable[t](t, (uint32_t)(uintptr_t)data, (int)(uintptr_t)err);
 }
 
 void kh_arm7_reply(int tag, uint32_t data, int err)
@@ -172,11 +172,11 @@ static void receive(int tag, uint32_t data, int err)
 
 void PXI_InitFifo(void)
 {
-    if (data_02046284)
+    if (FifoCtrlInit)
         return;
-    data_02046284 = 1;
+    FifoCtrlInit = 1;
     *(volatile uint32_t *)KH_SHARED(PXI_CHECKER_ARM9) = 0;
-    memset(data_02046288, 0, sizeof(data_02046288));
+    memset(FifoRecvCallbackTable, 0, sizeof(FifoRecvCallbackTable));
     kh_arm7_init();
 }
 

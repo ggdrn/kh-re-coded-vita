@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Re:coded Vita build. Game compiler flags also feed the native portability audit."""
 import argparse
+import json
 import os
 import shlex
 import subprocess
@@ -57,9 +58,17 @@ LIBS = [
 def main():
     ap = argparse.ArgumentParser(description="Build the Re:coded Vita diagnostic shell")
     ap.add_argument("--with-game", action="store_true", help="reserved for native game integration")
+    ap.add_argument("--native-objects", action="store_true", help="compile native units and retain failures/objects")
+    ap.add_argument("--native-link", action="store_true", help="diagnostic relocatable link, not a VPK")
     args = ap.parse_args()
+    if args.native_objects:
+        sys.exit(subprocess.call([sys.executable, str(ROOT / "tools/compile_native.py")]))
+    if args.native_link:
+        sys.exit(subprocess.call([sys.executable, str(ROOT / "tools/link_native.py")]))
     if args.with_game:
-        sys.exit("Re:coded game integration is not linked yet. Run tools/audit_recoded.py; the default build is the Vita diagnostic shell.")
+        report = ROOT / "build/native/compile.json"
+        details = json.loads(report.read_text())["counts"] if report.exists() else "native objects not built"
+        sys.exit(f"Gameplay VPK is not ready: {details}. Use --native-objects / --native-link to inspect native integration; unresolved ABI, hardware side effects and runtime bindings must be completed first.")
     version = (ROOT / "VERSION").read_text().strip()
     major, minor, patch = map(int, version.split("."))
     app_ver = f"{major:02d}.{minor * 10 + min(patch, 9):02d}"

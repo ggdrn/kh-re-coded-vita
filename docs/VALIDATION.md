@@ -1,6 +1,8 @@
 # Validação desta etapa
 
-Executada no Mac com VitaSDK GCC 15.2.0. Nenhum teste em PS Vita físico.
+Validação inicial executada no Mac com VitaSDK GCC 15.2.0.
+Depois, os logs fornecidos pelo usuário confirmaram o boot diagnóstico no Vita;
+veja NATIVE_INTEGRATION.md e device-tests/. Gameplay ainda não foi validado.
 
 | Verificação | Resultado |
 |---|---|
@@ -25,7 +27,8 @@ adicionado no Days. O shim só entra no comando de teste; o build Vita usa VitaS
 A auditoria completa de compilação grava `build/audit/recoded.json` e logs por
 unidade. Fontes são compilados individualmente sem modificações; falhas são
 registradas como resultados da investigação, não escondidas nem substituídas por
-stubs. Não existe link do jogo nesta etapa.
+stubs. Essa auditoria inicial não incluiu link; a integração posterior abaixo
+produz um objeto relocável de diagnóstico.
 
 Para aceitar uma build jogável ainda faltam: compilação adaptada, link completo,
 boot, primeiro frame, controles/touch, gameplay, save/load, áudio/vídeos, dual-3D
@@ -44,3 +47,14 @@ unidades, não bytes de código, progresso do port ou compatibilidade do jogo.
 
 `compile-audit-summary.json` preserva contagens, primeiros erros e lista de falhas;
 `build/audit/recoded.json` contém inventário e logs locais completos.
+
+## Integração nativa posterior
+
+Consulte `NATIVE_INTEGRATION.md` e `native-integration-summary.json` para o estado
+atual. Os números da primeira auditoria acima são um baseline histórico.
+
+Passaram os asserts ABI no compilador ARM32, as verificações de BSS/DTCM e aliases
+compartilhados, o teste do carregador de overlays, o teste dos espelhos de RAM e as rotinas
+reais de registro/consulta dos 22 canais de IRQ.
+O primeiro link relocável foi produzido sem stubs para funções de jogo ausentes.
+O link parcial não certifica um executável nem o boot de NitroMain.

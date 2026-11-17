@@ -26,9 +26,9 @@ enum {
 };
 
 /* DS values from OS_GetInitArenaLo/Hi (EU ROM) */
-#define DS_MAIN_ARENA_SIZE (0x023e0000u - 0x020d73e0u)
-#define DS_ITCM_ARENA_SIZE (0x02000000u - 0x01fffee0u)
-#define DS_DTCM_ARENA_LO 0x0e60u                /* SDK_SECTION_ARENA_DTCM_START - DTCM */
+#define DS_MAIN_ARENA_SIZE (0x023e0000u - 0x020d9c40u)
+#define DS_ITCM_ARENA_SIZE (0x02000000u - 0x01fffec0u)
+#define DS_DTCM_ARENA_LO 0x0280u                /* SDK_SECTION_ARENA_DTCM_START - DTCM */
 #define DS_SHARED_ARENA_SIZE (0x027ff680u - 0x027ff000u)
 
 static uint8_t *s_main_arena;
@@ -122,7 +122,7 @@ unsigned long kh_ds_unpack_ptr(unsigned long ds_addr)
 /* KH_IS_PACKED in the decomp. A packed handle unpacks to a pack header that
  * Msg_OpenContainerAndReadHeader filled: in an arena, with the ROM archive at +8. A file name's
  * address does not (it is in the image, and what its bits unpack to holds no such header). */
-extern uint8_t data_02046334[]; /* fsi_arc_rom, the ROM archive */
+extern uint8_t fsi_arc_rom[]; /* fsi_arc_rom, the ROM archive */
 
 static int unpack_quiet(unsigned long v, uintptr_t *out)
 {
@@ -142,20 +142,20 @@ int kh_is_packed_handle(unsigned long v)
     uintptr_t hdr;
     if (!(v & 0x80000000u) || !unpack_quiet(v, &hdr))
         return 0;
-    return *(const uint32_t *)(hdr + 8) == (uint32_t)(uintptr_t)data_02046334;
+    return *(const uint32_t *)(hdr + 8) == (uint32_t)(uintptr_t)fsi_arc_rom;
 }
 
 /* ---- tick ------------------------------------------------------------------------------------ */
 
-extern uint16_t data_02044664; /* the tick system's "initialized" flag (OS_IsTickAvailable) */
+extern uint16_t OSi_TickState; /* the tick system's "initialized" flag (OS_IsTickAvailable) */
 
 static uint64_t s_tick_origin_us;
 
 void OS_InitTick(void)
 {
-    if (data_02044664)
+    if (OSi_TickState)
         return;
-    data_02044664 = 1;
+    OSi_TickState = 1;
     s_tick_origin_us = sceKernelGetProcessTimeWide();
 }
 
