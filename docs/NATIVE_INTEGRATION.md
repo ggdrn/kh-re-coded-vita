@@ -87,9 +87,9 @@ As contagens medem unidades, não porcentagem de conclusão ou jogabilidade.
 
 ## Continuação validada em 17/11/2026
 
-O estado atual é **11.789 compiladas, 149 falhas, 89 backends, 279 fontes BSS
+O estado atual é **11.790 compiladas, 148 falhas, 89 backends, 279 fontes BSS
 representadas pelo layout gerado e 24 fontes assembly pendentes**. As seis fontes
-C++ ativas agora compilam. O link relocável termina com **235 nomes indefinidos**,
+C++ ativas agora compilam. O link relocável termina com **233 nomes indefinidos**,
 incluindo provedores da plataforma/libc. Nenhum backend falhou. Houve build
 completo após as mudanças gerais de headers, seguido de recompilação dos
 consumidores dos overrides, rastreados pelos arquivos `.d`.
@@ -110,8 +110,8 @@ Foram resolvidos:
   e bytes foram verificados. Nenhum símbolo `fsi_*` ficou indefinido no link.
 - Link ordenado por seção/owner/endereço EU, incluindo labels em áreas de dados,
   nomes numéricos e alinhamentos comprovados. Objetos originais ficam preservados;
-  objcopy modifica apenas cópias de staging. Os **1.608 pares entre âncoras
-  disponíveis** mantêm as distâncias DS. Restam **80 nomes ausentes**, inclusive
+  objcopy modifica apenas cópias de staging. Os **1.609 pares entre âncoras
+  disponíveis** mantêm as distâncias DS. Restam **79 nomes ausentes**, inclusive
   aliases interiores; isso não certifica todos os layouts nem todos os ponteiros.
 - Reescrita GX do Days aplicada a 23 arquivos; integração VRAM em 26 arquivos
   (inclui wrappers/headers). Stores viram chamadas ao backend e o cleanup executa
@@ -143,7 +143,7 @@ em aprovação de layout. Seus resultados e a lista de falhas estão no resumo J
 ### Bloqueios que continuam abertos
 
 1. Wrappers BIOS/assembly restantes, helpers de runtime MSL e interfaces especiais
-   de retorno; SDK/NNS ainda incompletos. As 149 falhas permanecem explícitas.
+   de retorno; SDK/NNS ainda incompletos. As 148 falhas permanecem explícitas.
 2. Aliases interiores/owners restantes e confirmação de ponteiros em dados,
    incluindo tabelas que não são cobertas pela comparação entre âncoras disponíveis.
 3. MobiClip e DS Protect: C++ compilável não implica decoder nem dispatch executável.
@@ -182,3 +182,24 @@ python3 tools/test_native_layout.py
 
 Todos passaram. A auditoria de dados continua com 1.608/1.608 pares correspondentes
 e 80 nomes ausentes. O resultado permanece parcial, sem novo boot no hardware.
+
+
+### Continuação: alias da câmera e carregamento de imagem
+
+`gCameraLayerIdsByMode` agora é um alias relocável da tabela `gCameraLayerIds`
+do ov046. O linker reconhece somente arquivos contendo `.global` e `.equ`, exige
+metadados de dados no mesmo módulo/endereço e encontra a seção real do proprietário.
+O endereço DS serve apenas à identificação; não é emitido como ponteiro nativo.
+A modificação por objcopy ocorre em cópia de staging, preservando o objeto original.
+O relatório de link registra `resolved_data_aliases`. A entrada assembly continua
+contada entre as 24 fontes não compiladas, mas seu alias está resolvido pelo linker.
+
+Foi corrigida também a declaração antecipada de `GXS_SetOBJVRamModeChar` para
+coincidir com sua definição inline local, permitindo compilar
+`NNS_G2dLoadImage1DMapping` sem alterar seu corpo.
+
+Validação: `python3 tools/test_native_data_alias.py` verifica sintaxe restrita,
+proprietário, seção, offset não nulo em ELF ARM e igualdade dos símbolos reais da
+câmera após o link. `python3 tools/test_graphics_rewrites.py` passou novamente.
+O refresh recompilou 1.182 unidades. A cobertura de dados passou a 1.609 pares,
+com 79 nomes ausentes. O boot e o VPK jogável continuam pendentes.

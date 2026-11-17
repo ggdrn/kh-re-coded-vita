@@ -16,7 +16,7 @@ def apply(relative,text):
     if relative in ARCHIVE_VIEW_SOURCES:
         text='#include "nnsys/archive_view.h"\n'+text
     if relative in FORWARD_SOURCES:
-        for name in ['InitializeVRamLocation_', 'GX_SetOBJVRamModeChar', 'G3_MtxMode', 'G3X_SetFifoIntrCond']:
+        for name in ['InitializeVRamLocation_', 'GX_SetOBJVRamModeChar', 'GXS_SetOBJVRamModeChar', 'G3_MtxMode', 'G3X_SetFifoIntrCond']:
             if re.search(r'static inline[^;{}]*\b'+name+r'\s*\(',text):
                 text=re.sub(r'extern\s+([^;{}]*?\b'+name+r'\s*\([^;{}]*\))\s*;',r'static inline \1;',text)
     if relative in COLOR_ENUM_SOURCES:

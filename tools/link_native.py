@@ -9,6 +9,7 @@ sys.path.insert(0,str(ROOT))
 from configure_vita import BIN
 from audit_recoded import inventory
 from native_data_order import section_script
+from native_data_alias import parse_alias, bind_alias
 
 def main():
     out=ROOT/'build/native';report=json.loads((out/'compile.json').read_text())
@@ -16,6 +17,14 @@ def main():
     layout=json.loads((out/'gen/layout.json').read_text());bss={x['name'] for x in layout['bss']}
     ownership={e['source']:{s.split()[0] for s in e['sections']} for e in inventory(ROOT/'build/decomp')}
     objects={};weak=[];ordered={};data_conflicts=[]
+    aliases={};bound_aliases=[]
+    for entry in report['units']:
+        if entry['status'] != 'non-c-pending':continue
+        source=ROOT/'build/decomp/eu'/entry['source']
+        alias=parse_alias(source.read_text(),layout['modules'][entry['module']]['symbols'])
+        if alias:
+            alias['source']=entry['source']
+            aliases.setdefault(entry['module'],[]).append(alias)
     entries_by_source={e['source']:e for e in inventory(ROOT/'build/decomp')}
     for entry in report['units']:
         if entry['status']!='compiled':continue
@@ -61,6 +70,16 @@ def main():
             for section in owned:
                 match=re.search(r'(\.\w+)\s+start:(0x[0-9a-f]+)\s+end:(0x[0-9a-f]+)',section)
                 if match:spans.append((match[1],int(match[2],16),int(match[3],16)))
+            for alias in aliases.get(module,[]):
+                binding=bind_alias(alias,native_symbols,section_objects.get(str(src),[]),spans)
+                if binding:
+                    if any(x['module']==module and x['name']==alias['name'] for x in bound_aliases):
+                        raise ValueError('Duplicate native alias owner: '+alias['name'])
+                    section,offset,target=binding
+                    cmd+=['--add-symbol',f"{alias['name']}={section}:{offset:#x},global,object"]
+                    subprocess.run(cmd+[str(src),str(dst)],check=True)
+                    staged[-1]=dst
+                    bound_aliases.append(dict(alias,module=module,target=target,owner=e['source']))
             groups={}
             for offset,input_section,name in section_objects.get(str(src),[]):
                 symbol=native_symbols.get(name)
@@ -106,7 +125,7 @@ def main():
     # Backends are included once, even if many DS routines map to one provider.
     cmd+=sorted({str(ROOT/p) for p in report['backend_exports'].values()})
     p=subprocess.run(cmd,capture_output=True,text=True);(out/'link.log').write_text(p.stdout+p.stderr)
-    result={'partial_link_returncode':p.returncode,'compile_counts':report['counts'],'weak_storage':weak,'data_section_conflicts':data_conflicts}
+    result={'partial_link_returncode':p.returncode,'compile_counts':report['counts'],'weak_storage':weak,'data_section_conflicts':data_conflicts,'resolved_data_aliases':bound_aliases}
     if p.returncode==0:
         nm=subprocess.check_output([str(BIN/'arm-vita-eabi-nm'),'-u',str(out/'recoded.partial.o')],text=True)
         result['unresolved']=sorted(set(line.split()[-1] for line in nm.splitlines() if line.split()))

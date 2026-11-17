@@ -1,15 +1,15 @@
 {
   "status": "partial-native-link-not-bootable",
   "compile_counts": {
-    "compiled": 11789,
-    "failed": 149,
+    "compiled": 11790,
+    "failed": 148,
     "backend": 89,
     "generated-bss": 279,
     "non-c-pending": 24
   },
   "backend_errors": [],
   "partial_link_returncode": 0,
-  "unresolved_count": 235,
+  "unresolved_count": 233,
   "unresolved": [
     "Actor_CaptureNodeMatrix",
     "Actor_Draw",
@@ -40,7 +40,6 @@
     "MobiClip_FastAudioDecode",
     "MoviePlayer_SetupDisplay",
     "NNS_G2dCharCanvasInitForOBJ1D",
-    "NNS_G2dLoadImage1DMapping",
     "NNS_G2dMakeCellToOams",
     "NNS_G3dGetCurrentMtx",
     "NNS_GfdDumpFrmPlttVramManagerEx",
@@ -167,7 +166,6 @@
     "func_ov021_020a89c8",
     "func_ov021_020a8cc0",
     "fwrite",
-    "gCameraLayerIdsByMode",
     "gFieldMenuFadeRamps",
     "gMarkerResetConfig",
     "gMovieDecodeTableBlob",
@@ -248,8 +246,8 @@
     "threadstat_add"
   ],
   "data_layout": {
-    "checked_pairs": 1608,
-    "matching_pairs": 1608,
+    "checked_pairs": 1609,
+    "matching_pairs": 1609,
     "unplaced_pairs": 0,
     "adjacency_differences": [],
     "missing_names": [
@@ -579,11 +577,6 @@
         "name": "data_ov041_020cf61d"
       },
       {
-        "module": "ov046",
-        "section": ".data",
-        "name": "gCameraLayerIdsByMode"
-      },
-      {
         "module": "ov101",
         "section": ".data",
         "name": "data_ov101_020c1bc8"
@@ -812,10 +805,6 @@
     {
       "source": "libs/nns/g2d/calls/UnPackExtendedData_.c",
       "error": "unknown type name 'NNSG2dUserExCellAttrBank'"
-    },
-    {
-      "source": "libs/nns/g2d/calls/NNS_G2dLoadImage1DMapping.c",
-      "error": "static declaration of 'GXS_SetOBJVRamModeChar' follows non-static declaration"
     },
     {
       "source": "src/calls/NNS_G2dMakeCellToOams.c",
@@ -1270,6 +1259,17 @@
     "105 absolute overlay IDs and empty main constructor terminator",
     "Re:coded clear32 partial words, matrix conversion and overlap",
     "original animation controller behavior and ARM32 cell/SRT ABI",
-    "SHA-1 against hashlib and SDK sort workspace/edge cases"
+    "SHA-1 against hashlib and SDK sort workspace/edge cases",
+    "ARM data alias relocation, owner and section checks; real camera alias equality"
+  ],
+  "resolved_data_aliases": [
+    {
+      "name": "gCameraLayerIdsByMode",
+      "address": 34354112,
+      "source": "src/ov046/data/Alias_gCameraLayerIdsByMode.s",
+      "module": "ov046",
+      "target": "gCameraLayerIds",
+      "owner": "src/ov046/data/gCameraLayerIds.c"
+    }
   ]
 }

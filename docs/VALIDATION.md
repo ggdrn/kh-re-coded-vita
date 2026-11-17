@@ -71,3 +71,9 @@ Na continuação, passaram também os testes de memória Re:coded (palavras parc
 e overlap de matrizes), SHA-1 contra hashlib, sort com workspace e casos-limite,
 controlador de animação original, layout ARM32 de células/SRT e IDs dos 105 overlays.
 Estado: 11.789 compiladas, 149 falhas, 89 backends; link relocável aprovado.
+
+
+Alias de câmera e imagem 2D: link parcial atualizado com 233 nomes pendentes,
+11.790 unidades compiladas e 148 falhas. O alias de ov046 foi verificado como
+símbolo relocável no mesmo endereço/seção da tabela nativa. Auditoria: 1.609 pares
+correspondentes e 79 nomes ausentes. Testes de aliases ARM e GX/VRAM passaram.
