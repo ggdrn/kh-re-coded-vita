@@ -87,9 +87,9 @@ As contagens medem unidades, não porcentagem de conclusão ou jogabilidade.
 
 ## Continuação validada em 17/11/2026
 
-O estado atual é **11.798 compiladas, 140 falhas, 89 backends, 279 fontes BSS
+O estado atual é **11.800 compiladas, 138 falhas, 89 backends, 279 fontes BSS
 representadas pelo layout gerado e 24 fontes assembly pendentes**. As seis fontes
-C++ ativas agora compilam. O link relocável termina com **227 nomes indefinidos**,
+C++ ativas agora compilam. O link relocável termina com **225 nomes indefinidos**,
 incluindo provedores da plataforma/libc. Nenhum backend falhou. Houve build
 completo após as mudanças gerais de headers, seguido de recompilação dos
 consumidores dos overrides, rastreados pelos arquivos `.d`.
@@ -143,7 +143,7 @@ em aprovação de layout. Seus resultados e a lista de falhas estão no resumo J
 ### Bloqueios que continuam abertos
 
 1. Wrappers BIOS/assembly restantes, helpers de runtime MSL e interfaces especiais
-   de retorno; SDK/NNS ainda incompletos. As 140 falhas permanecem explícitas.
+   de retorno; SDK/NNS ainda incompletos. As 138 falhas permanecem explícitas.
 2. Aliases interiores/owners restantes e confirmação de ponteiros em dados,
    incluindo tabelas que não são cobertas pela comparação entre âncoras disponíveis.
 3. MobiClip e DS Protect: C++ compilável não implica decoder nem dispatch executável.
@@ -250,3 +250,21 @@ Reproduzir após `python3 tools/prepare_native_abi.py`. O refresh recompilou
 
 Link parcial aprovado: 227 nomes pendentes. Auditoria: 1609/1609 pares
 correspondentes e 79 nomes ausentes. O boot continua pendente.
+
+
+### Continuação: cabeçalhos de fontes e texto do menu
+
+`nnsys/font_binary_view.h` recupera da decompilação os cabeçalhos de arquivo/bloco
+NFTR e as constantes FINF/versão. O override é restrito ao carregador de fonte.
+O menu de dicas usa as declarações canônicas de glyph e vtable; o adaptador exige
+as duas definições locais esperadas antes de removê-las, preservando o corpo.
+
+`python3 tools/font_binary_test/run.py` executa o carregador original: versões
+1.0–1.3, limpeza das flags somente na versão antiga, bloco FINF ausente, assinatura
+inválida, versão inválida e ponteiro nulo. Spies verificam ordem e argumentos das
+chamadas de relocação/busca; não substituem essas funções no port nem validam a
+relocação completa de uma fonte. O caminho fatal é observado com longjmp no teste.
+Asserts ARM32 verificam headers 16/8 bytes, FINF de 20 bytes, ponteiro de glyph no
+offset 8, flags no offset 7 e os layouts de glyph/vtable compartilhados pelo menu.
+
+O runtime herdado agora chama kh_recoded_prepare_memory antes de criar a thread de NitroMain e encerra a inicialização se a preparação falhar. game.c compilou isoladamente com Vita GCC. A ligação desse runtime ao VPK e o primeiro frame no aparelho seguem pendentes.

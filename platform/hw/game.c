@@ -51,7 +51,8 @@ static int s_gpu3d;          /* the GPU 3D renderer is up */
 static uint64_t s_render_total, s_window_start; /* 2D time and wall clock since the last report */
 static uint32_t s_render_max;
 
-extern void NitroMain(void);
+#include "hw/recoded_boot.h"
+extern int NitroMain(void);
 
 #define GAME_STACK_SIZE (1024 * 1024)
 
@@ -83,7 +84,7 @@ static int game_thread(SceSize args, void *argp)
     return 0;
 }
 
-static void boot_state(void)
+static int boot_state(void)
 {
     kh_romfs_init();
     kh_button_glyphs_init();
@@ -119,7 +120,7 @@ static void boot_state(void)
     *(volatile uint32_t *)KH_SHARED(0x027ffc20) = kh_reset_parameter();
     kh_cpu_init();
     kh_arm7_init();
-    kh_overlays_snapshot();
+    return kh_recoded_prepare_memory();
 }
 
 static uint32_t s_render_us; /* the last frame's 2D rendering time, both engines */
@@ -1750,7 +1751,10 @@ void kh_game_run(void)
         entries += kh_overlays[i].entry != NULL;
     LOG("game: %d overlays, %d with an entry", kh_overlay_count, entries);
 
-    boot_state();
+    if (!boot_state()) {
+        log_flush();
+        return;
+    }
     input_init();
     kh_gx3d_swap_wait = swap_wait;
     kh_gpu3d_clock = display_vblanks;

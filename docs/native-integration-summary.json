@@ -1,15 +1,15 @@
 {
   "status": "partial-native-link-not-bootable",
   "compile_counts": {
-    "compiled": 11798,
-    "failed": 140,
+    "compiled": 11800,
+    "failed": 138,
     "backend": 89,
     "generated-bss": 279,
     "non-c-pending": 24
   },
   "backend_errors": [],
   "partial_link_returncode": 0,
-  "unresolved_count": 227,
+  "unresolved_count": 225,
   "unresolved": [
     "Actor_CaptureNodeMatrix",
     "Actor_Draw",
@@ -50,7 +50,6 @@
     "NNS_SndHeapDestroy",
     "NNS_SndPlayerSetAllocatableChannel",
     "NNS_SndPlayerSetInitialVolume",
-    "NNSi_G2dGetUnpackedFont",
     "NNSi_G3dFuncSbc_BB",
     "NNSi_G3dFuncSbc_ENVMAP",
     "NNSi_G3dFuncSbc_PRJMAP",
@@ -77,7 +76,6 @@
     "RunEncrypted_ROMTest_IsGood",
     "RunEncrypted_ROMUtil_CRC32",
     "SetModelMaterialPolygonId",
-    "SlotMenu_DrawHintText",
     "StampContextDateTime",
     "StartSoundStreamAtOffset",
     "StrmCallback_2",
@@ -805,10 +803,6 @@
       "error": "expected '(' before '{' token"
     },
     {
-      "source": "libs/nns/g2d/calls/NNSi_G2dGetUnpackedFont.c",
-      "error": "unknown type name 'NNSG2dBinaryFileHeader'"
-    },
-    {
       "source": "libs/nns/g3d/calls/NNS_G3dGetCurrentMtx.c",
       "error": "static declaration of 'G3_PushMtx' follows non-static declaration"
     },
@@ -1097,10 +1091,6 @@
       "error": "'REG_POWCNT_ADDR' undeclared (first use in this function); did you mean 'REG_DIVCNT_ADDR'?"
     },
     {
-      "source": "src/overlays/ov076/calls/SlotMenu_DrawHintText.c",
-      "error": "redefinition of 'struct NNSG2dGlyph'"
-    },
-    {
       "source": "src/overlays/ov104/asm_stubs/calls/__DSProt_DetectFlashcart.c",
       "error": "expected '(' before 'u32'"
     },
@@ -1224,7 +1214,8 @@
     "SHA-1 against hashlib and SDK sort workspace/edge cases",
     "ARM data alias relocation, owner and section checks; real camera alias equality",
     "Original OAM head selection with/without bounds; ARM32 extended-cell layouts; main/ov021 wrapper target and offset checks",
-    "Original affine/256x16 BG controls with adapted register table: 131072 cases and ARM32 enum ABI"
+    "Original affine/256x16 BG controls with adapted register table: 131072 cases and ARM32 enum ABI",
+    "NFTR version and FINF dispatch, ARM32 layout and standalone runtime-game ARM compilation"
   ],
   "resolved_data_aliases": [
     {
