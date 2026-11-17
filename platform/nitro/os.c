@@ -144,28 +144,3 @@ int kh_is_packed_handle(unsigned long v)
         return 0;
     return *(const uint32_t *)(hdr + 8) == (uint32_t)(uintptr_t)fsi_arc_rom;
 }
-
-/* ---- tick ------------------------------------------------------------------------------------ */
-
-extern uint16_t OSi_TickState; /* the tick system's "initialized" flag (OS_IsTickAvailable) */
-
-static uint64_t s_tick_origin_us;
-
-void OS_InitTick(void)
-{
-    if (OSi_TickState)
-        return;
-    OSi_TickState = 1;
-    s_tick_origin_us = sceKernelGetProcessTimeWide();
-}
-
-uint64_t OS_GetTick(void)
-{
-    uint64_t us = sceKernelGetProcessTimeWide() - s_tick_origin_us;
-    return us * (KH_DS_BUS_HZ / 64) / 1000000u;
-}
-
-uint16_t OS_GetTickLo(void)
-{
-    return (uint16_t)OS_GetTick();
-}

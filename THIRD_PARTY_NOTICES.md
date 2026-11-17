@@ -17,3 +17,8 @@ O header platform/compat/recoded/nnsys/fnd.h foi recuperado do checkout local
 khdays-decomp/include/nnsys/fnd.h (árvore CC0). Os headers de compatibilidade
 Re:coded e as declarações IRQ recuperam definições da decompilação local;
 os caminhos de origem estão registrados nos comentários e na documentação.
+
+As passagens de comandos GX/VRAM e ordenação de dados reutilizam os algoritmos
+preservados em reference/days/tools/. Os contratos BIOS e views de arquivos de
+áudio/filesystem vêm de eu/docs/library/sdk_bios.md e dos headers internos da
+cópia Re:coded EU. As fontes originais permanecem intactas.

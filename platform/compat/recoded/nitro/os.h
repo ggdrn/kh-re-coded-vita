@@ -10,4 +10,6 @@ typedef struct {
     void *pArg;
 } OSiIrqSlot;
 #define OS_IRQ_TABLE_MAX 22
+/* Same DTCM-relative flag as the original Nitro header; DTCM is local. */
+#define OSi_IrqCheckFlags (*(volatile u32 *)(DTCM + 0x3ff8))
 #endif

@@ -12,6 +12,9 @@ def main():
     addresses={p[2]:int(p[0],16) for p in (l.split() for l in nm.splitlines()) if len(p)==3}
     for symbol in layout['bss']:
         assert addresses[symbol['name']]-addresses['kh_bss_'+symbol['module']+'_start']==symbol['offset'],symbol
+    assert addresses['fsi_rom_archive_state']==addresses['fsi_default_dma_no']
+    assert addresses['fsi_card_lock_id']-addresses['fsi_rom_archive_state']==4
+    assert addresses['fsi_arc_rom']-addresses['fsi_rom_archive_state']==8
     assert addresses['gIrqWaitThreadQueue']-addresses['kh_ds_dtcm']==0xa0
     # OS_Set/GetIrqFunction index four DMA slots then four timer slots.
     base=addresses['gDmaIrqCallback0Function']

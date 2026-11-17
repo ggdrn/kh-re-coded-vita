@@ -3,7 +3,14 @@
 #include <assert.h>
 #include <stdio.h>
 #include "nitro/os.h"
-OSIrqFunction SDK_AUTOLOAD_DTCM_START[22];
+OSIrqFunction SDK_AUTOLOAD_DTCM_START[0x4000 / sizeof(OSIrqFunction)];
+unsigned int gIrqWaitThreadQueue;
+static unsigned sleeps, interrupt_mask;
+static volatile unsigned int *check_flags(void) { return (volatile unsigned int *)((char *)SDK_AUTOLOAD_DTCM_START + 0x3ff8); }
+unsigned int OS_DisableInterrupts(void) { unsigned int old=interrupt_mask; interrupt_mask=0x80; return old; }
+unsigned int OS_RestoreInterrupts(unsigned int state) { unsigned int old=interrupt_mask; interrupt_mask=state; return old; }
+void OS_SleepThread(void *queue) { assert(queue==&gIrqWaitThreadQueue); ++sleeps; *check_flags() |= 1; }
+extern void OS_WaitIrq(int clear, unsigned int mask);
 OSiIrqSlot gDmaIrqCallback0Function[8];
 extern void OS_SetIrqFunction(unsigned int, OSIrqFunction);
 extern OSIrqFunction OS_GetIrqFunction(unsigned int);
@@ -31,6 +38,9 @@ int main(void)
     assert(OS_GetIrqFunction(1u << 21) == handler);
     assert(OS_GetIrqFunction(0) == NULL);
     assert(OS_GetIrqFunction(1u << 31) == NULL);
-    puts("irq_test: 22 IRQ registrations, DMA/timer slots and masks OK");
+    *check_flags()=3; OS_WaitIrq(0,1); assert(sleeps==0 && *check_flags()==3);
+    OS_WaitIrq(1,1); assert(sleeps==1 && *check_flags()==3 && interrupt_mask==0);
+    *check_flags()=2; OS_WaitIrq(0,1); assert(sleeps==2 && *check_flags()==3);
+    puts("irq_test: 22 IRQ registrations, DMA/timer slots, masks and real OS_WaitIrq flags OK");
     return 0;
 }

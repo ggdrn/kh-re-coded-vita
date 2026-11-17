@@ -24,6 +24,8 @@ typedef volatile u32 REGType32v;
 typedef u16 REGType16;
 typedef u32 REGType32;
 typedef u64 REGType64;
+typedef float f32;
+typedef double f64;
 typedef int BOOL;
 typedef int fx32;
 typedef short fx16;

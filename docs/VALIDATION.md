@@ -58,3 +58,10 @@ compartilhados, o teste do carregador de overlays, o teste dos espelhos de RAM e
 reais de registro/consulta dos 22 canais de IRQ.
 O primeiro link relocável foi produzido sem stubs para funções de jogo ausentes.
 O link parcial não certifica um executável nem o boot de NitroMain.
+
+
+Continuação de 17/11/2026: os testes de temporários, strings MSL, tick, BIOS,
+getters de áudio, vínculos FS, ordenação de dados, GX/VRAM e registradores FX
+passaram. O link parcial contém 266 nomes pendentes; 1.608 pares disponíveis de
+DATA/RODATA mantêm seus deltas DS, com 80 nomes ainda ausentes. Consulte o resumo
+JSON atualizado. Nenhum desses testes substitui boot/gameplay no aparelho.

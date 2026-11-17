@@ -74,6 +74,12 @@ def generate(decomp,rom,out):
     for name,offset in {'OSi_RescheduleCount':4,'OSi_CurrentThreadPtr':8,'OSi_ThreadIdCount':0x18,'data_02044330':0x1c}.items():
         asm += [f'.global {name}',f'.type {name}, %object',f'.set {name}, OSi_ThreadSystemState + {offset}']
         bss.append({'module':'main','name':name,'offset':base-modules['main']['ranges']['.bss'][0]+offset})
+    # FSRomArchiveState owns the same DMA/lock/archive block as these SDK
+    # aliases. Binding a second native allocation would split filesystem state.
+    base=next(s['address'] for s in modules['main']['symbols'] if s['name']=='fsi_default_dma_no')
+    asm += ['.global fsi_rom_archive_state','.type fsi_rom_archive_state, %object',
+            '.set fsi_rom_archive_state, fsi_default_dma_no']
+    bss.append({'module':'main','name':'fsi_rom_archive_state','offset':base-modules['main']['ranges']['.bss'][0]})
     image=rom.read_bytes();fat=struct.unpack_from('<I',image,0x48)[0]
     overlays=[];unresolved=[];functions=set();wrappers=[]
     for ov in metadata['overlays']:

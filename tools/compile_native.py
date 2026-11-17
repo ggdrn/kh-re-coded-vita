@@ -7,7 +7,7 @@ import argparse, concurrent.futures, hashlib, json, os, re, shlex, subprocess, s
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
-from configure_vita import BIN,COMMON_CFLAGS,GAME_CFLAGS,PORT_CFLAGS
+from configure_vita import BIN,COMMON_CFLAGS,GAME_CFLAGS,GAME_CXXFLAGS,PORT_CFLAGS
 from audit_recoded import inventory
 
 def run(cmd, log):
@@ -23,7 +23,7 @@ def main():
     ap.add_argument('--retry-failed',action='store_true',help='update failures in the last full native report')
     ap.add_argument('--failed-only',action='store_true',help='retry the original audit failures only')
     a=ap.parse_args();d=a.decomp.resolve();out=ROOT/'build/native';out.mkdir(parents=True,exist_ok=True)
-    cc=BIN/'arm-vita-eabi-gcc';includes=['-I'+str(out/'adapted/eu'),'-I'+str(out/'adapted'),'-I'+str(ROOT/'platform/compat/recoded'),'-I'+str(ROOT/'platform/compat'),'-I'+str(d/'eu'),'-I'+str(d),'-I'+str(d/'src'),'-I'+str(d/'include')]
+    cc=BIN/'arm-vita-eabi-gcc';includes=['-I'+str(ROOT/'platform/compat/recoded'),'-I'+str(out/'adapted/eu'),'-I'+str(out/'adapted'),'-I'+str(ROOT/'platform/compat'),'-I'+str(d/'eu'),'-I'+str(d),'-I'+str(d/'src'),'-I'+str(d/'include')]
     flags=[*COMMON_CFLAGS,*GAME_CFLAGS,*includes,'-include',str(ROOT/'platform/compat/recoded/abi.h')]
     check=out/'abi_check.o'
     if run([cc,*flags,'-c',ROOT/'platform/nitro/abi_check.c','-o',check],out/'abi_check.log'):
@@ -58,10 +58,10 @@ def main():
     previous=None
     if a.retry_failed or a.refresh_abi:
         previous=json.loads((out/'compile.json').read_text())
-        failed={x['source'] for x in previous['units'] if x['status']=='failed'}
+        failed={x['source'] for x in previous['units'] if x['status']=='failed' or (x['status']=='non-c-pending' and x['source'].endswith('.cpp'))}
         if a.refresh_abi:
             overrides=json.loads((out/'adapted/manifest.json').read_text())
-            changed={str(d/x['source']) for x in overrides}
+            changed={str(base/x['source']) for x in overrides for base in [d,out/'adapted']}
             for old in previous['units']:
                 if old['status']!='compiled':continue
                 dep=ROOT/(old['object']+'.d')
@@ -80,9 +80,11 @@ def main():
             return dict(row,status='backend',provider=backend[source.stem])
         if e['sections'] and all(sec.startswith('.bss ') for sec in e['sections']):
             return dict(row,status='generated-bss')
-        if source.suffix!='.c':return dict(row,status='non-c-pending')
+        if source.suffix not in ['.c','.cpp']:return dict(row,status='non-c-pending')
         obj=out/'objects'/e['module']/Path(e['source']).with_suffix('.o');obj.parent.mkdir(parents=True,exist_ok=True)
-        cmd=[cc,*flags,'-Dmain=NitroMain','-MMD','-MF',str(obj)+'.d','-c',source,'-o',obj]
+        compiler=BIN/'arm-vita-eabi-g++' if source.suffix=='.cpp' else cc
+        unit_flags=[*COMMON_CFLAGS,*GAME_CXXFLAGS,*includes,'-include',str(ROOT/'platform/compat/recoded/abi.h')] if source.suffix=='.cpp' else flags
+        cmd=[compiler,*unit_flags,'-Dmain=NitroMain','-MMD','-MF',str(obj)+'.d','-c',source,'-o',obj]
         if any('.data ' in s or '.rodata ' in s for s in e['sections']):cmd += ['-Os','-fno-zero-initialized-in-bss']
         if e['module']=='dtcm':
             cmd += ['-D'+x['name']+'='+x['initial'] for x in layout['dtcm_initializers']]
@@ -99,6 +101,9 @@ def main():
     if previous:
         updates={x['source']:x for x in rows}
         rows=[updates.get(x['source'],x) for x in previous['units']]
+        for row in rows:
+            if row['status']=='backend' and Path(row['source']).stem in backend:
+                row['provider']=backend[Path(row['source']).stem]
     counts={status:sum(x['status']==status for x in rows) for status in ['compiled','failed','backend','generated-bss','non-c-pending']}
     report={'mode':'original-failures' if a.failed_only else 'full','counts':counts,'backend_errors':backend_errors,'backend_exports':backend,'units':rows}
     name='retry.json' if a.failed_only else 'compile.json'
