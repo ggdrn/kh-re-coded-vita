@@ -77,3 +77,9 @@ Alias de câmera e imagem 2D: link parcial atualizado com 233 nomes pendentes,
 11.790 unidades compiladas e 148 falhas. O alias de ov046 foi verificado como
 símbolo relocável no mesmo endereço/seção da tabela nativa. Auditoria: 1.609 pares
 correspondentes e 79 nomes ausentes. Testes de aliases ARM e GX/VRAM passaram.
+
+
+Células com limites e atributos: testes das funções originais e asserts ARM32
+aprovados. A chamada do wrapper ov021 foi conferida contra as relocações EU.
+Estado: 11.793 compiladas, 145 falhas, 230 nomes pendentes no link parcial;
+1.609/1.609 pares de dados correspondentes, 79 nomes ausentes. Sem novo boot no Vita.

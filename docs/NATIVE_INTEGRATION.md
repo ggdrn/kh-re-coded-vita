@@ -87,9 +87,9 @@ As contagens medem unidades, não porcentagem de conclusão ou jogabilidade.
 
 ## Continuação validada em 17/11/2026
 
-O estado atual é **11.790 compiladas, 148 falhas, 89 backends, 279 fontes BSS
+O estado atual é **11.793 compiladas, 145 falhas, 89 backends, 279 fontes BSS
 representadas pelo layout gerado e 24 fontes assembly pendentes**. As seis fontes
-C++ ativas agora compilam. O link relocável termina com **233 nomes indefinidos**,
+C++ ativas agora compilam. O link relocável termina com **230 nomes indefinidos**,
 incluindo provedores da plataforma/libc. Nenhum backend falhou. Houve build
 completo após as mudanças gerais de headers, seguido de recompilação dos
 consumidores dos overrides, rastreados pelos arquivos `.d`.
@@ -143,7 +143,7 @@ em aprovação de layout. Seus resultados e a lista de falhas estão no resumo J
 ### Bloqueios que continuam abertos
 
 1. Wrappers BIOS/assembly restantes, helpers de runtime MSL e interfaces especiais
-   de retorno; SDK/NNS ainda incompletos. As 148 falhas permanecem explícitas.
+   de retorno; SDK/NNS ainda incompletos. As 145 falhas permanecem explícitas.
 2. Aliases interiores/owners restantes e confirmação de ponteiros em dados,
    incluindo tabelas que não são cobertas pela comparação entre âncoras disponíveis.
 3. MobiClip e DS Protect: C++ compilável não implica decoder nem dispatch executável.
@@ -203,3 +203,26 @@ proprietário, seção, offset não nulo em ELF ARM e igualdade dos símbolos re
 câmera após o link. `python3 tools/test_graphics_rewrites.py` passou novamente.
 O refresh recompilou 1.182 unidades. A cobertura de dados passou a 1.609 pares,
 com 79 nomes ausentes. O boot e o VPK jogável continuam pendentes.
+
+
+### Continuação: células com limites e atributos estendidos
+
+A view de animação recupera da decompilação os tipos `NNSG2dCellDataWithBR`,
+`NNSG2dCellBoundingRectS16`, `NNSG2dUserExDataBlock` e os atributos de célula.
+As funções originais de seleção do início de OAM e encaminhamento de atributos
+estendidos recebem esses tipos por overrides locais. O wrapper de nome semelhante
+no ov021 também compila, preservando sua chamada original.
+
+O teste de animação executa a seleção OAM para zero a quatro células, com e sem
+retângulos de limite. Test spies verificam o endereço recebido pelas rotinas de
+unpack chamada pelo main e `ReleaseResourceAndDetach` chamada pelo ov021. O nome
+`UnpackExtendedData` do ov021 é enganoso: ele encaminha ponteiro +8 ao destrutor
+de recursos, não à rotina de atributos. A relocação EU do ov021 de `0x020a825c`
+para `0x0202eefc` (símbolo main `ReleaseResourceAndDetach`) confirma o alvo. Os spies não substituem funções no port e não
+certificam o unpack completo. Asserts ARM32 verificam strides de 8/16 bytes para
+células simples/com limites, bounds no offset 8 e header estendido de 8 bytes.
+
+Validação: `python3 tools/animation_view_test/run.py`.
+
+Resultado: 11.793 compiladas, 145 falhas e 230 nomes pendentes no link parcial.
+Auditoria de dados: 1.609/1.609 pares correspondentes, 79 nomes ausentes.

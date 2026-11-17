@@ -1,15 +1,15 @@
 {
   "status": "partial-native-link-not-bootable",
   "compile_counts": {
-    "compiled": 11790,
-    "failed": 148,
+    "compiled": 11793,
+    "failed": 145,
     "backend": 89,
     "generated-bss": 279,
     "non-c-pending": 24
   },
   "backend_errors": [],
   "partial_link_returncode": 0,
-  "unresolved_count": 233,
+  "unresolved_count": 230,
   "unresolved": [
     "Actor_CaptureNodeMatrix",
     "Actor_Draw",
@@ -25,7 +25,6 @@
     "GetBGExtPlttSlot",
     "GetBGExtPlttSlot_0202aef8",
     "GetCharIndex1D",
-    "GetPtrOamArrayHead_",
     "HandleSlotListInput",
     "LoadBank",
     "LoadSeq",
@@ -86,8 +85,6 @@
     "StartSoundStreamAtOffset",
     "StrmCallback_2",
     "StrmThread",
-    "UnPackExtendedData_",
-    "UnpackExtendedData",
     "WH_StateInStartScan",
     "WM_StartMP",
     "_Unwind_Backtrace",
@@ -799,14 +796,6 @@
       "error": "unknown type name 'NNSGfdFrmPlttVramManager'"
     },
     {
-      "source": "libs/nns/g2d/auto/GetPtrOamArrayHead_.c",
-      "error": "'NNSG2dCellDataWithBR' undeclared (first use in this function); did you mean 'NNSG2dCellDataBank'?"
-    },
-    {
-      "source": "libs/nns/g2d/calls/UnPackExtendedData_.c",
-      "error": "unknown type name 'NNSG2dUserExCellAttrBank'"
-    },
-    {
       "source": "src/calls/NNS_G2dMakeCellToOams.c",
       "error": "conflicting types for 'MtxFx22'; have 'struct MtxFx22'"
     },
@@ -1115,10 +1104,6 @@
       "error": "expected '(' before '{' token"
     },
     {
-      "source": "src/overlays/ov021/calls/UnpackExtendedData.c",
-      "error": "unknown type name 'NNSG2dUserExCellAttrBank'; did you mean 'NNSi_G2dUnpackUserExCellAttrBank'?"
-    },
-    {
       "source": "src/overlays/ov059/calls/Actor_Draw.c",
       "error": "'NNS_G3D_RENDEROBJ_FLAG_RECORD' undeclared (first use in this function); did you mean 'NNS_G3D_RENDEROBJ_FLAG_HINT_OBSOLETE'?"
     },
@@ -1260,7 +1245,8 @@
     "Re:coded clear32 partial words, matrix conversion and overlap",
     "original animation controller behavior and ARM32 cell/SRT ABI",
     "SHA-1 against hashlib and SDK sort workspace/edge cases",
-    "ARM data alias relocation, owner and section checks; real camera alias equality"
+    "ARM data alias relocation, owner and section checks; real camera alias equality",
+    "Original OAM head selection with/without bounds; ARM32 extended-cell layouts; main/ov021 wrapper target and offset checks"
   ],
   "resolved_data_aliases": [
     {

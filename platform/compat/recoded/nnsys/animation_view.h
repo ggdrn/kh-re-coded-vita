@@ -187,4 +187,32 @@ typedef enum NNSG2dAffineEnable {
     NNS_G2D_AFFINEENABLE_MAX    = 0x10
 } NNSG2dAffineEnable;
 
+
+typedef struct NNSG2dCellBoundingRectS16 {
+    s16 maxX;
+    s16 maxY;
+    s16 minX;
+    s16 minY;
+} NNSG2dCellBoundingRectS16;
+
+typedef struct NNSG2dCellDataWithBR {
+    NNSG2dCellData cellData;
+    NNSG2dCellBoundingRectS16 boundingRect;
+} NNSG2dCellDataWithBR;
+
+typedef struct NNSG2dUserExDataBlock {
+    u32 blkTypeID;
+    u32 blkSize;
+} NNSG2dUserExDataBlock;
+
+typedef struct NNSG2dUserExCellAttr {
+    u32 * pAttr;
+} NNSG2dUserExCellAttr;
+
+typedef struct NNSG2dUserExCellAttrBank {
+    u16 numCells;
+    u16 numAttribute;
+    NNSG2dUserExCellAttr * pCellAttrArray;
+} NNSG2dUserExCellAttrBank;
+
 #endif

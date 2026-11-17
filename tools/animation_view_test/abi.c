@@ -13,3 +13,10 @@ _Static_assert(sizeof(NNSG2dSRTData)==24,"SRT union");
 _Static_assert(sizeof(NNSG2dSRTControl)==28,"SRT control");
 _Static_assert(offsetof(NNSG2dCellAnimation,srtCtrl)==60,"cell SRT offset");
 _Static_assert(sizeof(NNSG2dCellAnimation)==88,"cell animation");
+
+_Static_assert(sizeof(NNSG2dCellBoundingRectS16)==8,"bounding rectangle");
+_Static_assert(sizeof(NNSG2dCellDataWithBR)==16,"bounded cell stride");
+_Static_assert(offsetof(NNSG2dCellDataWithBR,boundingRect)==8,"bounds offset");
+_Static_assert(sizeof(NNSG2dUserExDataBlock)==8,"extended block header");
+_Static_assert(sizeof(NNSG2dUserExCellAttrBank)==8,"extended cell bank");
+_Static_assert(offsetof(NNSG2dUserExCellAttrBank,pCellAttrArray)==4,"attribute pointer");
