@@ -87,9 +87,9 @@ As contagens medem unidades, não porcentagem de conclusão ou jogabilidade.
 
 ## Continuação validada em 17/11/2026
 
-O estado atual é **11.793 compiladas, 145 falhas, 89 backends, 279 fontes BSS
+O estado atual é **11.798 compiladas, 140 falhas, 89 backends, 279 fontes BSS
 representadas pelo layout gerado e 24 fontes assembly pendentes**. As seis fontes
-C++ ativas agora compilam. O link relocável termina com **230 nomes indefinidos**,
+C++ ativas agora compilam. O link relocável termina com **227 nomes indefinidos**,
 incluindo provedores da plataforma/libc. Nenhum backend falhou. Houve build
 completo após as mudanças gerais de headers, seguido de recompilação dos
 consumidores dos overrides, rastreados pelos arquivos `.d`.
@@ -143,7 +143,7 @@ em aprovação de layout. Seus resultados e a lista de falhas estão no resumo J
 ### Bloqueios que continuam abertos
 
 1. Wrappers BIOS/assembly restantes, helpers de runtime MSL e interfaces especiais
-   de retorno; SDK/NNS ainda incompletos. As 145 falhas permanecem explícitas.
+   de retorno; SDK/NNS ainda incompletos. As 140 falhas permanecem explícitas.
 2. Aliases interiores/owners restantes e confirmação de ponteiros em dados,
    incluindo tabelas que não são cobertas pela comparação entre âncoras disponíveis.
 3. MobiClip e DS Protect: C++ compilável não implica decoder nem dispatch executável.
@@ -226,3 +226,27 @@ Validação: `python3 tools/animation_view_test/run.py`.
 
 Resultado: 11.793 compiladas, 145 falhas e 230 nomes pendentes no link parcial.
 Auditoria de dados: 1.609/1.609 pares correspondentes, 79 nomes ausentes.
+
+
+### Continuação: controle de backgrounds 2D
+
+A view local `nnsys/background_view.h` recupera os enums de backgrounds e GX dos
+headers Re:coded. Cinco wrappers passam a compilar, preservando os corpos de
+seleção de paleta estendida, configuração afim e configuração 256x16 cores.
+
+`python3 tools/background_view_test/run.py` executa as duas rotinas originais de
+controle com a tabela real `NNSiG2dBGCNTTable` adaptada por KH_HW. Verifica os oito
+endereços de registradores nas duas telas. Para os BG2/BG3 de cada tela, cobre
+os quatro tamanhos, os dois modos de repetição, as 32 bases de mapa e as 16 bases
+de tiles com quatro padrões iniciais: 131.072 chamadas no total. Verifica seleção
+de tabela/main/sub, bits de
+prioridade e mosaico preservados e ausência de alterações nos demais BGs.
+Os callbacks de troca de modo são spies do teste; renderização e efeitos completos
+de vídeo ainda dependem dos backends e do teste no aparelho. Os seis enums têm
+ABI de 4 bytes confirmada pelo compilador ARM32.
+
+Reproduzir após `python3 tools/prepare_native_abi.py`. O refresh recompilou
+1.182 unidades e deixou 11.798 compiladas e 140 falhas explícitas.
+
+Link parcial aprovado: 227 nomes pendentes. Auditoria: 1609/1609 pares
+correspondentes e 79 nomes ausentes. O boot continua pendente.

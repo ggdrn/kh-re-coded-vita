@@ -83,3 +83,9 @@ Células com limites e atributos: testes das funções originais e asserts ARM32
 aprovados. A chamada do wrapper ov021 foi conferida contra as relocações EU.
 Estado: 11.793 compiladas, 145 falhas, 230 nomes pendentes no link parcial;
 1.609/1.609 pares de dados correspondentes, 79 nomes ausentes. Sem novo boot no Vita.
+
+
+Backgrounds 2D: enums recuperados e cinco wrappers compilados. Passaram os
+131.072 casos de configuração com a tabela de registradores adaptada e os asserts
+ARM32. Estado: 11.798 compiladas, 140 falhas, 227 nomes pendentes no link parcial.
+Auditoria: 1609/1609 pares correspondentes, 79 nomes ausentes.

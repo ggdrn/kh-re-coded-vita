@@ -1,15 +1,15 @@
 {
   "status": "partial-native-link-not-bootable",
   "compile_counts": {
-    "compiled": 11793,
-    "failed": 145,
+    "compiled": 11798,
+    "failed": 140,
     "backend": 89,
     "generated-bss": 279,
     "non-c-pending": 24
   },
   "backend_errors": [],
   "partial_link_returncode": 0,
-  "unresolved_count": 230,
+  "unresolved_count": 227,
   "unresolved": [
     "Actor_CaptureNodeMatrix",
     "Actor_Draw",
@@ -22,7 +22,6 @@
     "Encryptor_DecryptionWrapperFragment",
     "Encryptor_EncryptFunction",
     "FX_MUL",
-    "GetBGExtPlttSlot",
     "GetBGExtPlttSlot_0202aef8",
     "GetCharIndex1D",
     "HandleSlotListInput",
@@ -77,8 +76,6 @@
     "RunEncrypted_ROMTest_IsBad",
     "RunEncrypted_ROMTest_IsGood",
     "RunEncrypted_ROMUtil_CRC32",
-    "SetBGControl256x16Pltt",
-    "SetBGControlAffine",
     "SetModelMaterialPolygonId",
     "SlotMenu_DrawHintText",
     "StampContextDateTime",
@@ -800,26 +797,6 @@
       "error": "conflicting types for 'MtxFx22'; have 'struct MtxFx22'"
     },
     {
-      "source": "libs/nns/g2d/calls/GetBGExtPlttSlot.c",
-      "error": "unknown type name 'NNSG2dBGExtPlttSlot'"
-    },
-    {
-      "source": "libs/nns/g2d/calls/SetBGnControlToAffine.c",
-      "error": "unknown type name 'NNSG2dBGSelect'"
-    },
-    {
-      "source": "libs/nns/g2d/calls/SetBGnControlTo256x16Pltt.c",
-      "error": "unknown type name 'NNSG2dBGSelect'"
-    },
-    {
-      "source": "libs/nns/g2d/calls/SetBGControlAffine.c",
-      "error": "unknown type name 'GXBGAreaOver'"
-    },
-    {
-      "source": "libs/nns/g2d/calls/SetBGControl256x16Pltt.c",
-      "error": "unknown type name 'GXBGAreaOver'"
-    },
-    {
       "source": "libs/nns/g2d/calls/GetCharIndex1D.c",
       "error": "expected '(' before '{' token"
     },
@@ -1246,7 +1223,8 @@
     "original animation controller behavior and ARM32 cell/SRT ABI",
     "SHA-1 against hashlib and SDK sort workspace/edge cases",
     "ARM data alias relocation, owner and section checks; real camera alias equality",
-    "Original OAM head selection with/without bounds; ARM32 extended-cell layouts; main/ov021 wrapper target and offset checks"
+    "Original OAM head selection with/without bounds; ARM32 extended-cell layouts; main/ov021 wrapper target and offset checks",
+    "Original affine/256x16 BG controls with adapted register table: 131072 cases and ARM32 enum ABI"
   ],
   "resolved_data_aliases": [
     {
