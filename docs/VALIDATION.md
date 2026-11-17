@@ -62,6 +62,12 @@ O link parcial não certifica um executável nem o boot de NitroMain.
 
 Continuação de 17/11/2026: os testes de temporários, strings MSL, tick, BIOS,
 getters de áudio, vínculos FS, ordenação de dados, GX/VRAM e registradores FX
-passaram. O link parcial contém 266 nomes pendentes; 1.608 pares disponíveis de
+passaram. O link parcial contém 235 nomes pendentes; 1.608 pares disponíveis de
 DATA/RODATA mantêm seus deltas DS, com 80 nomes ainda ausentes. Consulte o resumo
 JSON atualizado. Nenhum desses testes substitui boot/gameplay no aparelho.
+
+
+Na continuação, passaram também os testes de memória Re:coded (palavras parciais
+e overlap de matrizes), SHA-1 contra hashlib, sort com workspace e casos-limite,
+controlador de animação original, layout ARM32 de células/SRT e IDs dos 105 overlays.
+Estado: 11.789 compiladas, 149 falhas, 89 backends; link relocável aprovado.

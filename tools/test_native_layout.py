@@ -10,6 +10,10 @@ def main():
     out=ROOT/'build/native';layout=json.loads((out/'gen/layout.json').read_text())
     nm=subprocess.check_output([str(BIN/'arm-vita-eabi-nm'),'--defined-only',str(out/'gen/ds_bss.o')],text=True)
     addresses={p[2]:int(p[0],16) for p in (l.split() for l in nm.splitlines()) if len(p)==3}
+    kinds={p[2]:p[1] for p in (l.split() for l in nm.splitlines()) if len(p)==3}
+    for ov in layout['overlays']:
+        name='OVERLAY_'+str(ov['id'])+'_ID'
+        assert addresses[name]==ov['id'] and kinds[name]=='A'
     for symbol in layout['bss']:
         assert addresses[symbol['name']]-addresses['kh_bss_'+symbol['module']+'_start']==symbol['offset'],symbol
     assert addresses['fsi_rom_archive_state']==addresses['fsi_default_dma_no']
@@ -27,6 +31,9 @@ def main():
     shared={p[2]:int(p[0],16) for p in (l.split() for l in nm.splitlines()) if len(p)==3}
     for name,offset in {'gEngineState':0xc20,'data_02fffc30':0xc30,'gVBlankCount':0xc3c,'data_02ffff96':0xf96}.items():
         assert shared[name]-shared['kh_ds_shared_area']==offset,name
+    ctor=out/'gen/main_ctors.check.bin'
+    subprocess.run([str(BIN/'arm-vita-eabi-objcopy'),'-O','binary','-j','.rodata.kh_main_ctors',str(out/'gen/ds_bss.o'),str(ctor)],check=True)
+    assert ctor.read_bytes()==b'\0'*4
     objs=list((out/'objects/dtcm').rglob('*.o'))
     nm=subprocess.check_output([str(BIN/'arm-vita-eabi-nm'),'-S','--defined-only',*[str(p) for p in objs]],text=True)
     sizes={p[3]:int(p[1],16) for p in (l.split() for l in nm.splitlines()) if len(p)==4}

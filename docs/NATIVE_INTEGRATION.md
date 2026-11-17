@@ -87,9 +87,9 @@ As contagens medem unidades, não porcentagem de conclusão ou jogabilidade.
 
 ## Continuação validada em 17/11/2026
 
-O estado atual é **11.776 compiladas, 168 falhas, 83 backends, 279 fontes BSS
+O estado atual é **11.789 compiladas, 149 falhas, 89 backends, 279 fontes BSS
 representadas pelo layout gerado e 24 fontes assembly pendentes**. As seis fontes
-C++ ativas agora compilam. O link relocável termina com **266 nomes indefinidos**,
+C++ ativas agora compilam. O link relocável termina com **235 nomes indefinidos**,
 incluindo provedores da plataforma/libc. Nenhum backend falhou. Houve build
 completo após as mudanças gerais de headers, seguido de recompilação dos
 consumidores dos overrides, rastreados pelos arquivos `.d`.
@@ -143,7 +143,7 @@ em aprovação de layout. Seus resultados e a lista de falhas estão no resumo J
 ### Bloqueios que continuam abertos
 
 1. Wrappers BIOS/assembly restantes, helpers de runtime MSL e interfaces especiais
-   de retorno; SDK/NNS ainda incompletos. As 168 falhas permanecem explícitas.
+   de retorno; SDK/NNS ainda incompletos. As 149 falhas permanecem explícitas.
 2. Aliases interiores/owners restantes e confirmação de ponteiros em dados,
    incluindo tabelas que não são cobertas pela comparação entre âncoras disponíveis.
 3. MobiClip e DS Protect: C++ compilável não implica decoder nem dispatch executável.
@@ -153,3 +153,32 @@ em aprovação de layout. Seus resultados e a lista de falhas estão no resumo J
    validação no Vita. O diagnóstico 0.1.0 continua sendo a única evidência no aparelho.
 
 **Não há VPK jogável novo e o boot de NitroMain ainda não foi validado/conectado.**
+
+
+### Continuação: memória, matemática e animação 2D
+
+Mais 19 falhas foram resolvidas: 13 unidades passaram a compilar e seis passaram
+para backends nativos. O refresh recompilou 1.182 unidades; o link parcial passou.
+
+- `MIi_CpuClear32` mantém o arredondamento para cima do loop ARM para tamanhos
+  parciais; `MTX_Copy33To43` mantém a leitura por linha e o comportamento de overlap.
+- SHA-1 reaproveita o núcleo Days com a disposição de contexto Re:coded. O sort
+  usa o workspace fornecido e trata largura zero antes de calcular `clz`.
+- Views locais de animação/células/SRT recuperam tipos da decompilação; os corpos
+  originais continuam responsáveis pelas operações. Layouts ARM32 e set/get de
+  frame, incluindo índice inválido e frame inativo, foram testados.
+- Os 105 IDs de overlay são constantes numéricas. A tabela vazia de construtores
+  main possui terminador nulo nativo; o gerador rejeita uma tabela não vazia até
+  que seus construtores sejam resolvidos explicitamente.
+- `DC_FlushRange` segue o modelo de memória nativa do backend Days; isso não
+  substitui a gestão de cache de GPU/DMA pelos backends Vita.
+
+```sh
+bash tools/recoded_memory_test/run.sh
+python3 tools/sdk_math_test/run.py
+python3 tools/animation_view_test/run.py
+python3 tools/test_native_layout.py
+```
+
+Todos passaram. A auditoria de dados continua com 1.608/1.608 pares correspondentes
+e 80 nomes ausentes. O resultado permanece parcial, sem novo boot no hardware.

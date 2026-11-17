@@ -28,6 +28,16 @@ def generate(decomp,rom,out):
     modules={('main' if p.parent.name=='arm9' else p.parent.name):parse_module(p.parent)
              for p in sorted((decomp/'eu/config/arm9').rglob('delinks.txt'))}
     asm=['.syntax unified'];bss=[];dtcm=[]
+    # IDs are numeric linker constants, not native pointers to DS addresses.
+    for overlay in metadata['overlays']:
+        ident=overlay['id'];name=f'OVERLAY_{ident}_ID'
+        asm += [f'.global {name}', f'.set {name}, {ident}']
+    ctor=modules['main']['ranges']['.ctor']
+    if ctor[0]!=ctor[1]:raise ValueError('Main constructors need explicit resolution')
+    asm += ['.section .rodata.kh_main_ctors,"a",%progbits','.balign 4',
+            '.global ARM9_CTOR_START','.type ARM9_CTOR_START, %object',
+            'ARM9_CTOR_START:', '.word 0', '.size ARM9_CTOR_START, 4']
+
     for module,desc in modules.items():
         if module=='dtcm':lo,hi=0x027e0000,0x027e4000
         elif '.bss' in desc['ranges']:lo,hi=desc['ranges']['.bss']

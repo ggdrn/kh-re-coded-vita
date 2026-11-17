@@ -361,122 +361,6 @@ void MTX_Copy44To43_(const int32_t *src, int32_t *dst)
     }
 }
 
-/* ---- MATH_QSort (qsort.c), translated from the SDK's ARM ------------------------------------
- * Same pivot (the middle element swapped to the front), same partition and the same order of
- * pushes, so equal keys end up where the DS put them. */
-
-typedef int32_t (*MATHCompareFunc)(void *a, void *b);
-
-static void swap_elems(uint8_t *a, uint8_t *b, uint32_t width)
-{
-    if ((width & 3) == 0) {
-        for (; width; width -= 4, a += 4, b += 4) {
-            uint32_t t = *(uint32_t *)a;
-            *(uint32_t *)a = *(uint32_t *)b;
-            *(uint32_t *)b = t;
-        }
-    } else {
-        for (; width; width--, a++, b++) {
-            uint8_t t = *a;
-            *a = *b;
-            *b = t;
-        }
-    }
-}
-
-void Util_QuickSortWithWork(void *head, uint32_t num, uint32_t width, MATHCompareFunc comp,
-                            void *stackBuf)
-{
-    uint8_t *stack[2 * 64]; /* the SDK sizes it 8 bytes per bit of num: 32 pairs at most */
-    int sp = 0;
-    uint32_t shift = 32 - __builtin_clz(width);
-
-    (void)stackBuf;
-    if ((int32_t)num <= 1)
-        return;
-    stack[sp++] = head;
-    stack[sp++] = (uint8_t *)head + (num - 1) * width;
-
-    while (sp) {
-        uint8_t *right = stack[--sp];
-        uint8_t *left = stack[--sp];
-        uint8_t *l, *r, *mid;
-
-        if ((uint32_t)(right - left) == width) {
-            if (comp(left, right) > 0)
-                swap_elems(left, right, width);
-            continue;
-        }
-        mid = left + (((uint32_t)(right - left)) >> shift) * width;
-        swap_elems(mid, left, width);
-
-        l = left + width;
-        r = right;
-        for (;;) {
-            while (l < right && comp(l, left) < 0)
-                l += width;
-            while (comp(r, left) > 0)
-                r -= width;
-            if (l >= r)
-                break;
-            swap_elems(l, r, width);
-            l += width;
-            r -= width;
-            if (l > r)
-                break;
-        }
-        swap_elems(left, r, width);
-
-        if ((int32_t)(r - left) > (int32_t)(right - r)) {
-            if (left < r - width) {
-                stack[sp++] = left;
-                stack[sp++] = r - width;
-            }
-            if (r + width < right) {
-                stack[sp++] = r + width;
-                stack[sp++] = right;
-            }
-        } else {
-            if (r + width < right) {
-                stack[sp++] = r + width;
-                stack[sp++] = right;
-            }
-            if (left < r - width) {
-                stack[sp++] = left;
-                stack[sp++] = r - width;
-            }
-        }
-    }
-}
-
-/* ---- SHA-1 block transform (DGT's libdgt.a) ------------------------------------------------ */
-
-#define ROL(x, n) (((x) << (n)) | ((x) >> (32 - (n))))
-
-void DGTi_Hash2ProcessBlock(uint32_t *h, const uint8_t *p, unsigned long len)
-{
-    for (; len >= 64; len -= 64, p += 64) {
-        uint32_t w[80], a, b, c, d, e, t;
-        int i;
-        for (i = 0; i < 16; i++)
-            w[i] = (uint32_t)p[i * 4] << 24 | (uint32_t)p[i * 4 + 1] << 16 |
-                   (uint32_t)p[i * 4 + 2] << 8 | p[i * 4 + 3];
-        for (; i < 80; i++)
-            w[i] = ROL(w[i - 3] ^ w[i - 8] ^ w[i - 14] ^ w[i - 16], 1);
-        a = h[0], b = h[1], c = h[2], d = h[3], e = h[4];
-        for (i = 0; i < 80; i++) {
-            uint32_t f, k;
-            if (i < 20)      f = (b & c) | (~b & d),          k = 0x5a827999;
-            else if (i < 40) f = b ^ c ^ d,                   k = 0x6ed9eba1;
-            else if (i < 60) f = (b & c) | (b & d) | (c & d), k = 0x8f1bbcdc;
-            else             f = b ^ c ^ d,                   k = 0xca62c1d6;
-            t = ROL(a, 5) + f + e + k + w[i];
-            e = d, d = c, c = ROL(b, 30), b = a, a = t;
-        }
-        h[0] += a, h[1] += b, h[2] += c, h[3] += d, h[4] += e;
-    }
-}
-
 /* ---- divider / square root context (CP) ------------------------------------------------------
  * {DIV_NUMER, DIV_DENOM (16 bytes at 0x04000290), SQRT_PARAM (8 at 0x040002b8),
  *  DIVCNT & 3, SQRTCNT & 1}. */
@@ -611,6 +495,9 @@ uint32_t kh_reset_parameter(void)
 /* ---- ARM946E only: caches, protection unit, TCM ------------------------------------------- */
 
 void DC_InvalidateRange(void *p, uint32_t n) { (void)p; (void)n; }
+/* DS cache maintenance has no separate cache to flush in the native memory
+ * model. Real Vita GPU/DMA cache ownership remains in the platform backends. */
+void DC_FlushRange(void *p, uint32_t n) { DC_InvalidateRange(p,n); }
 void DC_StoreRange(const void *p, uint32_t n) { (void)p; (void)n; }
 void DC_FlushAll(void) {}
 void DC_StoreAll(void) {}

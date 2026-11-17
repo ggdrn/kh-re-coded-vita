@@ -1,26 +1,23 @@
 {
   "status": "partial-native-link-not-bootable",
   "compile_counts": {
-    "compiled": 11776,
-    "failed": 168,
-    "backend": 83,
+    "compiled": 11789,
+    "failed": 149,
+    "backend": 89,
     "generated-bss": 279,
     "non-c-pending": 24
   },
   "backend_errors": [],
   "partial_link_returncode": 0,
-  "unresolved_count": 266,
+  "unresolved_count": 235,
   "unresolved": [
-    "ARM9_CTOR_START",
     "Actor_CaptureNodeMatrix",
     "Actor_Draw",
     "Actor_InitNodeCaptureCallback",
     "AllocatorAllocForSDKHeap",
     "AllocatorFreeForSDKHeap",
-    "ApplyPartRotationAndCaptureNodeCallback",
     "CTRDGi_InitModuleInfo",
     "ConfigureFieldBgLayers",
-    "DC_FlushRange",
     "Encryptor_DecryptFunction",
     "Encryptor_DecryptionWrapperFragment",
     "Encryptor_EncryptFunction",
@@ -34,25 +31,17 @@
     "LoadSeq",
     "LoadSeqArc",
     "LoadWaveArc",
-    "MATHi_SHA1ProcessBlock",
     "MI_ReadUncompLZ8",
     "MIi_CheckDma0SourceAddress",
-    "MIi_CpuClear32",
     "MSL_Sqrt",
-    "MTX_Copy33To43",
     "MobiClip_AudioTransformDecode",
     "MobiClip_BlitRows",
     "MobiClip_DeblockFrame",
     "MobiClip_FastAudioDecode",
     "MoviePlayer_SetupDisplay",
     "NNS_G2dCharCanvasInitForOBJ1D",
-    "NNS_G2dGetAnimCtrlCurrentFrame",
-    "NNS_G2dGetAnimSequenceByIdx",
     "NNS_G2dLoadImage1DMapping",
     "NNS_G2dMakeCellToOams",
-    "NNS_G2dSetCellAnimationCurrentFrame",
-    "NNS_G2dSetCellAnimationSequence",
-    "NNS_G2dTickCellAnimation",
     "NNS_G3dGetCurrentMtx",
     "NNS_GfdDumpFrmPlttVramManagerEx",
     "NNS_GfdDumpFrmTexVramManager",
@@ -65,30 +54,12 @@
     "NNS_SndPlayerSetAllocatableChannel",
     "NNS_SndPlayerSetInitialVolume",
     "NNSi_G2dGetUnpackedFont",
-    "NNSi_G2dSrtcInitControl",
     "NNSi_G3dFuncSbc_BB",
     "NNSi_G3dFuncSbc_ENVMAP",
     "NNSi_G3dFuncSbc_PRJMAP",
     "OS_UnlockCartridge_0x02001704",
     "OSi_DoBoot",
     "OSi_ReloadRomData",
-    "OVERLAY_0_ID",
-    "OVERLAY_104_ID",
-    "OVERLAY_21_ID",
-    "OVERLAY_22_ID",
-    "OVERLAY_24_ID",
-    "OVERLAY_25_ID",
-    "OVERLAY_26_ID",
-    "OVERLAY_27_ID",
-    "OVERLAY_39_ID",
-    "OVERLAY_3_ID",
-    "OVERLAY_40_ID",
-    "OVERLAY_41_ID",
-    "OVERLAY_45_ID",
-    "OVERLAY_51_ID",
-    "OVERLAY_52_ID",
-    "OVERLAY_56_ID",
-    "OVERLAY_58_ID",
     "OpenFileStream",
     "OpenMessageWindowLayers",
     "PM_DeletePostSleepCallback",
@@ -96,7 +67,6 @@
     "PM_SetBackLight",
     "PMi_SetLED",
     "PXIi_HandlerRecvFifoNotEmpty",
-    "ReleaseTitlePanelResources",
     "RtcCommonCallback",
     "RunEncrypted_Dummy_IsBad",
     "RunEncrypted_Dummy_IsGood",
@@ -191,7 +161,6 @@
     "func_01ff88c4",
     "func_01ff8ad8",
     "func_01ff8dc8",
-    "func_0200dc4c",
     "func_020bd17c",
     "func_020bd2a4",
     "func_020cf02c",
@@ -282,6 +251,7 @@
     "checked_pairs": 1608,
     "matching_pairs": 1608,
     "unplaced_pairs": 0,
+    "adjacency_differences": [],
     "missing_names": [
       {
         "module": "main",
@@ -684,7 +654,6 @@
         "name": "data_ov101_020c4fe0"
       }
     ],
-    "adjacency_differences": [],
     "section_conflicts": []
   },
   "failed_units": [
@@ -749,16 +718,8 @@
       "error": "expected '(' before 'void'"
     },
     {
-      "source": "libs/nitro/os/asm_stubs/auto/func_0200093c.c",
-      "error": "expected '(' before 'void'"
-    },
-    {
       "source": "src/asm_stubs/calls/INITi_DoAutoload.c",
       "error": "expected '(' before 'void'"
-    },
-    {
-      "source": "src/auto/DC_FlushRange.c",
-      "error": "expected '(' before '{' token"
     },
     {
       "source": "libs/nitro/os/asm_stubs/calls/OSi_GetAndDisplayContext.c",
@@ -783,14 +744,6 @@
     {
       "source": "libs/nitro/mi/asm_stubs/calls/MI_ReadUncompLZ8.c",
       "error": "expected '(' before 's32'"
-    },
-    {
-      "source": "libs/nitro/math/asm_stubs/auto/func_0200dc4c.c",
-      "error": "expected '(' before 'void'"
-    },
-    {
-      "source": "src/asm_stubs/calls/MATHi_SHA1ProcessBlock.c",
-      "error": "expected '(' before 'void'"
     },
     {
       "source": "libs/nitro/pxi/calls/PXIi_HandlerRecvFifoNotEmpty.c",
@@ -853,60 +806,16 @@
       "error": "unknown type name 'NNSGfdFrmPlttVramManager'"
     },
     {
-      "source": "libs/nns/g2d/auto/NNS_G2dGetAnimSequenceByIdx.c",
-      "error": "unknown type name 'NNSG2dAnimBankData'"
-    },
-    {
       "source": "libs/nns/g2d/auto/GetPtrOamArrayHead_.c",
-      "error": "unknown type name 'NNSG2dCellDataBank'"
+      "error": "'NNSG2dCellDataWithBR' undeclared (first use in this function); did you mean 'NNSG2dCellDataBank'?"
     },
     {
       "source": "libs/nns/g2d/calls/UnPackExtendedData_.c",
       "error": "unknown type name 'NNSG2dUserExCellAttrBank'"
     },
     {
-      "source": "libs/nns/g2d/calls/NNS_G2dSetAnimCtrlCurrentFrame.c",
-      "error": "unknown type name 'NNSG2dAnimController'"
-    },
-    {
-      "source": "libs/nns/g2d/auto/NNS_G2dGetAnimCtrlCurrentFrame.c",
-      "error": "unknown type name 'NNSG2dAnimController'"
-    },
-    {
-      "source": "libs/nns/g2d/calls/NNS_G2dBindAnimCtrl.c",
-      "error": "unknown type name 'NNSG2dAnimController'"
-    },
-    {
       "source": "libs/nns/g2d/calls/NNS_G2dLoadImage1DMapping.c",
       "error": "static declaration of 'GXS_SetOBJVRamModeChar' follows non-static declaration"
-    },
-    {
-      "source": "libs/nns/g2d/auto/NNSi_G2dSrtcSetSRTRotZ.c",
-      "error": "unknown type name 'NNSG2dSRTControl'"
-    },
-    {
-      "source": "libs/nns/g2d/auto/NNSi_G2dSrtcSetSRTScale.c",
-      "error": "unknown type name 'NNSG2dSRTControl'"
-    },
-    {
-      "source": "libs/nns/g2d/calls/NNSi_G2dSrtcInitControl.c",
-      "error": "unknown type name 'NNSG2dSRTControl'"
-    },
-    {
-      "source": "libs/nns/g2d/calls/ApplyCurrentAnimResult_.c",
-      "error": "unknown type name 'NNSG2dCellAnimation'"
-    },
-    {
-      "source": "libs/nns/g2d/calls/NNS_G2dSetCellAnimationSequence.c",
-      "error": "unknown type name 'NNSG2dAnimController'"
-    },
-    {
-      "source": "libs/nns/g2d/calls/NNS_G2dTickCellAnimation.c",
-      "error": "unknown type name 'NNSG2dAnimController'"
-    },
-    {
-      "source": "libs/nns/g2d/calls/NNS_G2dSetCellAnimationCurrentFrame.c",
-      "error": "unknown type name 'NNSG2dAnimController'"
     },
     {
       "source": "src/calls/NNS_G2dMakeCellToOams.c",
@@ -1141,10 +1050,6 @@
       "error": "unknown type name 'OSThreadQueue'"
     },
     {
-      "source": "libs/nitro/mi/asm_stubs/auto/MIi_CpuClear32.c",
-      "error": "expected '(' before 'void'"
-    },
-    {
       "source": "src/asm_stubs/calls/func_01ff88c4.c",
       "error": "expected '(' before 'void'"
     },
@@ -1197,24 +1102,12 @@
       "error": "expected '(' before 'void'"
     },
     {
-      "source": "src/calls/MTX_Copy33To43.c",
-      "error": "expected ';' before 'void'"
-    },
-    {
-      "source": "src/overlays/ov000/calls/ReleaseTitlePanelResources.c",
-      "error": "unknown type name 'NNSG2dAnimController'"
-    },
-    {
       "source": "src/overlays/ov001/calls/ConfigureFieldBgLayers.c",
       "error": "'REG_BG3CNT_ADDR' undeclared (first use in this function); did you mean 'REG_DIVCNT_ADDR'?"
     },
     {
       "source": "src/overlays/ov001/calls/OpenMessageWindowLayers.c",
       "error": "'REG_BG0CNT_ADDR' undeclared (first use in this function); did you mean 'REG_DIVCNT_ADDR'?"
-    },
-    {
-      "source": "src/overlays/ov001/calls/ApplyPartRotationAndCaptureNodeCallback.c",
-      "error": "unknown type name 'NNSG2dAnimController'"
     },
     {
       "source": "src/overlays/ov001/calls/SetModelMaterialPolygonId.c",
@@ -1373,6 +1266,10 @@
     "ARM32 per-section data order and 2-byte table alignment",
     "C/C++ GX forwarding and VRAM cleanup",
     "real Re:coded vector normalize with Days DIV/SQRT backend",
-    "existing Days gx3d test"
+    "existing Days gx3d test",
+    "105 absolute overlay IDs and empty main constructor terminator",
+    "Re:coded clear32 partial words, matrix conversion and overlap",
+    "original animation controller behavior and ARM32 cell/SRT ABI",
+    "SHA-1 against hashlib and SDK sort workspace/edge cases"
   ]
 }
