@@ -30,6 +30,7 @@ def main():
                     'strtol=kh_recoded_msl_strtol', source, staged], check=True)
     # EU ov013 and ov021 give these entry labels the same address as their owners.
     aliases = {
+        'MI_ReadUncompLZ8': 'func_02004484',
         'sSha1PaddingZeros': 'kh_recoded_sha1_zeros',
         'data_ov013_020749f4': 'gRecordSelectionBgConfig',
         'data_ov013_02074a74': 'gRecordSelectionObjConfig',
@@ -66,6 +67,26 @@ def main():
     for asm in sources:
         obj = build / ('sdk' + asm.stem + '.o')
         subprocess.run([BIN/'arm-vita-eabi-gcc', *COMMON_CFLAGS, '-c', asm, '-o', obj], check=True)
+        helpers.append(obj)
+    for name in ('button_sprites','button_glyphs'):
+        obj = build / (name+'.o')
+        subprocess.run([BIN/'arm-vita-eabi-gcc', *COMMON_CFLAGS, '-O2',
+                        '-I'+str(ROOT/'platform'), '-I'+str(ROOT/'platform/core'),
+                        '-c', ROOT/'platform/nitro'/(name+'.c'), '-o', obj], check=True)
+        helpers.append(obj)
+    includes = ['-I'+str(path) for path in (ROOT/'platform/compat/recoded',
+                build/'adapted/eu',build/'adapted',ROOT/'platform/compat',eu,eu.parent)]
+    compat = ROOT/'platform/compat/recoded'
+    units = [(eu/'src/calls/GetBGExtPlttSlot_0202aef8.c', 'nnsys/background_view.h'),
+             (compat/'runtime/fx_mul.c', None)]
+    for name in ('NNS_GfdSetFrmPlttVramState','NNS_GfdDumpFrmTexVramManager',
+                 'NNS_GfdDumpFrmPlttVramManagerEx','NNS_GfdDumpFrmTexVramManagerEx'):
+        units.append((eu/'libs/nns/gfd/calls'/(name+'.c'), 'nnsys/frame_vram_view.h'))
+    for src, header in units:
+        obj = build / (src.stem+'.o')
+        options = ['-include', compat/header] if header else []
+        subprocess.run([BIN/'arm-vita-eabi-gcc', *COMMON_CFLAGS, '-O2', *includes,
+                        *options, '-c', src, '-o', obj], check=True)
         helpers.append(obj)
     # A group lets dependencies between the static C, C++ and graphics libraries resolve.
     subprocess.run([BIN / 'arm-vita-eabi-gcc', *COMMON_CFLAGS, '-nostdlib', '-r',
