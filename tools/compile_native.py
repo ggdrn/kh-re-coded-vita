@@ -10,6 +10,12 @@ sys.path.insert(0,str(ROOT))
 from configure_vita import BIN,COMMON_CFLAGS,GAME_CFLAGS,GAME_CXXFLAGS,PORT_CFLAGS
 from audit_recoded import inventory
 
+# Data-only assembly reviewed against the corresponding EU overlay.
+ASSEMBLY_SOURCES = {
+    'src/overlays/ov022/asm_stubs/calls/gMovieDecoderLookupTable.s',
+    'src/overlays/ov022/asm_stubs/calls/gMovieDecodeTableBlob.s',
+}
+
 def run(cmd, log):
     p=subprocess.run([str(x) for x in cmd],capture_output=True,text=True)
     log.write_text(p.stdout+p.stderr)
@@ -58,7 +64,11 @@ def main():
     previous=None
     if a.retry_failed or a.refresh_abi:
         previous=json.loads((out/'compile.json').read_text())
-        failed={x['source'] for x in previous['units'] if x['status']=='failed' or (x['status']=='non-c-pending' and x['source'].endswith('.cpp'))}
+        failed = {
+            unit['source'] for unit in previous['units']
+            if unit['status'] == 'failed' or (unit['status'] == 'non-c-pending' and
+                (unit['source'].endswith('.cpp') or unit['source'] in ASSEMBLY_SOURCES))
+        }
         if a.refresh_abi:
             overrides=json.loads((out/'adapted/manifest.json').read_text())
             changed={str(base/x['source']) for x in overrides for base in [d,out/'adapted']}
@@ -80,10 +90,12 @@ def main():
             return dict(row,status='backend',provider=backend[source.stem])
         if e['sections'] and all(sec.startswith('.bss ') for sec in e['sections']):
             return dict(row,status='generated-bss')
-        if source.suffix not in ['.c','.cpp']:return dict(row,status='non-c-pending')
+        if source.suffix not in ['.c','.cpp'] and e['source'] not in ASSEMBLY_SOURCES:return dict(row,status='non-c-pending')
         obj=out/'objects'/e['module']/Path(e['source']).with_suffix('.o');obj.parent.mkdir(parents=True,exist_ok=True)
         compiler=BIN/'arm-vita-eabi-g++' if source.suffix=='.cpp' else cc
         unit_flags=[*COMMON_CFLAGS,*GAME_CXXFLAGS,*includes,'-include',str(ROOT/'platform/compat/recoded/abi.h')] if source.suffix=='.cpp' else flags
+        if e['source'] in ASSEMBLY_SOURCES:
+            unit_flags=[*COMMON_CFLAGS,'-x','assembler-with-cpp']
         cmd=[compiler,*unit_flags,'-Dmain=NitroMain','-MMD','-MF',str(obj)+'.d','-c',source,'-o',obj]
         if any('.data ' in s or '.rodata ' in s for s in e['sections']):cmd += ['-Os','-fno-zero-initialized-in-bss']
         if e['module']=='dtcm':
