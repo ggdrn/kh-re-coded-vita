@@ -18,6 +18,13 @@ ITCM_MEMORY_ROUTINES = {
 }
 
 def apply(relative,text):
+    if relative == 'src/ov001/shared_engine/SetModelMaterialPolygonId_0208f5fc.c':
+        # The EU G3D header already defines the three resource lookup helpers.
+        start = text.index('inline void *NNS_G3dGetResDataByIdx(')
+        end = text.index('void SetModelMaterialPolygonId_0208f5fc(', start)
+        text = (text[:start] + '#define REG_G3_POLYGON_ATTR_ID_MASK 0x3f000000u\n'
+                '#define REG_G3_POLYGON_ATTR_ID_SHIFT 24\n\n' + text[end:])
+        text = text.replace('(polygonId <<', '((u32)polygonId <<')
     if relative == 'src/ov059/unclassified_helpers/Actor_InitNodeCaptureCallback_020cd254.c':
         # Timing C from the SDK declaration used by RegisterSbcCallback_020188a4.
         text = text.replace('#include "nnsys/g3d.h"', '#include "nnsys/g3d.h"\n'
