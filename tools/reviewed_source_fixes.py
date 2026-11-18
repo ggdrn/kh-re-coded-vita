@@ -1,5 +1,6 @@
 """Compatibility fixes limited to reviewed failures, preserving function bodies."""
 import re
+from dsprot_rewrites import adapt as adapt_dsprot
 
 def apply(relative,text):
     if relative in SOUND_LOADER_WRAPPERS:
@@ -73,7 +74,7 @@ def apply(relative,text):
         text=text.replace(definition,'/* Canonical color enum is in the native g2d header. */')
     if relative in FONT_SOURCES:
         text=text.replace('->cbCharSpliter','->splitCharacter')
-    return text
+    return adapt_dsprot(relative, text)
 
 FORWARD_SOURCES = ['src/arm9/library_nns_g2d/NNS_G2dInitImageProxy_0201528c.c', 'src/arm9/library_nns_g2d/func_020152b8.c', 'src/arm9/library_nns_g2d/func_020152e4.c', 'src/arm9/library_nns_g3d/func_02019d00.c', 'src/arm9/library_nns_g3d/func_02019e38.c']
 COLOR_ENUM_SOURCES = ['eu/src/overlays/ov076/calls/SlotMenu_DrawHintText.c', 'eu/src/overlays/ov076/calls/SlotMenu_DrawRecordLabel.c', 'eu/src/overlays/ov077/calls/ItemScreen_DrawHintText.c']
