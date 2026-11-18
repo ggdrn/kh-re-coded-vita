@@ -78,7 +78,7 @@ def main():
                 build/'adapted/eu',build/'adapted',ROOT/'platform/compat',eu,eu.parent)]
     compat = ROOT/'platform/compat/recoded'
     units = [(eu/'src/calls/GetBGExtPlttSlot_0202aef8.c', 'nnsys/background_view.h'),
-             (compat/'runtime/fx_mul.c', None)]
+             (compat/'runtime/fx_mul.c', None), (compat/'runtime/sdk_heap.c', None)]
     for name in ('NNS_GfdSetFrmPlttVramState','NNS_GfdDumpFrmTexVramManager',
                  'NNS_GfdDumpFrmPlttVramManagerEx','NNS_GfdDumpFrmTexVramManagerEx'):
         units.append((eu/'libs/nns/gfd/calls'/(name+'.c'), 'nnsys/frame_vram_view.h'))
