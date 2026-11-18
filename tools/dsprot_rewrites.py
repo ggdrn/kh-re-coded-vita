@@ -4,8 +4,46 @@ import re
 CALLS = 'eu/src/overlays/ov104/calls/'
 WRAPPERS = 'eu/src/overlays/ov104/asm_stubs/calls/'
 
+# Each original initializer receives the table immediately after its ARM body.
+# The native linker places the two in different sections.
+INITIALIZER_TABLES = {
+    '__sinit_ov104_020d2028': 'gDSProtDetectionFunctions',
+    '__sinit_ov104_020d25d0': 'gDSProtIntegrityFunctions',
+    '__sinit_ov104_020d2958': 'gDSProtEncryptionFunctions',
+    '__sinit_ov104_020d31fc': 'gDSProtRuntimeFunctions',
+    '__sinit_ov104_020d36b4': 'gDSProtCipherFunctions',
+}
+
+def native_initializer(name, table):
+    declaration = f'extern DSProtFunctionInfo {table}[];'
+    entries = table
+    if table == 'gDSProtDetectionFunctions':
+        declaration = f'''extern struct DSProtDetectionTable {{
+    DSProtFunctionInfo functions[7];
+    unsigned long encodedTrailer;
+}} {table};'''
+        entries += '.functions'
+    # Cortex-A9 bodies are already native code. The remaining observable
+    # decoder operation consumes the writable entries up to the terminator.
+    return f'''#include "src/overlays/ov104/DSProtFunctionInfo.h"
+{declaration}
+
+void {name}(void)
+{{
+    DSProtFunctionInfo *entry = {entries};
+    while (entry->encodedAddress != 0) {{
+        entry->encodedAddress = 0;
+        entry->encodedSize = 0;
+        ++entry;
+    }}
+}}
+'''
+
 def adapt(relative, text):
     if relative.startswith(WRAPPERS):
+        name = relative[len(WRAPPERS):].removesuffix('.c')
+        if name in INITIALIZER_TABLES:
+            return native_initializer(name, INITIALIZER_TABLES[name])
         match = re.fullmatch(r'(?:__DSProt_|RunEncrypted_)(\w+)\.c', relative[len(WRAPPERS):])
         if match:
             name = relative[len(WRAPPERS):-2]
