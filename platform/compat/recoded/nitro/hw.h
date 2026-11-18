@@ -9,6 +9,9 @@
 #define REG_BG2CNT_ADDR KH_HW(0x0400000c)
 #define REG_BG3CNT_ADDR KH_HW(0x0400000e)
 
+/* POWCNT1 bit 15 selects which LCD displays engine A. */
+#define REG_POWCNT_ADDR KH_HW(0x04000304)
+
 /* Existing *_ADDR macros are mapped by the generated EU hardware header.
  * DIV/SQRT result reads invoke the Days backend's computed-register handlers. */
 #define REG_DIVCNT (*(vu16 *)REG_DIVCNT_ADDR)

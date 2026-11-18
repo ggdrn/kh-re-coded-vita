@@ -1,4 +1,5 @@
 """Compatibility fixes limited to reviewed failures, preserving function bodies."""
+import json
 import re
 from dsprot_rewrites import adapt as adapt_dsprot
 
@@ -9,7 +10,23 @@ RTC_COMMANDS = {
     'RTCi_WriteRawStatus2Async': 'RTC_PXI_COMMAND_WRITE_STATUS2',
 }
 
+# The EU byte copy and overlap-safe move share ten ARM branch targets.
+ITCM_BYTE_COPY = {
+    'src/itcm/asm/func_01ff8ad8.c', 'src/itcm/asm/func_01ff8dc8.c',
+    *('eu/src/asm_stubs/calls/func_01ff'+suffix+'.c' for suffix in
+      ('8b7c','8bb8','8c50','8ce8','8d80','8e84','8ec0','8f5c','8ff8','9094')),
+}
+
 def apply(relative,text):
+    if relative in ITCM_BYTE_COPY:
+        name = relative.rsplit('/', 1)[1][:-2]
+        match = re.search(r'asm void '+name+r'\(void\)\s*\{\n(.*?)\n\}\s*$', text, re.S)
+        if not match:
+            raise ValueError('Unexpected ITCM assembly in '+relative)
+        assembly = (f'.syntax unified\n.arm\n.pushsection .text.{name},"ax",%progbits\n'
+                    f'.balign 4\n.global {name}\n.type {name},%function\n{name}:\n'
+                    f'{match[1]}\n.size {name},.-{name}\n.popsection\n')
+        return '__asm__(' + json.dumps(assembly) + ');\n'
     if relative == 'eu/libs/nns/g2d/include/g2d_charcanvas_internal.h':
         original = """    int leadingZeros = (int)value;
     asm {
