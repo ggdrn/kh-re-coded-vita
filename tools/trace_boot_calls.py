@@ -38,8 +38,10 @@ def main():
             if addr<start+size and binding!='l':
                 graph[name].add(p[2])
     blockers=json.loads((build/'boot-blockers.json').read_text())['reported']
-    queue=collections.deque([['NitroMain']])
-    seen={'NitroMain'}
+    root=sys.argv[1] if len(sys.argv)>1 else "NitroMain"
+    if root not in graph: raise ValueError("Unknown call-graph root: "+root)
+    queue=collections.deque([[root]])
+    seen={root}
     reached={}
     while queue:
         path=queue.popleft()
@@ -49,7 +51,8 @@ def main():
                 route=path+[target]
                 queue.append(route)
                 if target in blockers:reached[target]=route
-    (build/'boot-direct-paths.json').write_text(json.dumps(reached,indent=2)+'\n')
+    output='boot-direct-paths.json' if root=='NitroMain' else 'boot-direct-'+root+'.json'
+    (build/output).write_text(json.dumps(reached,indent=2)+'\n')
     print(len(reached),'blockers reached by direct global calls or tail branches')
     for route in list(reached.values())[:5]:print(' -> '.join(route))
 

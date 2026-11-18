@@ -2,6 +2,19 @@
 import re
 
 def apply(relative,text):
+    if relative == 'eu/libs/nitro/os/auto/OS_ReleaseLockID.c':
+        # These CodeWarrior globals are scratch registers local to one leaf routine.
+        start=text.index('/* These caller-clobbered')
+        end=text.index('/* lockId',start)
+        text=text[:start]+text[end:]
+        text=text.replace('    sReleasedIdBitmap =', '    u32 sReleasedIdMask, sAvailableLockIds;\n    volatile u32 *sReleasedIdBitmap =')
+        text=text.replace('__schedule_barrier();','__asm__ volatile ("" ::: "memory");')
+    if relative == 'src/arm9/library_nitro_ctrdg/CTRDGi_InitModuleInfo_020125c8.c':
+        text='#include "nitro/recoded_ctrdg_boot.h"\n'+text
+        for address in ('0x02fffc30','0x02ffff9a','0x02ffff9b'):
+            text=text.replace(address,'KH_HW('+address+')')
+        # PXI encodes the emulated address, while copies use the native object.
+        text=text.replace('(u32)&data_0205a2e0 - HW_MAIN_MEM','0x0205a2e0u - HW_MAIN_MEM')
     if relative == 'eu/libs/nns/g2d/calls/NNSi_G2dGetUnpackedFont.c':
         text='#include "nnsys/font_binary_view.h"\n'+text
     if relative == 'eu/src/overlays/ov076/calls/SlotMenu_DrawHintText.c':
