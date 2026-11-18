@@ -29,3 +29,10 @@ entry _d2f
     vmov s0,r0
     pop {r4,pc}
 .size _d2f,.-_d2f
+
+entry MSL_Sqrt
+    vmov r0,r1,d0
+    bl kh_raw_sqrt
+    vmov d0,r0,r1
+    pop {r4,pc}
+.size MSL_Sqrt,.-MSL_Sqrt

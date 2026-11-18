@@ -474,6 +474,17 @@ void OS_ResetSystem(uint32_t param)
     sceKernelExitProcess(0);
 }
 
+/* The ITCM tail of the SDK reset: on the DS it waits for the ARM7, reloads the ROM header and
+ * jumps to the cartridge entry (OSi_ReloadRomData, OSi_DoBoot). Its only caller is the original
+ * OS_ResetSystem, which leaves the parameter at HW_RESET_PARAMETER first; the port restarts the
+ * eboot with that parameter instead. */
+void OSi_DoResetSystem(void)
+{
+    uint32_t param;
+    memcpy(&param, KH_SHARED(0x027ffc20u), sizeof(param));
+    OS_ResetSystem(param);
+}
+
 uint32_t kh_reset_parameter(void)
 {
     uint32_t param = 0;

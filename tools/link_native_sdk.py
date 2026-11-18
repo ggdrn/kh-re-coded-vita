@@ -26,10 +26,41 @@ def main():
     if (binding, kind, section, int(size,16)) != ('g','O','.kh_main_rodata',12):
         raise ValueError('Unexpected SHA-1 padding owner')
     alias = 'kh_recoded_sha1_zeros=' + section + ':' + hex(int(offset,16)+1) + ',global,object'
-    subprocess.run([BIN / 'arm-vita-eabi-objcopy', '--add-symbol', alias, '--redefine-sym',
+    # Rebind interior EU addresses inside the corresponding relocated native objects.
+    layout = json.loads((build/'gen/layout.json').read_text())['modules']
+    owners = {'gSinFx12Table': ('main', 0x2000),
+              'gPanelStateCallbacks': ('ov013', 0x90), 'gWirelessThemeData': ('ov015', 0xfc),
+              'gWirelessSlotStyles': ('ov015', 0x13c), 'gGroupEntries': ('ov001', 0xc24)}
+    views = {'gPanelEntryStateHandler': 'gPanelStateCallbacks', 'gWirelessThemes': 'gWirelessThemeData',
+             'data_ov015_0207a40f': 'gWirelessSlotStyles', 'data_ov001_020a0101': 'gGroupEntries'}
+    sine = (ROOT/'build/decomp/eu/libs/nitro/data/SdkLinkerSymbols.s').read_text()
+    for name, value in re.findall(r'\.equ (data_[0-9a-f]+), (0x[0-9a-f]+)', sine):
+        if 0x02053580 <= int(value, 16) < 0x02055580:
+            views[name] = 'gSinFx12Table'
+    extra = []
+    for name, owner in views.items():
+        module, expected_size = owners[owner]
+        addresses = {row['name']: row['address'] for row in layout[module]['symbols']}
+        relative = addresses[name] - addresses[owner]
+        [row] = [line.split() for line in symbols.splitlines() if line.endswith(' '+owner)]
+        offset, binding, kind, section, size, _ = row
+        if kind != 'O' or int(size,16) != expected_size or not 0 <= relative < expected_size:
+            raise ValueError(f'Invalid interior view {name} in {owner}')
+        extra.extend(['--add-symbol', f'{name}={section}:{int(offset,16)+relative:#x},global,object'])
+    subprocess.run([BIN / 'arm-vita-eabi-objcopy', *extra, '--add-symbol', alias, '--redefine-sym',
                     'strtol=kh_recoded_msl_strtol', source, staged], check=True)
     # EU ov013 and ov021 give these entry labels the same address as their owners.
     aliases = {
+        'sLnkTexUsedList': 'sLnkTexVramManager',
+        'sLnkTexCompressedUsedList': 'sLnkTexCompressedVramManager',
+        'sLnkTexBlockPool': 'sLnkTexVramBlockPoolList',
+        'gFieldMenuFadeRamps': 'gFieldMenuStateRamps',
+        'gMarkerResetConfig': 'gMarkerReset',
+        # The ov035 callers test GetOverlay41PhaseActiveFlag before both calls.
+        'func_020bd17c': 'ReleaseFinishedStageItems',
+        'func_020bd2a4': 'DrawStageItems',
+        # The ov001 BLX enters ARM code. The matching ARM entry belongs to ov041.
+        'func_020cf02c': 'CreateStageCaption',
         'MI_ReadUncompLZ8': 'func_02004484',
         'sSha1PaddingZeros': 'kh_recoded_sha1_zeros',
         'data_ov013_020749f4': 'gRecordSelectionBgConfig',
@@ -50,13 +81,13 @@ def main():
     for symbol, filename in {
         '_ffix': '_ffix_020241ac.c', '_fflt': '_fflt_02023a98.c',
         '_fmul': '_fmul_02024408.c', 'kh_raw_dflt': '_dflt_0202363c.c',
-        'kh_raw_d2f': 'func_02023538.c',
+        'kh_raw_d2f': 'func_02023538.c', 'kh_raw_sqrt': 'sqrt_0202426c.c',
     }.items():
         text = (eu.parent/'src/arm9/asm'/filename).read_text()
-        body = re.fullmatch(r'.*?\basm [^{]+\{([^{}]*)\}\s*', text, re.S)[1]
+        body = re.fullmatch(r'.*?\basm [^{]+\{(.*)\}\s*', text, re.S)[1]
         asm = build/(symbol+'.s')
         asm.write_text(f'.syntax unified\n.arm\n.text\n.global {symbol}\n.type {symbol},%function\n{symbol}:\n'
-                       + body.replace('@','.L') + f'\n.size {symbol},.-{symbol}\n')
+                       + body.replace('@','.L').replace('=data_0205fdbc','=gMslErrno') + f'\n.size {symbol},.-{symbol}\n')
         sources.append(asm)
     sources.append(eu/'src/asm_stubs/calls/_dadd.s')
     raw_sub = build/'kh_raw_dsub.s'

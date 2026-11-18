@@ -14,11 +14,14 @@
 #include <kubridge.h>
 #include <psp2/vshbridge.h>
 #include <psp2/kernel/threadmgr.h>
+#include <psp2/kernel/modulemgr.h>
 #include <stdio.h>
 
 extern int main(void);
 
 static KuKernelExceptionHandler s_prev[3];
+static uintptr_t code_base;
+static size_t code_size;
 
 static void report(KuKernelExceptionContext *c)
 {
@@ -111,6 +114,12 @@ void fault_init(void)
     /* kubridge is optional (crash reports only). Without the plugin its weak import does not
      * return an error as fault.c assumed: the call jumps to address 0 and the port died at boot
      * (GitHub issue, v0.1.0). Asked for by name first. */
+    SceKernelModuleInfo info = { .size = sizeof(info) };
+    SceUID module = sceKernelGetModuleIdByAddr((void *)main);
+    if (module >= 0 && sceKernelGetModuleInfo(module, &info) == 0) {
+        code_base = (uintptr_t)info.segments[0].vaddr;
+        code_size = info.segments[0].memsz;
+    }
     if (_vshKernelSearchModuleByName("kubridge", search) < 0) {
         LOG("fault: kubridge not loaded, no crash reports (main=%08x)", (unsigned)(uintptr_t)main);
         return;
@@ -123,8 +132,7 @@ void fault_init(void)
 
 /* Whether a is an address in the eboot's code (the main module's .text through the overlays'),
  * for game code that is about to call a value it computed. */
-extern char _init[], kh_ov_text_all_end[];
 int kh_is_code(unsigned long a)
 {
-    return a >= (uintptr_t)_init && a < (uintptr_t)kh_ov_text_all_end && !(a & 3);
+    return a - code_base < code_size && !(a & 3);
 }

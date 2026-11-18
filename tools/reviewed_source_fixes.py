@@ -18,6 +18,23 @@ ITCM_MEMORY_ROUTINES = {
 }
 
 def apply(relative,text):
+    if relative == 'src/ov022/movie/get_cached_movie_decoder_code_020aa8fc.c':
+        # The original fallback executes the linked position-independent code in place.
+        # A Vita work arena is data memory.
+        start = text.index('    void *decoderCode;')
+        text = text[:start] + '    return data_020b0ba0;\n}\n'
+    if relative == 'src/arm9/library_nns_g3d/NNSi_G3dFuncSbc_BB_02039da4.c':
+        text = text.replace('"nitro/gx.h"', '"include/nitro/gx.h"')
+    if relative in ('src/arm9/library_nns_g3d/NNSi_G3dFuncSbc_ENVMAP_0203a2f4.c',
+                    'src/arm9/library_nns_g3d/NNSi_G3dFuncSbc_PRJMAP_0203a574.c'):
+        text = text.replace('#include "nitro/hw.h"', '#include "nitro/hw.h"\n'
+                            '#define REG_G3_TEXIMAGE_PARAM_TGEN_MASK 0xc0000000u\n'
+                            '#define REG_G3_TEXIMAGE_PARAM_TGEN_SHIFT 30')
+    if relative == 'src/arm9/library_nitro_wm/WM_StartMP_02011b6c.c':
+        text = text.replace('"nitro/wm.h"', '"include/nitro/wm.h"')
+    if relative == 'eu/src/overlays/ov015/calls/WH_StateInStartScan.c':
+        text = text.replace('asm {\n        clz x, x\n    }\n    return x;',
+                            'return x ? (u32)__builtin_clz(x) : 32u;')
     if relative == 'src/ov001/shared_engine/SetModelMaterialPolygonId_0208f5fc.c':
         # The EU G3D header already defines the three resource lookup helpers.
         start = text.index('inline void *NNS_G3dGetResDataByIdx(')

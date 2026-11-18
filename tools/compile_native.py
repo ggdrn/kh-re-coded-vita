@@ -10,10 +10,15 @@ sys.path.insert(0,str(ROOT))
 from configure_vita import BIN,COMMON_CFLAGS,GAME_CFLAGS,GAME_CXXFLAGS,PORT_CFLAGS
 from audit_recoded import inventory
 
-# Data-only assembly reviewed against the corresponding EU overlay.
+# Reconstructed ARM code and data for the EU movie overlay.
 ASSEMBLY_SOURCES = {
     'src/overlays/ov022/asm_stubs/calls/gMovieDecoderLookupTable.s',
     'src/overlays/ov022/asm_stubs/calls/gMovieDecodeTableBlob.s',
+    'src/overlays/ov022/asm_stubs/calls/gMovieDecoderCodeBlob.s',
+    'src/overlays/ov022/asm_stubs/calls/MobiClip_DeblockFrame.s',
+    'src/overlays/ov022/asm_stubs/calls/MobiClip_FastAudioDecode.s',
+    'src/overlays/ov022/asm_stubs/calls/MobiClip_AudioTransformDecode.s',
+    'libs/mobiclip/video/asm_stubs/auto/MobiClip_BlitRows.s',
 }
 
 def run(cmd, log):
@@ -94,6 +99,12 @@ def main():
         obj=out/'objects'/e['module']/Path(e['source']).with_suffix('.o');obj.parent.mkdir(parents=True,exist_ok=True)
         compiler=BIN/'arm-vita-eabi-g++' if source.suffix=='.cpp' else cc
         unit_flags=[*COMMON_CFLAGS,*GAME_CXXFLAGS,*includes,'-include',str(ROOT/'platform/compat/recoded/abi.h')] if source.suffix=='.cpp' else flags
+        if e['source'] == 'libs/msl/c/calls/strlen.c':
+            unit_flags = [*unit_flags, '-fno-tree-loop-distribute-patterns', '-fno-builtin']
+        if source.stem in ('NNS_SndHeapDestroy', 'StrmCallback_2', 'OpenFileStream',
+                           'StrmThread', 'StartSoundStreamAtOffset'):
+            # These shared bodies use the full FS, sound and OS structure definitions.
+            unit_flags = [*unit_flags, '-iquote', str(d/'include')]
         if e['source'] in ASSEMBLY_SOURCES:
             unit_flags=[*COMMON_CFLAGS,'-x','assembler-with-cpp']
         cmd=[compiler,*unit_flags,'-Dmain=NitroMain','-MMD','-MF',str(obj)+'.d','-c',source,'-o',obj]

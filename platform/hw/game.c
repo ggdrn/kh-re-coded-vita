@@ -14,7 +14,7 @@
 #include "hw/textures.h"
 #include "hw/vram.h"
 #include "hw/io.h"
-#include "hw/fieldhud.h"
+#include "boot_trace.h"
 #include "hw/memmap.h"
 #include "hw/overlays.h"
 #include "hw/shared_area.h"
@@ -72,11 +72,26 @@ extern int NitroMain(void);
 static uint32_t s_top[256 * 192], s_bottom[256 * 192];
 static int s_console; /* the on-screen log: off at start, L+R+Start toggles it */
 
+static unsigned title_updated;
+
+extern int __real_UpdateTitlePanel(void);
+
+int __wrap_UpdateTitlePanel(void)
+{
+    int result = __real_UpdateTitlePanel();
+    if (!__atomic_load_n(&title_updated, __ATOMIC_RELAXED)) {
+        kh_boot_mark("title update completed");
+        __atomic_store_n(&title_updated, 1, __ATOMIC_RELEASE);
+    }
+    return result;
+}
+
 static int game_thread(SceSize args, void *argp)
 {
     (void)args;
     (void)argp;
     kh_cpu_set_owner();
+    kh_boot_mark("NitroMain");
     LOG("game: NitroMain");
     log_flush();
     NitroMain();
@@ -337,195 +352,7 @@ void kh_dual3d_toggled(void)
     __atomic_add_fetch(&s_toggle_seq, 1, __ATOMIC_RELEASE);
 }
 
-/* The single screen's autohide panels (config panel autohide: the INFORMATION bar, the mission
- * gauge): each one slides in for 7 s when what it shows changes to something new -- a picture
- * seen in the last few seconds (a marker blinking) does not count -- and stays while the game
- * is paused (its own pause state, however the pause menu was opened or closed) or the camera
- * is in its look view (Select's zoom on the player, from Ov002_Camera_UpdateFollow). */
-#define PANEL_SHOW_US 7000000u
-#define PANEL_SLIDE_US 300000.0f
-#define PANEL_RECENT 8
-
-static struct {
-    float vis;
-    uint64_t until;
-    uint32_t seen[PANEL_RECENT];
-    uint64_t seen_at[PANEL_RECENT];
-} s_panels[KH_PANELS];
-volatile int kh_camera_look;
-volatile unsigned int kh_camera_look_seq;
-
-/* the look view, while the field camera is still being updated (the flag is left as it was
- * when the field stops: a menu, a cutscene) */
-static int camera_look(uint64_t now)
-{
-    static unsigned int seq;
-    static uint64_t seq_at;
-    if (kh_camera_look_seq != seq) {
-        seq = kh_camera_look_seq;
-        seq_at = now;
-    }
-    return kh_camera_look && now - seq_at < 200000u;
-}
-/* HUD size: a dialogue box on the top screen (seen in the layer map) */
 static int s_dialog_open;
-/* config single_screen: the bottom screen's pictures black in a row (video_set_single_scene) */
-static int s_bottom_dark;
-static uint32_t s_bottom_lit_since; /* the VBlank the bottom screen's last lit run began */
-/* the same for the bottom screen's 2D pixels only (code 2D, or 2D over the 3D): the colour a
- * 3D-coded pixel holds is the backdrop under the 3D, unfaded, and read as something there it
- * put the single screen's overlay up before a cutscene's Sora came (0.8.4's log) */
-static int s_bottom_2d_dark;
-/* config single_screen, a scene (present): the bottom screen over the top one while it plays
- * something of its own. Told by the game's own events, to the frame: a movie's frames shown by
- * the engine on the bottom screen (Ov024_MobiClip_PresentOnVBlank counts them), and in a
- * dual-3D cutscene the bottom screen's last toggle drawing polygons (Sora); the sampled
- * pixels (s_bottom_dark) only for anything else, and not after an event ended until the
- * bottom screen has been black once (its last picture would hold the overlay up). */
-static int s_in_scene, s_sora_bottom, s_scene_event, s_sample_mute;
-
-static void scene_bottom_decide(int a_on_top)
-{
-    extern volatile unsigned int kh_movie_presents[2];
-    static unsigned int seen[2];
-    static uint32_t movie_vb[2] = { 0x80000000u, 0x80000000u };
-    int e, movie, event;
-    for (e = 0; e < 2; e++)
-        if (kh_movie_presents[e] != seen[e]) {
-            seen[e] = kh_movie_presents[e];
-            movie_vb[e] = s_vblanks;
-        }
-    /* the engine on the bottom screen: B with A on top; a movie shows a frame every 2 to 4
-     * VBlanks, so 8 without one is its end */
-    movie = s_vblanks - movie_vb[a_on_top ? 1 : 0] < 8;
-    event = movie || s_sora_bottom;
-    if (event != s_scene_event) {
-        static int was_movie;
-        if (event)
-            was_movie = movie;
-        LOG("display: single screen scene, %s on the bottom screen %s",
-            (event ? movie : was_movie) ? "a movie" : "Sora", event ? "starts" : "ends");
-        if (!event)
-            s_sample_mute = 1;
-        s_scene_event = event;
-    }
-    if (s_bottom_2d_dark > 0)
-        s_sample_mute = 0;
-    if (movie && kh_config.single_screen)
-        s_in_scene = s_in_scene || !kh_overlay_loaded(22);
-    video_set_scene_bottom(s_in_scene && (event || (!s_sample_mute && s_bottom_2d_dark < 30)));
-}
-/* config single_screen: the camp menus' selection pages up, one bit each from its start-up to
- * its tear-down: 1 the mission list (Ov025/Ov008_MissionList*), 2 the mission's confirmation
- * (Ov025/Ov008_MissionMenu*: its challenges too), 4 the day list (Ov025_ScrollList_*:
- * Holo-Missions) */
-volatile unsigned int kh_mission_select_pages;
-extern int PauseMenu_GetMode(void); /* the game's pause state: 0 running */
-
-/* MASTER_BRIGHT brightening or darkening by a non-zero factor */
-static int fading(uint16_t mb)
-{
-    const int mode = (mb >> 14) & 3;
-    return (mode == 1 || mode == 2) && (mb & 31);
-}
-
-/* whether the panel's top 8 rows hold a few red pixels: the TARGET tab's letters */
-static int panel_has_red(const uint32_t *fb, const int *p)
-{
-    int x, y, n = 0;
-    for (y = p[KH_PANEL_SY]; y < p[KH_PANEL_SY] + 8 && y < p[KH_PANEL_SY] + p[KH_PANEL_SH]; y++)
-        for (x = p[KH_PANEL_SX]; x < p[KH_PANEL_SX] + p[KH_PANEL_SW]; x++) {
-            const uint32_t c = fb[y * 256 + x];
-            const int r = c & 0xff, g = (c >> 8) & 0xff, b = (c >> 16) & 0xff;
-            n += r > 150 && g < 90 && b < 90;
-        }
-    return n >= 6;
-}
-
-static uint32_t panel_hash(const uint32_t *fb, const int *p)
-{
-    uint32_t h = 2166136261u;
-    int x, y;
-    for (y = p[KH_PANEL_SY]; y < p[KH_PANEL_SY] + p[KH_PANEL_SH]; y++)
-        for (x = p[KH_PANEL_SX]; x < p[KH_PANEL_SX] + p[KH_PANEL_SW]; x++)
-            h = (h ^ (fb[y * 256 + x] & 0xffffffu)) * 16777619u;
-    return h;
-}
-
-static void update_panels(int single, int drawn, const uint32_t *bottom_fb)
-{
-    static int was_single;
-    static uint64_t last;
-    static int was_paused;
-    static uint64_t quiet_until;
-    const uint64_t now = sceKernelGetProcessTimeWide();
-    const float step = last ? (float)(now - last) / PANEL_SLIDE_US : 0.0f;
-    int i, k, paused, look;
-    last = now;
-    if (!single) {
-        was_single = 0;
-        return;
-    }
-    if (!was_single) {
-        /* the field (re)loaded -- an area change reloads its overlays: what the panels show
-         * then is not news (0.1.6 brought them out at every area change) */
-        was_single = 1;
-        quiet_until = now + 2000000u;
-    }
-    look = camera_look(now);
-    paused = PauseMenu_GetMode() != 0;
-    /* a screen fading (an area change, a cutscene): nothing it shows meanwhile counts */
-    if (fading(KH_IO16(0x0400006c)) || fading(KH_IO16(0x0400106c)))
-        quiet_until = now + 1500000u;
-    if (was_paused && !paused) {
-        /* the pause menu closed: the panels go at once, and the screen changing back does
-         * not bring them out again */
-        for (i = 0; i < KH_PANELS; i++)
-            s_panels[i].until = 0;
-        quiet_until = now + 1000000u;
-    }
-    was_paused = paused;
-    for (i = 0; i < KH_PANELS; i++) {
-        const int *p = kh_config.panel[i];
-        float target;
-        if (!p[KH_PANEL_AUTOHIDE] || !p[KH_PANEL_SW] || !p[KH_PANEL_SH]) {
-            video_set_panel_visibility(i, 1.0f);
-            continue;
-        }
-        if (p[KH_PANEL_AUTOHIDE] == KH_SHOW_ON_RED) {
-            if (drawn)
-                s_panels[i].until = panel_has_red(bottom_fb, p) ? ~0ull : 0;
-            target = now < s_panels[i].until ? 1.0f : 0.0f;
-            goto slide;
-        }
-        if (drawn && p[KH_PANEL_AUTOHIDE] == KH_SHOW_ON_CHANGE) {
-            const uint32_t h = panel_hash(bottom_fb, p);
-            int known = 0, oldest = 0;
-            for (k = 0; k < PANEL_RECENT; k++) {
-                if (s_panels[i].seen[k] == h && now - s_panels[i].seen_at[k] < 30000000u) {
-                    known = 1;
-                    s_panels[i].seen_at[k] = now;
-                    break;
-                }
-                if (s_panels[i].seen_at[k] < s_panels[i].seen_at[oldest])
-                    oldest = k;
-            }
-            if (!known) {
-                s_panels[i].seen[oldest] = h;
-                s_panels[i].seen_at[oldest] = now;
-                if (now >= quiet_until)
-                    s_panels[i].until = now + PANEL_SHOW_US;
-            }
-        }
-        target = (paused || look || now < s_panels[i].until) ? 1.0f : 0.0f;
-    slide:
-        if (s_panels[i].vis < target)
-            s_panels[i].vis = s_panels[i].vis + step > target ? target : s_panels[i].vis + step;
-        else if (s_panels[i].vis > target)
-            s_panels[i].vis = s_panels[i].vis - step < target ? target : s_panels[i].vis - step;
-        video_set_panel_visibility(i, s_panels[i].vis);
-    }
-}
 
 /* HUD size, after each 2D picture of engine A is finished: a dialogue box (BG3 as the HUD's
  * bars, but across the bottom middle where the HUD never is: gpu2d counted it) keeps the HUD
@@ -645,35 +472,9 @@ static void present(void)
      * 0.0.83). While the scene runs, the display waits for that toggle (8 ms at most) and
      * takes the screens it recorded. */
     const int dual = s_vblanks - s_toggle_vb < 8;
-    /* Dual 3D in the field's action (a fight with a second 3D view on the bottom screen: Sora,
-     * ov091, beside Roxas in Olympus) with the single screen on: only the top screen's frames
-     * are drawn, the bottom one's (its 3D drawn for a screen copy the single screen does not
-     * show) done at once. Drawn like a cutscene, both screens' 2D and 3D every toggle with the
-     * game waiting for each, the single screen went off, the screen fell to 40 fps and the 3D
-     * jumped between the two views (0.5.0's log). */
-    const int dual_field = dual && kh_overlay_loaded(22);
-    /* a dual-3D cutscene: each screen drawn from what it keeps, its own 2D and 3D (video.c
-     * video_set_dual_keep), no copy of engine A's picture made on the GPU */
+    /* Scene 2 loads the Re:coded field session in overlay 1. */
+    const int dual_field = dual && kh_overlay_loaded(1);
     const int keep = dual && !dual_field;
-    /* the single screen gives way to both for the first 10 s of such a fight (Sora is on the
-     * bottom screen then), and comes back after; a pause of the toggles under 2 s (the pause
-     * menu) is the same fight */
-    static uint32_t dual_field_since, dual_field_last = 0x80000000u;
-    /* A normal pause stops the battle's alternating 3D frames for longer than the
-     * two-second gap used to identify a new fight. Keep its age across that gap: otherwise
-     * resuming restarts the dual-screen hand-off and can leave the active view mostly black. */
-    static int dual_field_paused;
-    const int pause_open = PauseMenu_GetMode() != 0;
-    if (pause_open && (dual_field || s_vblanks - dual_field_last < 120))
-        dual_field_paused = 1;
-    if (dual_field) {
-        if (s_vblanks - dual_field_last > 120 && !dual_field_paused)
-            dual_field_since = s_vblanks;
-        dual_field_last = s_vblanks;
-        dual_field_paused = 0;
-    }
-    const int dual_top_only = dual_field && kh_config.single_screen &&
-                              s_vblanks - dual_field_since >= 600;
     static ToggleRegs tr;
     const KhGxFrame *toggle_frame = NULL;
     int trace_before = a_on_top;
@@ -694,13 +495,6 @@ static void present(void)
         a_on_top = s_toggle_top;
         tr = s_toggle_regs;
         toggle_frame = s_toggle_frame;
-        if (dual_top_only && !a_on_top) {
-            /* the bottom screen's frame: nothing of it is shown */
-            s_toggle_drawn = toggle_seq;
-            s_toggle_done = toggle_seq;
-            s_dual_skipped++;
-            return;
-        }
         s_dual_drawn++;
     }
     /* 30 fps: the Vita's screen at 30 too, each swap shown for two VBlanks (the display
@@ -715,21 +509,9 @@ static void present(void)
      * one, and the scenery shook (0.5.3). 0.5.2 held it too, but drew engine B on every
      * toggle: a pair did not fit in two VBlanks. With the single screen (bottom frames
      * passed over) the toggles pace it. */
-    /* A movie (the player's loop, Ov024_MobiClip_UpdatePlayback, ran in the last half second)
-     * at 30 too, in the 60 fps mode as well: its pictures come at 30 a second, and the screen
-     * left at 60 showed them unevenly, at some 51 a second (0.5.0's known issues) */
-    extern volatile unsigned int kh_mobiclip_passes;
-    static uint32_t movie_passes, movie_vb = 0x80000000u;
-    if (kh_mobiclip_passes != movie_passes) {
-        movie_passes = kh_mobiclip_passes;
-        movie_vb = s_vblanks;
-    }
-    const int movie = s_vblanks - movie_vb < 30;
-    /* config fps 60 (experimental) runs as fast as the GPU lets it, 40 or 50 a second in a heavy
-     * fight: 0.7.43 to 0.8.4 dropped to a steady 30 for 10 s to a minute when it fell behind,
-     * and the player who chose 60 seldom saw more than 30 (0.8.4's logs) */
+    const int movie = kh_overlay_loaded(3);
     const int lock30 = (!kh_config.frame_interpolation || movie) &&
-                       (!dual || (dual_field && !dual_top_only)) && !portmenu_is_open();
+                       (!dual || dual_field) && !portmenu_is_open();
     /* config confirm_cross (input.c): the fonts' A and B drawn to match */
     kh_button_glyphs_menu(kh_config.confirm_cross);
     video_set_swap_interval(lock30 ? 2 : 1);
@@ -766,94 +548,6 @@ static void present(void)
      * (and B's) with every screen it draws for */
     kh_gpu2d_dispcnt_override[KH_ENGINE_A] = dual ? tr.dispcnt_a : 0;
     kh_gpu2d_dispcnt_override[KH_ENGINE_B] = dual ? tr.dispcnt_b : 0;
-    /* experimental single screen (config single_screen): in the field (ov022, its action code,
-     * loaded; the same test as the widescreen 3D) with engine A on the top screen, the top
-     * screen alone and the bottom one's map, target and mission gauge as panels over it */
-    /* the world / mission selection (the camp menus' mission list, the mission's confirmation
-     * and the day list, ov025 in the field and ov008, from each page's start-up to its
-     * tear-down; Mission Mode's selection, ov006): the world over the whole display, the
-     * bottom screen beside it on the right */
-    if (!kh_overlay_loaded(25) && !kh_overlay_loaded(8))
-        kh_mission_select_pages = 0;
-    const int world_select = kh_config.single_screen && !dual &&
-                       (kh_mission_select_pages != 0 ||
-                        (kh_overlay_loaded(6) && !kh_overlay_loaded(22)));
-    video_set_single_select(world_select);
-    const int single = kh_config.single_screen && (!dual || dual_top_only) && a_on_top &&
-                       kh_overlay_loaded(22) && !world_select;
-    video_set_single_screen(single);
-    /* and before the game (the title's overlay, ov000: the logos, the title, its menus): one
-     * screen at a time, the title's menu over the player's picture */
-    const int menus = kh_config.single_screen && !dual && kh_overlay_loaded(0) &&
-                      !kh_overlay_loaded(22) && !world_select;
-    video_set_single_menus(menus);
-    /* A scene out of the field's action: the top screen alone over the display, its 3D
-     * widescreen. It starts with half a second of a black bottom screen (a dialogue, an event
-     * scene; not a fade's moment) or with 3D on both screens (a cutscene; until 2 s without a
-     * toggle). Within it, the bottom screen showing something (sampled below, as for the small
-     * screen: a scene of its own, Sora, a video) comes over the top one in the middle, half
-     * see-through (video_set_scene_bottom), and goes after half a second black. Lit for 15 s
-     * without a cutscene (a menu after the scene, most likely), the player's own layout comes
-     * back. 0.8.4 and before: anything on the bottom screen gave the layout back at once. */
-    {
-        const int cutscene = s_vblanks - s_toggle_vb < 120 && !kh_overlay_loaded(22);
-        const int scene_ok = kh_config.single_screen && !dual_field && !kh_overlay_loaded(22) &&
-                             !world_select && !menus && (cutscene || a_on_top);
-        if (!cutscene)
-            s_sora_bottom = 0;
-        if (!scene_ok)
-            s_in_scene = 0;
-        else if (cutscene || s_bottom_dark >= 30)
-            s_in_scene = 1;
-        else if (s_vblanks - s_bottom_lit_since > 900 && !s_scene_event && s_bottom_2d_dark < 30)
-            s_in_scene = 0;
-        scene_bottom_decide(a_on_top);
-        video_set_single_scene(s_in_scene);
-    }
-    /* a tutorial page (Ov002_OpenTutorialPage leaves the sub engine with BG2 and BG3 alone,
-     * which nothing else in the field does) is shown whole; while the game is paused the bottom
-     * screen is drawn without the fade it gets behind the pause menu, the panels being part of
-     * the menu then */
-    const int tutorial = single && ((KH_IO32(0x04001000) >> 8) & 0x1f) == 0x0c;
-    video_set_tutorial(tutorial);
-    /* DETAIL restores the legacy composition. Calling the inactive path also clears
-     * pieces, panel placement and flat-3D relocation when returning to Simple/OFF. */
-    kh_fieldhud_frame(single && !tutorial && kh_config.single_screen == KH_SINGLE_DETAIL,
-                      PauseMenu_GetMode() != 0, s_dialog_open, s_bottom);
-    /* the field's HUD at config hud_size (engine A, with the 3D, on top in the field) */
-    /* not while paused: the pause menu's buttons reach into the HP gauge's corner. The 2D
-     * gives the HUD's own layers (BG1, BG3) in its corners codes of their own (gpu2d
-     * hud_codes), which the composition leaves out and draws again smaller: no texture, no
-     * upload and no pass over the screen more than without it (0.1.12-0.1.15 sorted the HUD
-     * out with a layer map and a texture of its own, and lost up to 20 frames a second) */
-    const int hud_wanted = (!dual || dual_top_only) && a_on_top && kh_overlay_loaded(22) &&
-                           PauseMenu_GetMode() == 0 &&
-                           (kh_config.hud_size < 100 || video_hud_edges());
-    const int hud_on = hud_wanted && !s_dialog_open;
-    {
-        /* config partner_swap: a dialogue or a movie needs Roxas (Ov022_RefreshSlotRows); out
-         * of the field the swap is over (a new mission starts with Roxas) */
-        extern volatile int kh_partner_swap_index, kh_partner_swap_hold, kh_partner_swap_member,
-            kh_partner_swap_fresh;
-        kh_partner_swap_hold = s_dialog_open || movie;
-        if (!kh_overlay_loaded(22)) {
-            extern volatile int kh_partner_swap_slot;
-            /* each one keeps its own party record (0.7.42), nothing to give back */
-            kh_partner_swap_index = kh_partner_swap_member = 0;
-            kh_partner_swap_slot = -1;
-            kh_partner_swap_fresh = 1;
-        }
-    }
-    static int hud_was;
-    /* the last 2D picture had its HUD taken out (or not): redrawn when that changes */
-    const int hud_changed = hud_on != hud_was;
-    hud_was = hud_on;
-    /* the corners are drawn whenever the HUD size is on (with nothing marked, they draw
-     * nothing); gpu2d marks the HUD (2) or only watches for a dialogue (1) */
-    video_set_hud_shrink(hud_wanted);
-    kh_gpu2d_hud_mode = hud_on ? 2 : hud_wanted ? 1 : 0;
-    kh_gpu2d_note_edges = hud_on && video_hud_edges();
-    kh_gpu2d_plain[KH_ENGINE_B] = single && PauseMenu_GetMode() != 0;
     /* with the detailed log, once a second: this frame's GPU time measured alone */
     if (kh_config.debug == 3) {
         /* the GPU test: 5 s in each mode in turn, each one's late swaps logged */
@@ -954,7 +648,7 @@ static void present(void)
         }
         /* dual 3D: the engines change screens with every toggle, so both are drawn each
          * time (a skipped one left the other engine's picture on its screen, 0.0.88) */
-        draw2d = dual || hud_changed || shortcut_sync_frames || (pending && vb != serial_vb) ||
+        draw2d = dual || shortcut_sync_frames || (pending && vb != serial_vb) ||
                  vb - drawn_vb >= 4;
         if (draw2d) {
             pending = 0;
@@ -984,17 +678,10 @@ static void present(void)
                            ((tr.dispcnt_a >> 16) & 3) != 2 &&
                            (keep ? video_kept(a_on_top ? 1 : 0)
                                  : video_screen_memory_valid(a_on_top ? 1 : 0)));
-        /* single screen: the bottom screen only shows through small panels; drawn one 2D
-         * frame in three (every other one for a tutorial page) it was a third of the 2D time
-         * at full rate (0.1.6) */
-        static uint32_t single_parity;
-        const int skip_single_b = single && (tutorial ? (single_parity & 1) : (single_parity % 3));
         f2d.neng = 0;
         if (draw2d) {
-            if (single)
-                single_parity++;
             for (i = 0; i < 2; i++)
-                if (i == KH_ENGINE_B && (skip_b || skip_single_b))
+                if (i == KH_ENGINE_B && skip_b)
                     continue;
                 else if (dual || i != inset_engine || (parity & 1))
                     f2d.eng[f2d.neng++] = i;
@@ -1020,7 +707,7 @@ static void present(void)
         /* widescreen in the field (ov022, the field's action code, is loaded; menus over a
          * 3D model keep the DS's picture) when engine A's screen is drawn wider than 4:3 */
         const int wide_ok = kh_config.aspect == KH_ASPECT_WIDE &&
-                            (kh_overlay_loaded(22) || video_single_scene() || world_select);
+                            kh_overlay_loaded(1);
         int k;
         for (k = 0; k < 2; k++) {
             const float aspect = video_screen_aspect(k);
@@ -1033,7 +720,7 @@ static void present(void)
          * corners then drawn at the display's edges (2) */
         /* (not the mission selection: its 2D, the starry sky and the banners, across the
          * display with the world) */
-        video_set_hud_scale(kh_config.hud && !world_select && kh_gx3d_wide_x < 0.999f ? kh_gx3d_wide_x
+        video_set_hud_scale(kh_config.hud && kh_gx3d_wide_x < 0.999f ? kh_gx3d_wide_x
                                                                                  : 1.0f);
     }
     {
@@ -1130,10 +817,6 @@ static void present(void)
     raw3d = tex3d; /* for the capture, which sees the 3D layer whatever is displayed */
     if (!a3d)
         tex3d = 0;
-    /* PauseMenu_Open also handles cutscene Continue/Skip, without battle ov022.
-     * The blend registers guard the effect; do not restrict it to missions. */
-    video_set_pause_dim(PauseMenu_GetMode() != 0,
-                         KH_IO16(0x04000050), KH_IO16(0x04000054));
     video_set_3d(tex3d ? (a_on_top ? 0 : 1) : -1, tex3d, KH_IO16(0x0400006c),
                  /* BG0HOFS scrolls the 3D layer: 9 bits, signed */
                  (int)((int16_t)(KH_IO16(0x04000010) << 7) >> 7), KH_IO16(0x04000052),
@@ -1236,28 +919,11 @@ static void present(void)
         s_dump_2d = 0;
         dump_2d(a_on_top);
     }
-    update_panels(video_single_screen(), upload2d && (upload_mask & 2), s_bottom);
     if (upload2d && (upload_mask & 2)) {
-        /* the bottom screen all black (sampled): the small screen is not drawn */
-        int k, lit = 0, lit2d = 0;
-        for (k = 0; k < 256 * 192 && !(lit && lit2d); k += 7) {
-            const uint32_t c = s_bottom[k];
-            lit |= (c & 0xe0e0e0u) != 0;
-            lit2d |= (c & 0xe0e0e0u) != 0 && (c >> 24) >= KH_GPU2D_OVER_3D;
-        }
-        s_bottom_2d_dark = lit2d ? 0 : s_bottom_2d_dark + (s_bottom_2d_dark < 1000);
+        int lit = 0;
+        for (int k = 0; k < 256 * 192 && !lit; k += 7)
+            lit = (s_bottom[k] & 0xe0e0e0u) != 0;
         video_set_inset_blank(a_on_top && !lit);
-        /* a cutscene's 3D on the bottom screen (its 2D black under it) is something too */
-        lit |= keep && !a_on_top && trace_polys > 0;
-        /* and the event the overlay follows: this bottom toggle drew Sora or not */
-        if (keep && !a_on_top)
-            s_sora_bottom = trace_polys > 0;
-        s_bottom_dark = lit ? 0 : s_bottom_dark + (s_bottom_dark < 1000);
-        if (!lit)
-            s_bottom_lit_since = s_vblanks;
-        /* at once: the overlay comes with the frame that brings it */
-        if (kh_config.single_screen)
-            scene_bottom_decide(a_on_top);
     }
     s_stage = "present";
     {
@@ -1272,7 +938,19 @@ static void present(void)
         if (dual_field && !a_on_top) {
             video_run_capture(top, bottom);
         } else {
+            int title_frame = __atomic_load_n(&title_updated, __ATOMIC_ACQUIRE) &&
+                              kh_overlay_loaded(0) && (top || bottom);
             video_present(top, bottom);
+            static unsigned title_stage;
+            static uint32_t first_vblank;
+            if (title_frame && title_stage == 0) {
+                kh_boot_mark("title frame presented");
+                first_vblank = s_vblanks;
+                title_stage = 1;
+            } else if (title_frame && title_stage == 1 && s_vblanks - first_vblank >= 2) {
+                kh_boot_mark("title VBlank advancing");
+                title_stage = 2;
+            }
             if (lock30 && !dual) {
                 /* the 30 fps pacing (above) */
                 static uint32_t last_serial, last_vc, repeats_in_row;
@@ -1996,22 +1674,6 @@ void kh_game_run(void)
             kh_gx3d_take_stats(&gs);
             threadstat_log();
             video_log_memory();
-            {
-                /* the movie player's loop (Ov024_MobiClip_UpdatePlayback) and its waits */
-                extern volatile unsigned int kh_mobiclip_passes;
-                static uint32_t last[5];
-                const uint32_t passes = kh_mobiclip_passes;
-                uint32_t w[4];
-                int k;
-                for (k = 0; k < 4; k++)
-                    w[k] = kh_cpu_wait_stats[k] - last[k + 1], last[k + 1] = kh_cpu_wait_stats[k];
-                if (passes != last[0])
-                    LOG("movie: %u passes of the player's loop, %u with nothing to do: %u slept, "
-                        "%u back at once (%u an interrupt, %u a reschedule)",
-                        (unsigned)(passes - last[0]), (unsigned)w[0], (unsigned)w[1],
-                        (unsigned)(w[2] + w[3]), (unsigned)w[2], (unsigned)w[3]);
-                last[0] = passes;
-            }
             {
                 KhGpu3dStats rs;
                 kh_gpu3d_take_stats(&rs);

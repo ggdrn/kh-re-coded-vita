@@ -3,6 +3,7 @@
  * Until the decomp is linked in (KH_WITH_GAME), the shell boots, verifies the dump and shows
  * a diagnostic screen: the ROM header and the controls, so the install can be tested alone. */
 #include "fault.h"
+#include "boot_trace.h"
 #include "portmenu.h"
 #include <psp2/kernel/threadmgr.h>
 #include "input.h"
@@ -34,7 +35,7 @@ int _newlib_heap_size_user = 96 * 1024 * 1024;
 
 /* Boot markers in ux0:data/khrecoded/boot.txt, opened, written and closed at every stage: they
  * survive a hang or a crash at any point, even before the log exists. */
-static void mark(const char *stage)
+void kh_boot_mark(const char *stage)
 {
     SceUID fd = sceIoOpen(KH_DATA_DIR "/boot.txt", SCE_O_WRONLY | SCE_O_CREAT | SCE_O_APPEND, 0777);
     if (fd >= 0) {
@@ -155,11 +156,11 @@ int main(void)
 
     sceIoMkdir(KH_DATA_DIR, 0777);
     sceIoRemove(KH_DATA_DIR "/boot.txt");
-    mark("main " KH_VERSION);
+    kh_boot_mark("main " KH_VERSION);
     init_system();
-    mark("system");
+    kh_boot_mark("system");
     log_init(KH_DATA_DIR);
-    mark("log");
+    kh_boot_mark("log");
     /* the build's date too: test builds of one version share its name */
     LOG("khrecoded-vita %s (built %s %s)", KH_VERSION, __DATE__, __TIME__);
     LOG("power: clocks MHz CPU=%d GPU=%d BUS=%d XBAR=%d (requested 444/222/222/166)",
@@ -169,23 +170,23 @@ int main(void)
     LOG("memory free: user %u KiB, cdram %u KiB, phycont %u KiB", (unsigned)(mem.size_user >> 10),
         (unsigned)(mem.size_cdram >> 10), (unsigned)(mem.size_phycont >> 10));
     fault_init();
-    mark("fault");
+    kh_boot_mark("fault");
     config_load();
 
     video_init();
-    mark("video");
+    kh_boot_mark("video");
     check_rom();
-    mark("rom");
+    kh_boot_mark("rom");
 
     /* holding L at start-up skips the game: the controls test, to check the install */
     sceCtrlPeekBufferPositive(0, &pad, 1);
 #ifdef KH_WITH_GAME
     if (!(pad.buttons & SCE_CTRL_LTRIGGER)) {
-        mark("game");
+        kh_boot_mark("game");
         kh_game_run();
     }
 #endif
-    mark("diagnostic");
+    kh_boot_mark("diagnostic");
     LOG("diagnostic mode");
     diagnostic_loop();
     return 0;

@@ -270,3 +270,22 @@ offset 8, flags no offset 7 e os layouts de glyph/vtable compartilhados pelo men
 O runtime herdado agora chama kh_recoded_prepare_memory antes de criar a thread de NitroMain e encerra a inicialização se a preparação falhar. game.c compilou isoladamente com Vita GCC. A ligação desse runtime ao VPK e o primeiro frame no aparelho seguem pendentes.
 
 O link parcial passou a incluir main do Vita com KH_WITH_GAME e os objetos de hardware, áudio e core. O ELF define main, kh_game_run, kh_recoded_prepare_memory e NitroMain. As chamadas entre esses componentes têm relocações R_ARM_CALL. O escopo ampliado do link agora expõe 338 nomes indefinidos, incluindo bibliotecas da plataforma. PauseMenu_GetMode continua sendo uma dependência herdada do Days.
+
+
+### Continuação: primeiro VPK nativo
+
+`OSi_DoResetSystem` (ITCM) passa a ser backend em `asm_replacements.c`: lê o parâmetro
+deixado em `HW_RESET_PARAMETER` e reinicia o eboot pelo mesmo caminho de
+`OS_ResetSystem`, eliminando `OSi_DoBoot` e `OSi_ReloadRomData`. O HUD one-screen
+herdado do Days (`platform/hw/fieldhud.c`) foi removido; ele trazia os três dados
+`data_0204c240`, `data_ov002_0207f614` e `data_ov023_0208a784`.
+
+A tabela `.ctor` do ov104 (`gDSProtInitializers`) é emitida pelo GCC em `.data`;
+`link_native.py` reconhece a posse pela seção `.ctor` do delink EU em vez de
+enfraquecê-la. Os inicializadores continuam chamados por `kh_init_ov104`.
+
+Resultado: 11.879 compiladas, 61 falhas, 94 backends. Link SDK sem nenhum nome
+original pendente (os 23 restantes são runtime C/C++ resolvidos no link final).
+`check_elf.py` aprovado. `python3 configure_vita.py --with-game && ninja -f
+build/native-vpk.ninja` gera `build/VPK/khrecoded-vita-0.1.0-native.vpk`.
+O boot no aparelho ainda não foi testado.

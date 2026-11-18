@@ -56,23 +56,33 @@ def main():
             # Match the EU compiler wrapper's post-compile renames in this object only.
             for old,new in entries_by_source[e['source']].get('symbol_renames', ()):
                 cmd += ['--redefine-sym', old+'='+new]
+            owned=entries_by_source[e['source']]['sections']
+            spans=[]
+            for section in owned:
+                match=re.search(r'(\.\w+)\s+start:(0x[0-9a-f]+)\s+end:(0x[0-9a-f]+)',section)
+                if match:spans.append((match[1],int(match[2],16),int(match[3],16)))
             for line in per_object.get(str(src),[]):
                 parts=line.split()
                 if len(parts)!=3:continue
                 _,kind,name=parts
                 section={'D':'.data','B':'.bss','R':'.rodata','C':'.bss'}.get(kind)
-                if section and (name in bss or section not in ownership[e['source']]):
+                # Nitro stores some named data in .text. GCC emits these objects
+                # in data sections; their EU delink ranges still prove ownership.
+                declared = native_symbols.get(name)
+                owns_text_data = (kind in ('D','R') and declared and declared['kind'].startswith('data')
+                                  and any(k == '.text' and lo <= declared['address'] < hi
+                                          for k,lo,hi in spans))
+                # A Nitro .ctor table (an overlay's static initializers) is RW data in GCC.
+                # The generated overlay initializer calls those entries directly.
+                owns_ctor_table = kind == 'D' and '.ctor' in ownership[e['source']]
+                if section and (name in bss or (section not in ownership[e['source']]
+                                                and not owns_text_data and not owns_ctor_table)):
                     cmd+=['--weaken-symbol',name]
                     weak.append({'module':module,'source':e['source'],'symbol':name,'bound_bss':name in bss})
             if len(cmd)>1:
                 subprocess.run(cmd+[str(src),str(dst)],check=True)
                 staged.append(dst)
             else:staged.append(src)
-            owned=entries_by_source[e['source']]['sections']
-            spans=[]
-            for section in owned:
-                match=re.search(r'(\.\w+)\s+start:(0x[0-9a-f]+)\s+end:(0x[0-9a-f]+)',section)
-                if match:spans.append((match[1],int(match[2],16),int(match[3],16)))
             for alias in aliases.get(module,[]):
                 binding=bind_alias(alias,native_symbols,section_objects.get(str(src),[]),spans)
                 if binding:
@@ -122,7 +132,7 @@ def main():
     # Reuse Days' DS-order rule, but derive owners/addresses from EU delinks
     # and select actual staged archive members, including renamed weak objects.
     script=out/'gen/ordered-overlays.ld';script.write_text(section_script(objects,ordered))
-    cmd=[str(BIN/'arm-vita-eabi-ld'),'-r','--no-enum-size-warning','-T',str(script),'-o',str(out/'recoded.partial.o'),
+    cmd=[str(BIN/'arm-vita-eabi-ld'),'-r','--wrap=UpdateTitlePanel','--no-enum-size-warning','-T',str(script),'-o',str(out/'recoded.partial.o'),
          str(out/'gen/ds_bss.o'),str(out/'gen/dtcm_init.o'),str(out/'gen/overlays.o'),
          '--whole-archive',*[str(p) for p in libs],'--no-whole-archive']
     # Backends are included once, even if many DS routines map to one provider.

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Re:coded Vita build. Game compiler flags also feed the native portability audit."""
 import argparse
-import json
 import os
 import shlex
 import subprocess
@@ -51,13 +50,13 @@ LIBS = [
     "-lkubridge_stub_weak", "-lSceVshBridge_stub", "-ltaihen_stub", "-lSceShaccCg_stub", "-lSceKernelDmacMgr_stub",
     "-lSceCommonDialog_stub", "-lSceGxm_stub", "-lSceDisplay_stub", "-lSceAppMgr_stub",
     "-lSceAppUtil_stub", "-lSceCtrl_stub", "-lSceTouch_stub", "-lSceAudio_stub",
-    "-lScePower_stub", "-lSceRtc_stub", "-lSceSysmodule_stub", "-lSceLibKernel_stub",
+    "-lScePower_stub", "-lSceRtc_stub", "-lSceKernelModulemgr_stub", "-lSceSysmodule_stub", "-lSceLibKernel_stub",
 ]
 
 
 def main():
     ap = argparse.ArgumentParser(description="Build the Re:coded Vita diagnostic shell")
-    ap.add_argument("--with-game", action="store_true", help="reserved for native game integration")
+    ap.add_argument("--with-game", action="store_true", help="generate build/native-vpk.ninja for the linked game runtime")
     ap.add_argument("--native-objects", action="store_true", help="compile native units and retain failures/objects")
     ap.add_argument("--native-link", action="store_true", help="diagnostic relocatable link, not a VPK")
     args = ap.parse_args()
@@ -65,10 +64,6 @@ def main():
         sys.exit(subprocess.call([sys.executable, str(ROOT / "tools/compile_native.py")]))
     if args.native_link:
         sys.exit(subprocess.call([sys.executable, str(ROOT / "tools/link_native.py")]))
-    if args.with_game:
-        report = ROOT / "build/native/compile.json"
-        details = json.loads(report.read_text())["counts"] if report.exists() else "native objects not built"
-        sys.exit(f"Gameplay VPK is not ready: {details}. Use --native-objects / --native-link to inspect native integration; unresolved ABI, hardware side effects and runtime bindings must be completed first.")
     version = (ROOT / "VERSION").read_text().strip()
     major, minor, patch = map(int, version.split("."))
     app_ver = f"{major:02d}.{minor * 10 + min(patch, 9):02d}"
@@ -92,26 +87,37 @@ def main():
     rule("livearea", "python3 tools/make_livearea.py sce_sys")
     art = ["sce_sys/icon0.png", "sce_sys/livearea/contents/bg.png", "sce_sys/livearea/contents/startup.png"]
     template = "sce_sys/livearea/contents/template.xml"
-    rule("vpk", q([BIN / "vita-pack-vpk"]) + " -s build/param.sfo -b build/eboot.bin " +
+    rule("vpk", q([BIN / "vita-pack-vpk"]) + " -s build/param.sfo -b $in " +
          " ".join("-a " + x + "=" + x for x in art + [template]) + " $out")
-    objects = []
-    for source in sources:
+    if args.with_game:
+        native = "build/native"
+        objects = [native + "/recoded.sdk.o"]
+        stem = native + "/khrecoded"
+        eboot = native + "/eboot.bin"
+        rule("sdk", "python3 tools/link_native_sdk.py")
+        lines.append(f"build {native}/recoded.sdk.o: sdk {native}/recoded.partial.o | tools/link_native_sdk.py")
+    else:
+        objects = []
+        stem = "build/khrecoded"
+        eboot = "build/eboot.bin"
+    for source in ([] if args.with_game else sources):
         relative = source.relative_to(ROOT)
         obj = "build/port/" + str(relative.with_suffix(".o"))
         objects.append(obj)
         lines.append(f"build {esc(obj)}: cc {esc(relative)}")
     lines.extend([
-        "build build/khrecoded.elf: link " + " ".join(map(esc, objects)),
-        "build build/khrecoded.velf: velf build/khrecoded.elf",
-        "build build/eboot.bin: fself build/khrecoded.velf",
+        f"build {stem}.elf: link " + " ".join(map(esc, objects)),
+        f"build {stem}.velf: velf {stem}.elf",
+        f"build {eboot}: fself {stem}.velf",
         "build build/param.sfo: sfo | VERSION",
         "build " + " ".join(art) + ": livearea | tools/make_livearea.py",
     ])
-    vpk = f"build/VPK/khrecoded-vita-{version}.vpk"
-    lines.extend([f"build {vpk}: vpk build/eboot.bin build/param.sfo " + " ".join(art + [template]),
+    suffix = "-native" if args.with_game else ""
+    vpk = f"build/VPK/khrecoded-vita-{version}{suffix}.vpk"
+    lines.extend([f"build {vpk}: vpk {eboot} | build/param.sfo " + " ".join(art + [template]),
                   f"default {vpk}"])
-    (ROOT / "build.ninja").write_text("\n".join(lines) + "\n")
-    print(f"Diagnostic shell: {len(sources)} platform sources -> {vpk}")
+    (ROOT / ("build/native-vpk.ninja" if args.with_game else "build.ninja")).write_text("\n".join(lines) + "\n")
+    print(f"VPK target: {vpk}")
 
 if __name__ == "__main__":
     main()
