@@ -15,7 +15,8 @@ def main():
     out=ROOT/'build/native';report=json.loads((out/'compile.json').read_text())
     if report['mode']!='full':raise SystemExit('Full native compile required')
     layout=json.loads((out/'gen/layout.json').read_text());bss={x['name'] for x in layout['bss']}
-    ownership={e['source']:{s.split()[0] for s in e['sections']} for e in inventory(ROOT/'build/decomp')}
+    entries_by_source={e['source']:e for e in inventory(ROOT/'build/decomp')}
+    ownership={source:{s.split()[0] for s in e['sections']} for source,e in entries_by_source.items()}
     objects={};weak=[];ordered={};data_conflicts=[]
     aliases={};bound_aliases=[]
     for entry in report['units']:
@@ -25,7 +26,6 @@ def main():
         if alias:
             alias['source']=entry['source']
             aliases.setdefault(entry['module'],[]).append(alias)
-    entries_by_source={e['source']:e for e in inventory(ROOT/'build/decomp')}
     for entry in report['units']:
         if entry['status']!='compiled':continue
         objects.setdefault(entry['module'],[]).append(entry)
@@ -53,6 +53,9 @@ def main():
             src=ROOT/e['object'];dst=out/'staged'/module/(str(index)+'.o');dst.parent.mkdir(parents=True,exist_ok=True)
 
             cmd=[str(BIN/'arm-vita-eabi-objcopy')]
+            # Match the EU compiler wrapper's post-compile renames in this object only.
+            for old,new in entries_by_source[e['source']].get('symbol_renames', ()):
+                cmd += ['--redefine-sym', old+'='+new]
             for line in per_object.get(str(src),[]):
                 parts=line.split()
                 if len(parts)!=3:continue

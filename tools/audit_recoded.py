@@ -30,6 +30,9 @@ def inventory(decomp):
                 current = {'module': module, 'source': source, 'exists': p.is_file(), 'sections': []}
                 if p.is_file():
                     text = p.read_text(errors='replace')
+                    renames = re.findall(r'^// redefine-sym (\w+)=(\w+)\s*$', text, re.MULTILINE)
+                    if renames:
+                        current['symbol_renames'] = renames
                     current['shared_includes'] = re.findall(r'#include "(src/[^"\n]+)"',text)
                     current['hardware_literals'] = sorted(set(re.findall(r'0x0[4567][0-9a-fA-F]{6}\b',text)))
                     current['assembly_syntax'] = bool(re.search(r'\b(?:asm|__asm)\b',text))

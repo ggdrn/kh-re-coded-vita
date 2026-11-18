@@ -10,6 +10,17 @@ RTC_COMMANDS = {
 }
 
 def apply(relative,text):
+    if relative == 'eu/libs/nns/g2d/include/g2d_charcanvas_internal.h':
+        original = """    int leadingZeros = (int)value;
+    asm {
+        clz leadingZeros, leadingZeros
+    }
+    return 31 - leadingZeros;"""
+        if original not in text:
+            raise ValueError('Unexpected char canvas CLZ implementation')
+        text = text.replace(original, '    return value ? 31 - __builtin_clz(value) : -1;')
+    if relative == 'eu/libs/nns/g2d/calls/NNS_G2dCharCanvasInitForOBJ1D.c':
+        text = text.replace('NNSiG2dOBJ1DParam param;', 'NNSiG2dOBJ1DParam param = {0};')
     if relative.startswith('eu/libs/nitro/rtc/calls/'):
         name = relative.rsplit('/', 1)[1].removesuffix('.c')
         if name in RTC_COMMANDS:
