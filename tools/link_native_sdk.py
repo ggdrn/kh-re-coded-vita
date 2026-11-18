@@ -1,4 +1,5 @@
 """Bind Vita libraries to the native partial object and report remaining imports."""
+import re
 import json
 import subprocess
 import sys
@@ -36,9 +37,39 @@ def main():
         'func_ov021_020a8cc0': 'InitializeEntryGroupSlot',
     }
     bindings = ['-Wl,--defsym,' + name + '=' + owner for name, owner in aliases.items()]
+    # These EU routines consume integer registers (including raw single-precision
+    # bits) and return their results in r0/r1. Assemble their shared entry labels
+    # together. Double helpers with hard-float callers need separate ABI adapters.
+    eu = ROOT / 'build/decomp/eu'
+    sources = [eu/'libs/msl/c/asm_stubs/calls'/(name+'.s') for name in
+               ('_s32_div_f', '_u32_div_f', '_ll_sdiv', '_ll_udiv', '_ull_mod')]
+    sources.extend(eu/'src/asm_stubs/calls'/(name+'.s') for name in ('_fadd', '_fsub'))
+    # Translate only the enclosing CodeWarrior syntax and local labels of
+    # these instruction-only helpers from the pinned reconstruction.
+    for symbol, filename in {
+        '_ffix': '_ffix_020241ac.c', '_fflt': '_fflt_02023a98.c',
+        '_fmul': '_fmul_02024408.c', 'kh_raw_dflt': '_dflt_0202363c.c',
+        'kh_raw_d2f': 'func_02023538.c',
+    }.items():
+        text = (eu.parent/'src/arm9/asm'/filename).read_text()
+        body = re.fullmatch(r'.*?\basm [^{]+\{([^{}]*)\}\s*', text, re.S)[1]
+        asm = build/(symbol+'.s')
+        asm.write_text(f'.syntax unified\n.arm\n.text\n.global {symbol}\n.type {symbol},%function\n{symbol}:\n'
+                       + body.replace('@','.L') + f'\n.size {symbol},.-{symbol}\n')
+        sources.append(asm)
+    sources.append(eu/'src/asm_stubs/calls/_dadd.s')
+    raw_sub = build/'kh_raw_dsub.s'
+    raw_sub.write_text(re.sub(r'\b_dsub\b', 'kh_raw_dsub',
+                       (eu/'src/asm_stubs/calls/_dsub.s').read_text()))
+    sources.extend([raw_sub, ROOT/'platform/nitro/msl_double_abi.S'])
+    helpers = []
+    for asm in sources:
+        obj = build / ('sdk' + asm.stem + '.o')
+        subprocess.run([BIN/'arm-vita-eabi-gcc', *COMMON_CFLAGS, '-c', asm, '-o', obj], check=True)
+        helpers.append(obj)
     # A group lets dependencies between the static C, C++ and graphics libraries resolve.
     subprocess.run([BIN / 'arm-vita-eabi-gcc', *COMMON_CFLAGS, '-nostdlib', '-r',
-                    '-Wl,--no-enum-size-warning', staged, *bindings, '-Wl,--start-group', *LIBS,
+                    '-Wl,--no-enum-size-warning', staged, *helpers, *bindings, '-Wl,--start-group', *LIBS,
                     '-lgcc', '-lpthread', '-lSceSysmem_stub', '-lSceKernelThreadMgr_stub',
                     '-lSceKernelModulemgr_stub', '-lSceIofilemgr_stub', '-lSceProcessmgr_stub',
                     '-lSceNet_stub', '-lSceNetCtl_stub', '-Wl,--end-group', '-o', target], check=True)
