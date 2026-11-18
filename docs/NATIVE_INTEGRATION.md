@@ -268,3 +268,5 @@ Asserts ARM32 verificam headers 16/8 bytes, FINF de 20 bytes, ponteiro de glyph 
 offset 8, flags no offset 7 e os layouts de glyph/vtable compartilhados pelo menu.
 
 O runtime herdado agora chama kh_recoded_prepare_memory antes de criar a thread de NitroMain e encerra a inicialização se a preparação falhar. game.c compilou isoladamente com Vita GCC. A ligação desse runtime ao VPK e o primeiro frame no aparelho seguem pendentes.
+
+O link parcial passou a incluir main do Vita com KH_WITH_GAME e os objetos de hardware, áudio e core. O ELF define main, kh_game_run, kh_recoded_prepare_memory e NitroMain. As chamadas entre esses componentes têm relocações R_ARM_CALL. O escopo ampliado do link agora expõe 338 nomes indefinidos, incluindo bibliotecas da plataforma. PauseMenu_GetMode continua sendo uma dependência herdada do Days.

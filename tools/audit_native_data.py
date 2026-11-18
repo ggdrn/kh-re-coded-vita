@@ -19,7 +19,7 @@ def main():
         if len(parts)!=8 or not parts[0].endswith(':'):continue
         _,value,size,kind,binding,visibility,section,name=parts
         if binding not in ['GLOBAL','WEAK'] or not section.isdigit():continue
-        row={'value':int(value,16),'size':int(size),'section':section,'binding':binding}
+        row={'value':int(value,16),'size':int(size,0),'section':section,'binding':binding}
         if name not in symbols or binding=='GLOBAL':symbols[name]=row
     missing=[];differences=[];matches=0;checked=0
     for module,desc in layout['modules'].items():

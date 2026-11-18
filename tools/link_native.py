@@ -6,7 +6,7 @@ import json,re,subprocess,sys
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
-from configure_vita import BIN
+from configure_vita import BIN, COMMON_CFLAGS, PORT_CFLAGS
 from audit_recoded import inventory
 from native_data_order import section_script
 from native_data_alias import parse_alias, bind_alias
@@ -124,6 +124,19 @@ def main():
          '--whole-archive',*[str(p) for p in libs],'--no-whole-archive']
     # Backends are included once, even if many DS routines map to one provider.
     cmd+=sorted({str(ROOT/p) for p in report['backend_exports'].values()})
+    runtime_dir = out / 'runtime'
+    runtime_dir.mkdir(exist_ok=True)
+    # The generated shared area and boot helper already enter through backend_exports.
+    runtime_sources = sorted(source for group in ('hw','audio','core')
+                             for source in (ROOT/'platform'/group).glob('*.c')
+                             if source.name not in ('shared_area.c','recoded_boot.c'))
+    for source in runtime_sources:
+        obj = runtime_dir / (source.parent.name+'_'+source.stem+'.o')
+        subprocess.run([str(BIN/'arm-vita-eabi-gcc'), *COMMON_CFLAGS, *PORT_CFLAGS,
+                        '-DKH_WITH_GAME=1', '-DKH_VERSION="'+(ROOT/'VERSION').read_text().strip()+'"',
+                        *['-I'+str(ROOT/path) for path in ('platform','platform/core','platform/compat')],
+                        '-c', str(source), '-o', str(obj)], check=True)
+        cmd.append(str(obj))
     p=subprocess.run(cmd,capture_output=True,text=True);(out/'link.log').write_text(p.stdout+p.stderr)
     result={'partial_link_returncode':p.returncode,'compile_counts':report['counts'],'weak_storage':weak,'data_section_conflicts':data_conflicts,'resolved_data_aliases':bound_aliases}
     if p.returncode==0:
