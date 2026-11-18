@@ -2,6 +2,18 @@
 import re
 
 def apply(relative,text):
+    if relative in SOUND_LOADER_WRAPPERS:
+        text='#include "nnsys/sound_loader_view.h"\n'+text
+    if relative in ('eu/libs/nitro/spi/calls/PM_DeletePreSleepCallback.c',
+                    'eu/libs/nitro/spi/calls/PM_DeletePostSleepCallback.c'):
+        text='typedef struct PMSleepCallbackInfo PMSleepCallbackInfo;\n'+text
+    if relative in ('src/arm9/library_nns_snd/NNS_SndHandleReleaseSeq_0201d6a4.c',
+                    'src/arm9/library_nns_snd/NNS_SndPlayerSetInitialVolume_0201d72c.c'):
+        duplicate='inline BOOL NNS_SndHandleIsValid (const struct NNSSndHandle * handle)\n{\n    return handle->player != NULL ;\n}'
+        if duplicate not in text:raise ValueError('Unexpected sound handle validity check')
+        text=text.replace(duplicate,'').replace('->initVolume','->initialVolume')
+    if relative=='src/arm9/library_nns_snd/NNS_SndPlayerSetAllocatableChannel_0201d434.c':
+        text=text.replace('.allocChBitFlag','.allocatableChannelMask')
     if relative in ('eu/libs/nitro/spi/calls/PM_SetBackLight.c','eu/libs/nitro/spi/calls/PMi_SetLED.c'):
         text='#include "nitro/pm_sync_view.h"\n'+text
     if relative == 'src/itcm/library_nitro_mi/MIi_DmaSetParameters_01ff85b4.c':
@@ -70,3 +82,7 @@ ANIMATION_VIEW_SOURCES = ['eu/src/overlays/ov021/calls/UnpackExtendedData.c', 'e
 BACKGROUND_VIEW_SOURCES = ['eu/libs/nns/g2d/calls/GetBGExtPlttSlot.c', 'eu/libs/nns/g2d/calls/SetBGnControlToAffine.c', 'eu/libs/nns/g2d/calls/SetBGnControlTo256x16Pltt.c', 'eu/libs/nns/g2d/calls/SetBGControlAffine.c', 'eu/libs/nns/g2d/calls/SetBGControl256x16Pltt.c']
 
 SLOT_HINT_DUPLICATE_TYPES = ['typedef struct NNSG2dGlyph {\n    const NNSG2dCharWidths *pWidths;\n    const u8 *image;\n} NNSG2dGlyph;', 'struct NNSiG2dCharCanvasVTable {\n    void (*pDrawGlyph)(const NNSG2dCharCanvas *canvas, const NNSG2dFont *font,\n        int x, int y, int color, const NNSG2dGlyph *glyph);\n    void (*pClear)(const NNSG2dCharCanvas *canvas, int color);\n    void (*pClearArea)(const NNSG2dCharCanvas *canvas, int color,\n        int x, int y, int width, int height);\n};']
+
+SOUND_LOADER_WRAPPERS = {'eu/libs/nns/snd/calls/'+name+'.c' for name in (
+    'NNS_SndArcLoadSeq','NNS_SndArcLoadSeqArc','NNS_SndArcLoadBank',
+    'LoadBank','LoadSeq','LoadSeqArc','LoadWaveArc')}
