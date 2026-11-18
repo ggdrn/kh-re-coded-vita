@@ -6,6 +6,9 @@ mkdir -p "$out"
 for name in LoadSeq LoadSeqArc LoadBank LoadWaveArc NNS_SndArcLoadSeq NNS_SndArcLoadSeqArc NNS_SndArcLoadBank; do
     cc -O2 -Wno-pointer-to-int-cast -Iplatform/compat/recoded -Ibuild/decomp/eu -Ibuild/decomp -c "build/native/adapted/eu/libs/nns/snd/calls/$name.c" -o "$out/$name.o"
 done
+for name in BankDisposeCallback WaveArcDisposeCallback; do
+    cc -O2 -Wno-int-to-pointer-cast -Iplatform/compat/recoded -Ibuild/decomp/eu -Ibuild/decomp -include platform/compat/recoded/nnsys/sound_loader_view.h -c "build/decomp/eu/libs/nns/snd/calls/$name.c" -o "$out/$name.o"
+done
 for path in calls/NNS_SndPlayerSetAllocatableChannel auto/NNS_SndPlayerSetInitialVolume auto/NNS_SndHandleReleaseSeq; do
     cc -O2 -Iplatform/compat/recoded -Ibuild/native/adapted -Ibuild/decomp/eu -Ibuild/decomp -c "build/decomp/eu/libs/nns/snd/$path.c" -o "$out/${path##*/}.o"
 done

@@ -6,8 +6,21 @@ extern void *LoadSeq(u32,NNSSndHeapHandle,BOOL), *LoadSeqArc(u32,NNSSndHeapHandl
 extern void *LoadBank(u32,NNSSndHeapHandle,BOOL), *LoadWaveArc(u32,NNSSndHeapHandle,BOOL);
 #define CALLBACK(name) void name(void *p,u32 size,u32 a,u32 b) {}
 CALLBACK(SeqDisposeCallback)
-CALLBACK(BankDisposeCallback)
-CALLBACK(WaveArcDisposeCallback)
+void BankDisposeCallback(void *,u32,u32,u32);
+void WaveArcDisposeCallback(void *,u32,u32,u32);
+static unsigned char resource[32];
+static unsigned stage, wave;
+void DisposeCallback(void *mem,void *arc,u32 id) {
+    assert(stage++==0 && mem==resource && (uintptr_t)arc==0x1234 && id==17);
+}
+void SND_InvalidateBankData(const void *p,const void *end) {
+    assert(!wave && stage++==1 && p==resource && end==resource+32);
+}
+void SND_InvalidateWaveData(const void *p,const void *end) {
+    assert(wave && stage++==1 && p==resource && end==resource+32);
+}
+void SND_DestroyBank(void *mem) {assert(!wave && stage++==2 && mem==resource);}
+void SND_DestroyWaveArc(void *mem) {assert(wave && stage++==2 && mem==resource);}
 static NNSSndHeapDisposeCallback expected;
 static int loads, inserts, cached, fail, publish;
 static unsigned char data;
@@ -44,6 +57,9 @@ int main(void) {
         expected=callbacks[i];loads=inserts=0;
         assert(loaders[i](17,heap,publish)==(cached||!fail?&data:NULL));
         assert(loads==!cached && inserts==(!cached && !fail && publish));
+    }
+    for(wave=0;wave<2;++wave) {
+        stage=0; callbacks[2+wave](resource,sizeof resource,0x1234,17);assert(stage==3);
     }
     NNSSndSeqPlayer player={0};NNSSndHandle h={&player};player.handle=&h;
     NNS_SndPlayerSetInitialVolume(&h,73);assert(player.initialVolume==73);
