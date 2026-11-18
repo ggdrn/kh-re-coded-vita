@@ -127,6 +127,9 @@ def apply(relative,text):
 
     if relative in ARCHIVE_VIEW_SOURCES:
         text='#include "nnsys/archive_view.h"\n'+text
+    if relative == 'src/ov003/video_playback/MoviePlayer_SetupDisplay_02063ae0.c':
+        # The common GX header provides the display-mode and VRAM-bank enums.
+        text = text.replace('#include "nitro/gx.h"', '#include "include/nitro/gx.h"')
     if relative == 'src/arm9/library_nns_g2d/NNS_G2dMakeCellToOams_020157fc.c':
         # This common body supplies its own MtxFx22 and uses the common GX OAM ABI.
         text = text.replace('#include "nitro/gx.h"', '#include "include/nitro/gx.h"')
