@@ -11,14 +11,14 @@ RTC_COMMANDS = {
 }
 
 # The EU byte copy and overlap-safe move share ten ARM branch targets.
-ITCM_BYTE_COPY = {
-    'src/itcm/asm/func_01ff8ad8.c', 'src/itcm/asm/func_01ff8dc8.c',
+ITCM_MEMORY_ROUTINES = {
+    'src/itcm/asm/func_01ff88c4.c', 'src/itcm/asm/func_01ff8ad8.c', 'src/itcm/asm/func_01ff8dc8.c',
     *('eu/src/asm_stubs/calls/func_01ff'+suffix+'.c' for suffix in
       ('8b7c','8bb8','8c50','8ce8','8d80','8e84','8ec0','8f5c','8ff8','9094')),
 }
 
 def apply(relative,text):
-    if relative in ITCM_BYTE_COPY:
+    if relative in ITCM_MEMORY_ROUTINES:
         name = relative.rsplit('/', 1)[1][:-2]
         match = re.search(r'asm void '+name+r'\(void\)\s*\{\n(.*?)\n\}\s*$', text, re.S)
         if not match:

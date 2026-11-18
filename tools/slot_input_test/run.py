@@ -21,6 +21,8 @@ objects.append(build/'main/src/calls/MoveEquipmentSlot.o')
 kernels = sorted((build/'itcm/src/asm_stubs/calls').glob('func_01ff*.o'))
 objects += [p for p in kernels if 0x1ff8ad8 <= int(p.stem[5:],16) <= 0x1ff9094]
 assert len(objects)==17
+objects.extend([build/'itcm/src/asm_stubs/calls/func_01ff88c4.o',
+                build/'ov001/src/overlays/ov001/calls/ZeroActorTailBlock.o'])
 services = ['GetMenuInputState','GetPrimaryMenuSubOverlayIndex','GetSlotMenuItemPanelState',
             'UpdateScrollListInput','PlaySoundEffect','SetStatusElementVisible','GetOverlaySelectionRecord',
             'SlotMenu_ReloadAllSlots','BuildSelectionEntryList']
@@ -30,7 +32,7 @@ addr.update(kh_ds_io=io,gSaveIoStateDataTail=0x280000,gPadPressedStorage=0x28000
             gEquipmentSlotWork=work,__aeabi_unwind_cpp_pr0=0,__aeabi_unwind_cpp_pr1=0)
 elf = out/'test.elf'
 subprocess.run([BIN/'arm-vita-eabi-ld','-Ttext=0x100000','--gc-sections','--no-enum-size-warning',
-                '-e','HandleSlotListInput',*['--defsym='+k+'='+hex(v) for k,v in addr.items()],
+                '-e','HandleSlotListInput','-u','ZeroActorTailBlock',*['--defsym='+k+'='+hex(v) for k,v in addr.items()],
                 *objects,'-o',elf],check=True)
 subprocess.run([BIN/'arm-vita-eabi-objcopy','-O','binary',elf,out/'image'],check=True)
 for row in map(str.split,subprocess.check_output([BIN/'arm-vita-eabi-nm',elf],text=True).splitlines()):
@@ -76,6 +78,19 @@ for kernel in ('func_01ff8dc8','func_01ff8ad8'):
                 expected[dst:dst+length] = raw[src:src+length]
                 assert cpu.mem_read(buf,len(raw))==expected,(kernel,src,dst,length)
 
+# The fill kernel aligns to eight bytes before writing 32-byte blocks.
+for offset in range(8,16):
+    for length in (*range(17),31,32,33,63,64,65):
+        cpu.mem_write(buf,raw)
+        assert call('func_01ff88c4',buf+offset,0xa5,length)==buf+offset+length
+        expected = raw[:offset]+bytes([0xa5])*length+raw[offset+length:]
+        assert cpu.mem_read(buf,len(raw))==expected,(offset,length)
+
+actor_size = 0x3c8
+cpu.mem_write(buf,b'!'+bytes([0xa5])*actor_size+b'?')
+call('ZeroActorTailBlock',buf+1)
+assert cpu.mem_read(buf,actor_size+2)==b'!'+bytes(actor_size)+b'?'
+
 put(addr['gSaveIoStateDataTail'],'I',save)
 arrays = [(summary+4,16),(records+0xec,4),(save+0x2dc0,4),(save+0x2d84,4),(work,24)]
 for at,width in arrays:
@@ -119,4 +134,4 @@ assert frame(True,0,3,3,x=0x2f)==0 and get(drag,'h')==(-1,)
 check_order([1,2,3,4])
 assert get(save+0x28d7,'B')==(0xa1,)
 assert frame(True,0,2,3)==0 and get(lst+0x14,'I')==(0,)
-print('Slot input ARM: LCD selection, drag/release, button reorder/cancel, five record arrays and ITCM byte moves OK')
+print('Slot input ARM: LCD selection, drag/release, button reorder/cancel, five record arrays and ITCM byte moves and actor tail fill OK')
