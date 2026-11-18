@@ -452,10 +452,6 @@ void WaitByLoop(void)
 {
 }
 
-void RtcWaitBusy(void)
-{
-}
-
 /* The DS reboots into the game with the parameter left at 0x027ffc20 (HW_RESET_PARAMETER_BUF):
  * -2 is "back to the title" (the camp menu's Title Screen), others the connection-error screen.
  * Here the eboot is started again, with the save written and the parameter in a file that the

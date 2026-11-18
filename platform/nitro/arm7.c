@@ -81,13 +81,16 @@ static uint8_t bcd(int v)
     return (uint8_t)((v / 10) << 4 | (v % 10));
 }
 
-static void rtc_read_clock(void)
+static int rtc_read_clock(void)
 {
     SceDateTime t;
     volatile uint8_t *c = KH_SHARED(HW_RTC_BUF);
     int week;
-    sceRtcGetCurrentClockLocalTime(&t);
+    if (sceRtcGetCurrentClockLocalTime(&t) < 0)
+        return 4; /* RTC_PXI_RESULT_FATAL_ERROR */
     week = sceRtcGetDayOfWeek(t.year, t.month, t.day);
+    if (week < 0)
+        return 4;
     c[0] = bcd(t.year % 100);
     c[1] = bcd(t.month);
     c[2] = bcd(t.day);
@@ -96,14 +99,16 @@ static void rtc_read_clock(void)
     c[5] = bcd(t.minute);
     c[6] = bcd(t.second);
     c[7] = 0;
+    return 0;
 }
 
 static void rtc(uint32_t data)
 {
     uint32_t cmd = (data >> 8) & 0x7f;
+    uint32_t result = 0;
     if (cmd >= 0x10 && cmd <= 0x12) /* READ_DATETIME, READ_DATE, READ_TIME */
-        rtc_read_clock();
-    kh_arm7_reply(5, cmd << 8, 0); /* RTC_PXI_RESULT_SUCCESS */
+        result = rtc_read_clock();
+    kh_arm7_reply(5, (cmd << 8) | result, 0);
 }
 
 /* ---- SPI devices: touch panel (6), power management (8), NVRAM (4) --------------------------

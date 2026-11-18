@@ -2,7 +2,29 @@
 import re
 from dsprot_rewrites import adapt as adapt_dsprot
 
+RTC_COMMANDS = {
+    'RTCi_ReadRawDateTimeAsync': 'RTC_PXI_COMMAND_READ_DATETIME',
+    'RTCi_ReadRawDateAsync': 'RTC_PXI_COMMAND_READ_DATE',
+    'RTCi_ReadRawTimeAsync': 'RTC_PXI_COMMAND_READ_TIME',
+    'RTCi_WriteRawStatus2Async': 'RTC_PXI_COMMAND_WRITE_STATUS2',
+}
+
 def apply(relative,text):
+    if relative.startswith('eu/libs/nitro/rtc/calls/'):
+        name = relative.rsplit('/', 1)[1].removesuffix('.c')
+        if name in RTC_COMMANDS:
+            # The SDK callers test a BOOL; the common datetime body drops r0.
+            return ('#include "libs/nitro/rtc/rtc_internal.h"\n\n'
+                    f'BOOL {name}(void)\n{{\n    return RtcSendPxiCommand({RTC_COMMANDS[name]});\n}}\n')
+    if relative in (
+        'src/arm9/library_nitro_rtc/RtcCommonCallback_0200e5b8.c',
+        'src/arm9/library_nitro_rtc/RTC_GetDayOfWeek_0200e934.c',
+        'src/ov002/unclassified_helpers/StampContextDateTime_02067564.c',
+    ):
+        text = text.replace('#include "nitro/rtc.h"', '#include "include/nitro/rtc.h"')
+    if relative == 'src/ov002/unclassified_helpers/StampContextDateTime_02067564.c':
+        call = 'RTCi_RunAsyncCommandExAndWait_0200e594(&date, &time)'
+        text = text.replace(call+';', 'if ('+call+' != 0) return;')
     if relative in SOUND_LOADER_WRAPPERS:
         text='#include "nnsys/sound_loader_view.h"\n'+text
     if relative in ('eu/libs/nitro/spi/calls/PM_DeletePreSleepCallback.c',
