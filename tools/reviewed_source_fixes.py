@@ -18,6 +18,13 @@ ITCM_MEMORY_ROUTINES = {
 }
 
 def apply(relative,text):
+    if relative == 'src/ov059/unclassified_helpers/Actor_InitNodeCaptureCallback_020cd254.c':
+        # Timing C from the SDK declaration used by RegisterSbcCallback_020188a4.
+        text = text.replace('#include "nnsys/g3d.h"', '#include "nnsys/g3d.h"\n'
+                            'typedef enum { NNS_G3D_SBC_CALLBACK_TIMING_C = 3 } NNSG3dSbcCallBackTiming;')
+    if relative == 'src/ov059/unclassified_helpers/Actor_CaptureNodeMatrix_020cd280.c':
+        # EU g3d.h supplies the matrix types. The common SDK flag is absent there.
+        text = text.replace('#include "nitro/fx.h"', '#define NNS_G3D_RSFLAG_CURRENT_NODEDESC_VALID 0x10u')
     if relative in ITCM_MEMORY_ROUTINES:
         name = relative.rsplit('/', 1)[1][:-2]
         match = re.search(r'asm void '+name+r'\(void\)\s*\{\n(.*?)\n\}\s*$', text, re.S)
