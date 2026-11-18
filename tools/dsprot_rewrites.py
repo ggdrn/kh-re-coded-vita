@@ -2,7 +2,15 @@
 import re
 
 CALLS = 'eu/src/overlays/ov104/calls/'
+DATA = 'eu/src/overlays/ov104/data/'
 WRAPPERS = 'eu/src/overlays/ov104/asm_stubs/calls/'
+
+# EU arm9/overlays/ov104/symbols.txt, before the DS address encoding.
+DS_CIPHER_ADDRESSES = {
+    'Encryptor_EncryptFunction': 0x020d2830,
+    'Encryptor_DecryptFunction': 0x020d2770,
+    'Encryptor_DecryptionWrapperFragment': 0x020d2908,
+}
 
 # Each original initializer receives the table immediately after its ARM body.
 # The native linker places the two in different sections.
@@ -40,6 +48,21 @@ void {name}(void)
 '''
 
 def adapt(relative, text):
+    # The native wrappers branch to function.encodedAddress. The DS dispatcher
+    # address and the decoder's three source records are guest metadata only.
+    if relative == DATA+'gDSProtEncryptionFunctions.c':
+        for name, address in DS_CIPHER_ADDRESSES.items():
+            pattern = rf'DSPROT_FUNCTION_ENTRY\({name}, (0x[0-9a-f]+)\)'
+            text, count = re.subn(pattern, lambda m:
+                f'{{{address:#010x}UL + 0x1000, (unsigned long)(DSProt_BSS + 0x1000 + {m[1]})}}', text)
+            if count != 1:
+                raise ValueError(f'Unexpected encryption table entry for {name}')
+    if relative.startswith(DATA) and relative.endswith('Context.c'):
+        dispatcher = '(unsigned long)((unsigned char *)Encryptor_DecryptionWrapperFragment + 0x1000)'
+        if text.count(dispatcher) != 1:
+            raise ValueError(f'Unexpected dispatcher field in {relative}')
+        address = DS_CIPHER_ADDRESSES['Encryptor_DecryptionWrapperFragment']
+        text = text.replace(dispatcher, f'{address:#010x}UL + 0x1000')
     if relative.startswith(WRAPPERS):
         name = relative[len(WRAPPERS):].removesuffix('.c')
         if name in INITIALIZER_TABLES:

@@ -27,15 +27,17 @@ save = [game/(n+'.o') for n in ('InitSaveSystem', 'InvokeOptionalCallback',
 services = ['memset', 'OS_GetLockID', 'CARD_LockRom', 'CARD_UnlockRom',
             'OS_ReleaseLockID', 'rom_read', 'CARDi_ReadRom', 'OS_GetMacAddress',
             'OS_GetOwnerInfo', 'callback',
-            'FS_LoadOverlayInfo', 'WaitForGeometryTransfer', 'AllocFromHeapOrDefaultEx',
+            'CARD_GetOwnRomHeader', 'FS_InitFile', 'FS_CreateFileFromRom', 'FS_ReadFile',
+            'FS_OpenFileFast', 'FS_GetFileImageTop', 'FS_GetFileLength', 'FS_CloseFile',
+            'MI_CpuCopy8', 'WaitForGeometryTransfer', 'AllocFromHeapOrDefaultEx',
             'CARD_LockBackup', 'CARD_UnlockBackup', 'CARD_IdentifyBackup',
             'VerifyCardIdMatchesReference', 'InitSaveData', 'calloc', 'malloc', 'free',
             'memcpy', 'log_printf', 'OS_DisableInterrupts', 'OS_RestoreInterrupts']
 addresses = {name: 0x500000 + 4*i for i, name in enumerate(services)}
 # These context fields are metadata for the DS encrypted image.
-addresses.update(DSProt_BSS=0x600000, Encryptor_DecryptionWrapperFragment=0,
+addresses.update(DSProt_BSS=0x600000,
                  __aeabi_unwind_cpp_pr0=0, gSaveCheckOverlayId=104,
-                 gSaveIoStatePrefix=0x601000, gEngineHeapReferences=0x602000,
+                 FSiOverlayContext=0x607000, gSaveIoStatePrefix=0x601000, gEngineHeapReferences=0x602000,
                  BeginSaveSlotWrite=0x603000, OnCardBackupUnlockDone=0x603010)
 # Keep the generated descriptor and sinit call sequence for 104; other
 # overlay entries have no role in this isolated title/save test.
@@ -48,15 +50,15 @@ subprocess.run([BIN/'arm-vita-eabi-gcc', *COMMON_CFLAGS, '-I'+str(root/'platform
 (out/'overlay.ld').write_text("""SECTIONS {
  .ov104_data : { kh_ov104_data_start = .; *(.data.kh_dsprot*) kh_ov104_data_end = .; }
 } INSERT BEFORE .data;""")
-addresses.update(Garbage=0x604000, Encryptor_EncryptFunction=0x604004,
-                 Encryptor_DecryptFunction=0x604008, __global_destructor_chain=0x605000,
+addresses.update(Garbage=0x604000, __global_destructor_chain=0x605000,
                  kh_bss_ov104_start=0x606000, kh_bss_ov104_end=0x606020)
 for segment in ('bss','text','rodata'):
     for edge in ('start','end'):
         addresses['kh_ov104_'+segment+'_'+edge] = 0
 loader = [out/'overlays.o', native/'backend_overlay.o']
 for routine in ('LoadOverlayAfterGeometryTransfer', 'UnloadOverlayAfterGeometryTransfer',
-                'FS_LoadOverlay', 'FS_UnloadOverlay', 'FS_UnloadOverlayImage'):
+                'FS_LoadOverlay', 'FS_UnloadOverlay', 'FS_UnloadOverlayImage',
+                'FS_LoadOverlayInfo', 'FS_GetOverlayFileID'):
     obj, = (native/'objects/main').rglob(routine+'.o')
     loader.append(obj)
 elf = out/'test.elf'
@@ -78,13 +80,38 @@ cpu.reg_write(UC_ARM_REG_C1_C0_2, cpu.reg_read(UC_ARM_REG_C1_C0_2) | (15 << 20))
 cpu.reg_write(UC_ARM_REG_FPEXC, 1 << 30)
 cpu.mem_map(0x100000, 0x600000)
 cpu.mem_write(0x100000, (out/'image').read_bytes())
+# The DS cipher entries have no native implementation. Check every retained
+# guest address against the original EU map with no linker substitutions.
+guest_symbols = (root/'build/decomp/eu/config/arm9/overlays/ov104/symbols.txt').read_text()
+cipher_table = addresses['gDSProtEncryptionFunctions']
+for index, name in enumerate(('Encryptor_EncryptFunction', 'Encryptor_DecryptFunction',
+                              'Encryptor_DecryptionWrapperFragment')):
+    row = re.search(rf'^{name} .*?dsprot=(0x[0-9a-f]+)\) addr:(0x[0-9a-f]+)$',
+                    guest_symbols, re.MULTILINE)
+    assert row and name not in addresses
+    size, guest_address = (int(value,16) for value in row.groups())
+    encoded = guest_address + 0x1000
+    entry = struct.unpack('<II', cpu.mem_read(cipher_table+8*index,8))
+    assert entry == (encoded,addresses['DSProt_BSS']+0x1000+size)
+    if name == 'Encryptor_DecryptionWrapperFragment':
+        for context in contexts:
+            assert int.from_bytes(cpu.mem_read(addresses[context.stem]+20,4),'little') == encoded
 with (root.parent/'coded.nds').open('rb') as rom:
-    rom.seek(0x50)
-    table_offset, table_length = struct.unpack('<II',rom.read(8))
+    header = rom.read(0x200)
+    cpu.mem_write(0x608000, header)
+    table_offset, table_length = struct.unpack_from('<II', header, 0x50)
     assert table_length >= 105*32
-    rom.seek(table_offset+104*32)
-    info = rom.read(32)
+    rom.seek(table_offset)
+    overlay_table = rom.read(table_length)
+    info = overlay_table[104*32:105*32]
+    cpu.mem_write(0x610000,overlay_table)
     assert int.from_bytes(info[:4],'little') == 104
+    file_id = struct.unpack_from('<I', info, 24)[0]
+    fat_offset, fat_length = struct.unpack_from('<II', header, 0x48)
+    assert 8*(file_id+1) <= fat_length
+    rom.seek(fat_offset + 8*file_id)
+    file_top, file_end = struct.unpack('<II', rom.read(8))
+    assert file_top < file_end
     rom.seek(0x8000)
     pages = rom.read(0x600)
 assert len(pages) == 0x600
@@ -116,9 +143,28 @@ def service(cpu, pc, size, data):
     elif name == 'callback':
         assert a == param
         result = ~param & 0xffffffff
-    elif name == 'FS_LoadOverlayInfo':
-        assert (b,c) == (0,104)
-        cpu.mem_write(a,info+bytes(12))
+    elif name == 'CARD_GetOwnRomHeader':
+        result = 0x608000
+    elif name == 'FS_InitFile':
+        pass
+    elif name == 'FS_CreateFileFromRom':
+        assert (b,c) == (table_offset + 104*32, table_offset + table_length)
+        result = 1
+    elif name == 'MI_CpuCopy8':
+        assert (a,c) == (0x610000 + 104*32,32)
+        cpu.mem_write(b,bytes(cpu.mem_read(a,c)))
+    elif name == 'FS_ReadFile':
+        assert c == len(info)
+        cpu.mem_write(b, info)
+        result = c
+    elif name == 'FS_OpenFileFast':
+        assert (b,c) == (0x609000,file_id)
+        result = 1
+    elif name == 'FS_GetFileImageTop':
+        result = file_top
+    elif name == 'FS_GetFileLength':
+        result = file_end - file_top
+    elif name == 'FS_CloseFile':
         result = 1
     elif name in ('malloc','calloc'):
         global heap_cursor
@@ -188,6 +234,7 @@ def call_game(name):
     assert cpu.reg_read(UC_ARM_REG_PC) == 0x400000
     return cpu.reg_read(UC_ARM_REG_R0)
 
+cpu.mem_write(addresses['FSiOverlayContext'], struct.pack('<I',0x609000))
 heap_cursor = 0x650000
 assert call_game('kh_overlays_snapshot') == 1
 ctor_names = sorted(p.stem for p in entries if p.stem.startswith('__sinit_'))
@@ -209,9 +256,16 @@ state = addresses['gSaveIoStatePrefix']
 zero_mac = short_read = False
 for identical_pages, backup_present, card_matches, expected in [
         (False,1,1,0), (True,1,1,0), (False,0,1,3), (False,1,0,5)]:
+    # Exercise both EU table sources across reloads of the same overlay.
+    cached_table = not card_matches
+    region = (0x610000,table_length) if cached_table else (0,0)
+    cpu.mem_write(addresses['FSiOverlayContext']+4,struct.pack('<II',*region))
     cpu.mem_write(state, bytes(32))
     assert call_game('InitSaveSystem') == expected
-    assert events[0] == 'WaitForGeometryTransfer' and events.count('FS_LoadOverlayInfo') == 2
+    assert events[0] == 'WaitForGeometryTransfer'
+    assert events.count('FS_ReadFile') == (0 if cached_table else 2)
+    assert events.count('MI_CpuCopy8') == (2 if cached_table else 0)
+    assert events.count('FS_OpenFileFast') == 2
     assert [e for e in events if e.startswith('__sinit_')] == ctor_names
     for name,count in zip(table_names,counts):
         assert cpu.mem_read(addresses['gDSProt'+name+'Functions'],count*8+8) == bytes(count*8+8)
