@@ -87,11 +87,7 @@ uint32_t OS_ResetRequestIrqMask(uint32_t mask)
 /* ---- deferred completions (card reads, ARM7 replies) ----------------------------------------
  * Run like an interrupt handler, in IRQ mode. */
 
-typedef struct Deferred {
-    void (*fn)(void *a, void *b, void *c);
-    void *a, *b, *c;
-    struct Deferred *next;
-} Deferred;
+#include "nitro/deferred_queue.h"
 
 static volatile uint32_t s_irq_cpsr = 0x80; /* IRQ mode's own I/F bits (see OS_DisableInterrupts) */
 static Deferred *volatile s_deferred;      /* interrupt completions: need IME and IE */
@@ -132,6 +128,16 @@ static Deferred *take_deferred(Deferred *volatile *list)
     *list = NULL;
     sceKernelUnlockMutex(s_deferred_lock, 1);
     return taken;
+}
+
+/* Pop only one completion so a callback which polls PXI recursively can
+ * receive the next reply. Keep unrelated DMA completions queued. */
+static Deferred *take_interrupt_completion(void (*filter)(void *, void *, void *))
+{
+    sceKernelLockMutex(s_deferred_lock, 1, NULL);
+    Deferred *item = kh_take_completion(&s_deferred, filter);
+    sceKernelUnlockMutex(s_deferred_lock, 1);
+    return item;
 }
 
 static void run_deferred(Deferred *d)
@@ -199,7 +205,7 @@ static void run_handlers(void)
         } else if (s_task_deferred) {
             run_deferred(take_deferred(&s_task_deferred));
         } else {
-            run_deferred(take_deferred(&s_deferred));
+            run_deferred(take_interrupt_completion(NULL));
         }
         kh_cpu_irqs_delivered++;
         /* OS_IrqHandler_ThreadSwitch: threads waiting in OS_WaitIrq become ready */
@@ -722,4 +728,13 @@ void kh_cpu_log_owner_stack(void)
             n++;
         }
     }
+}
+
+void kh_cpu_drain_replies(void (*deliver)(void *, void *, void *))
+{
+    uint32_t state = OS_DisableInterrupts();
+    Deferred *reply;
+    while ((reply = take_interrupt_completion(deliver)) != NULL)
+        run_deferred(reply);
+    OS_RestoreInterrupts(state);
 }

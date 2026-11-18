@@ -52,6 +52,11 @@ void kh_arm7_reply(int tag, uint32_t data, int err)
     kh_cpu_defer(deliver, (void *)(uintptr_t)tag, (void *)(uintptr_t)data, (void *)(uintptr_t)err);
 }
 
+void PXIi_HandlerRecvFifoNotEmpty(void)
+{
+    kh_cpu_drain_replies(deliver);
+}
+
 void kh_arm7_init(void)
 {
     /* the ARM7 has a handler for every tag */

@@ -2,6 +2,8 @@
 import re
 
 def apply(relative,text):
+    if relative in ('eu/libs/nitro/spi/calls/PM_SetBackLight.c','eu/libs/nitro/spi/calls/PMi_SetLED.c'):
+        text='#include "nitro/pm_sync_view.h"\n'+text
     if relative == 'src/itcm/library_nitro_mi/MIi_DmaSetParameters_01ff85b4.c':
         text='extern void MIi_DmaSetParams(unsigned, unsigned, unsigned, unsigned);\n'+text
         for stores,call in [('regs[0] = src;\n    regs[1] = dest;\n    regs[2] = ctrl;',

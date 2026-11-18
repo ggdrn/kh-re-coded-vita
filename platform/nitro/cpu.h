@@ -32,6 +32,7 @@ void kh_irq_ack(uint32_t bits);
 
 /* Run fn(a, b, c) on the running NitroSDK thread, in IRQ mode, at the next delivery point:
  * the completion of something the DS did asynchronously (a card read, an ARM7 reply). */
+void kh_cpu_drain_replies(void (*deliver)(void *, void *, void *));
 void kh_cpu_defer(void (*fn)(void *, void *, void *), void *a, void *b, void *c);
 
 /* The same for a completion the DS delivered from a thread, not an interrupt (the CARD task
