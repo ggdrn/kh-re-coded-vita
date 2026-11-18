@@ -427,11 +427,11 @@ uint32_t OS_GetLockID(void)
     return 0xfffffffd; /* OS_LOCK_ID_ERROR */
 }
 
-extern void OS_UnlockCartridge_0x02001704(int processor);
+extern int OS_UnlockCartridge_0x020022c8(uint16_t id);
 
 void OS_UnLockCartridge(int processor)
 {
-    OS_UnlockCartridge_0x02001704(processor);
+    OS_UnlockCartridge_0x020022c8((uint16_t)processor);
 }
 
 /* ---- waits -------------------------------------------------------------------------------- */

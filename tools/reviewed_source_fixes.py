@@ -2,6 +2,15 @@
 import re
 
 def apply(relative,text):
+    if relative == 'src/itcm/library_nitro_mi/MIi_DmaSetParameters_01ff85b4.c':
+        text='extern void MIi_DmaSetParams(unsigned, unsigned, unsigned, unsigned);\n'+text
+        for stores,call in [('regs[0] = src;\n    regs[1] = dest;\n    regs[2] = ctrl;',
+                             'MIi_DmaSetParams(dmaNo, src, dest, ctrl);'),
+                            ('regs[0] = 0;\n            regs[1] = 0;\n            regs[2] = 0x81400001;',
+                             'MIi_DmaSetParams(dmaNo, 0, 0, 0x81400001);')]:
+            if stores not in text:raise ValueError('Unexpected DMA register sequence')
+            text=text.replace(stores,call)
+        text=text.replace('    vu32 *regs;\n','').replace('    regs = (vu32 *)(0x040000b0 + dmaNo * 12);\n','')
     if relative == 'eu/libs/nitro/os/auto/OS_ReleaseLockID.c':
         # These CodeWarrior globals are scratch registers local to one leaf routine.
         start=text.index('/* These caller-clobbered')
