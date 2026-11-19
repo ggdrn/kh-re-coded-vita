@@ -1,63 +1,43 @@
-# Kingdom Hearts Re:coded — PS Vita
+# Kingdom Hearts Re:coded for PS Vita
 
-Port nativo em desenvolvimento, iniciado a partir da infraestrutura local do
-`khdays-vita`. **O VPK atual é um diagnóstico; ainda não inicia o jogo.**
-A decompilação ARM9 do Re:coded precisa ser ligada e adaptada ao runtime Vita.
+An experimental native PS Vita port of the European Nintendo DS release. It
+recompiles the ARM9 game code from the Re:coded decompilation for Vita and
+provides a compatibility layer for DS graphics, audio, input, and cartridge
+access. vitaGL drives rendering on the Vita GPU. The port reads game data from
+your own cartridge dump at runtime.
 
-## Estado desta base
+## Run on PS Vita
 
-- Executável Vita, identidade própria `KHRC00001`, verificação da ROM europeia.
-- Menu `L+R+Select`, remapeamento, filtros, resolução e disposição das duas telas.
-- Tela única desabilitada, inclusive via config.ini. Opções específicas de
-  parceiros, Roxas, Mission Mode, HUD e ícones do Days não são oferecidas.
-- Renderizadores e áudio do Days preservados; integração com o Re:coded pendente.
-- No diagnóstico, controles/touch, layout e menu podem ser exercitados. Resolução
-  3D, áudio e velocidade só terão efeito no jogo quando o runtime estiver ligado.
-- Logs fornecidos pelo usuário confirmaram a chegada ao diagnóstico no Vita e a
-  aceitação da ROM. O jogo ainda não foi executado.
+1. On a homebrew-enabled Vita, install the shader compiler
+   (`libshacccg.suprx`) from your console. See the
+   [vitaGL setup instructions](https://github.com/Rinnegatamante/vitaGL#prerequisites).
+2. Install `recoded_v<version>.vpk` with VitaShell.
+3. Copy your European (`BK9P`) ROM dump to `ux0:data/khrecoded/coded.nds`.
+   The expected SHA-1 is `b9d45dcd654265fc7b8ba83f1bb3c15f011d6acf`.
+4. Launch the game from LiveArea. Press **L + R + Select** for port settings.
+   In the field, the left stick moves and the right stick controls the camera.
 
-## Compilar o diagnóstico
+## Build the VPK
 
-VitaSDK e as bibliotecas já usadas no Days: vitaGL, vitaShaRK, mathneon,
-SceShaccCgExt, kubridge/taihen; Python 3 e Ninja.
+Install Python 3, Ninja, and VitaSDK with `VITASDK` set. The build links
+vitaGL, vitaShaRK, SceShaccCgExt, mathneon, kubridge, and taiHEN.
 
-```sh
-python3 configure_vita.py
-ninja
-```
-
-Saída: `build/VPK/khrecoded-vita-0.1.0.vpk`.
-Instale com VitaShell e copie sua ROM para `ux0:data/khrecoded/coded.nds`.
-O aparelho precisa do `libshacccg.suprx` usado pelo port do Days.
-Configurações e logs ficam em `ux0:data/khrecoded/`; não usam os arquivos do Days.
-
-ROM: EU **BK9P**, 268435456 bytes,
-SHA-1 `b9d45dcd654265fc7b8ba83f1bb3c15f011d6acf`.
-Confirmado contra `eu/CONTRIBUTING.md` da decompilação e o dump local.
-
-## Trabalhar na integração
+From this repository, place your `coded.nds` one directory above it and run:
 
 ```sh
-python3 tools/inspect_rom.py ../coded.nds
+git clone https://github.com/kh-recoded-decomp/kh-recoded-decomp.git ../kh-recoded-decomp
 python3 tools/setup_decomp.py
-python3 tools/audit_recoded.py --decomp build/decomp
-python3 tools/audit_recoded.py --decomp build/decomp --probe --jobs 6
+python3 tools/build_vpk.py --full --no-bump
 ```
 
-O setup extrai o commit de `DECOMP_COMMIT` do Git local para uma cópia isolada.
-Não sobrescreve uma cópia existente. A auditoria usa os `delinks.txt` europeus,
-respeitando a propriedade nativa dos fontes e os wrappers regionais.
-O probe compila unidades isoladas: não testa link, ABI entre chamadas ou gameplay.
-`--with-game` falha explicitamente enquanto essa integração não estiver pronta.
+The setup script prepares the decompilation revision pinned in `DECOMP_COMMIT`.
+Find the VPK in `build/VPK/`. See the [native integration notes](docs/NATIVE_INTEGRATION.md)
+and [third-party notices](THIRD_PARTY_NOTICES.md) for more detail.
 
-A integração de ABI, BSS/DTCM e o primeiro link relocável estão documentados em
-[integração nativa](docs/NATIVE_INTEGRATION.md).
+## Credits
 
-Ver [análise e plano](docs/PORTING_ANALYSIS.md) e [validação](docs/VALIDATION.md).
-`reference/days/` preserva documentação, patch e ferramentas específicas do Days
-para consulta; **não aplicar esse patch ao Re:coded**.
-O manifesto em `docs/days-source-manifest.json` registra hashes dos arquivos locais
-usados como origem, incluindo alterações locais, além do commit do Days.
-
-Não há ROM, assets do jogo ou módulos Sony versionados. Fontes e ferramentas
-herdados mantêm suas atribuições; veja `THIRD_PARTY_NOTICES.md`.
+- **galetote** — PS Vita port.
+- [@Rinnegatamante](https://github.com/Rinnegatamante) — vitaGL.
+- [@vitasdk](https://github.com/vitasdk) and contributors — VitaSDK.
+- [@Yokimitsuro](https://github.com/Yokimitsuro) and
+  [@ricky074game](https://github.com/ricky074game) — Re:coded decompilation.
