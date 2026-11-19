@@ -38,6 +38,16 @@ static uint8_t **s_data_snapshot;
 static uint32_t *s_loaded_seq;
 static uint32_t s_seq;
 
+/* The menu parent is initialized directly in resume mode. Its submenus call
+ * into it even when Nitro never loaded an ov039 image. Keep this lifetime
+ * separate from DS image residency. */
+static int s_menu_active;
+
+void kh_overlay_set_menu_active(int active)
+{
+    s_menu_active = active;
+}
+
 static void mark_loaded(const KhOverlay *ov)
 {
     const uint32_t lo = ov->ds_ram, hi = ov->ds_ram + ov->ds_size + ov->ds_bss;
@@ -69,6 +79,8 @@ void *kh_ovdisp_resolve(const uint32_t *tab)
         void *fn = (void *)(uintptr_t)tab[3 + i * 2];
         if (!fn)
             continue;
+        if (id == 39 && s_menu_active)
+            return fn;
         if (!first)
             first = fn;
         if (s_loaded_seq && id < (uint32_t)kh_overlay_count && s_loaded_seq[id] > best_seq) {
@@ -159,6 +171,35 @@ int FS_LoadOverlayImage(FSOverlayInfo *ovi)
     reset_state(ov);
     mark_loaded(ov);
     LOG("overlay: load ov%03u", (unsigned)ovi->id);
+    return 1;
+}
+
+/* The asynchronous load (InitFieldPanelScene's HUD overlay): the SDK opens the overlay's file
+ * and starts reading its image to the DS load address in FSOverlayInfo, for the caller to wait
+ * on the file, close it and start the overlay. Here the image is linked in: the file is opened
+ * the same way, so FS_WaitAsync, FS_CloseFile and the rest see an idle, successful file, and
+ * the overlay's state is reset as FS_LoadOverlayImage does. Nothing goes to the DS address
+ * (0.0.7 stopped at the first field: a 0xbfa00-byte read to 0x020b5820). */
+typedef struct {
+    uint32_t arc;
+    uint32_t file_id;
+} FSFileIDView;
+extern void FS_InitFile(void *file);
+extern void FS_GetOverlayFileID(FSFileIDView *id, FSOverlayInfo *ovi);
+extern int FS_OpenFileFast(void *file, FSFileIDView id);
+extern int FS_CloseFile(void *file);
+
+int FS_LoadOverlayImageAsync(FSOverlayInfo *ovi, void *file)
+{
+    FSFileIDView id;
+    FS_InitFile(file);
+    FS_GetOverlayFileID(&id, ovi);
+    if (!FS_OpenFileFast(file, id))
+        return 0;
+    if (!FS_LoadOverlayImage(ovi)) {
+        FS_CloseFile(file);
+        return 0;
+    }
     return 1;
 }
 

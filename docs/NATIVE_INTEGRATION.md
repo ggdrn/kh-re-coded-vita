@@ -289,3 +289,345 @@ original pendente (os 23 restantes são runtime C/C++ resolvidos no link final).
 `check_elf.py` aprovado. `python3 configure_vita.py --with-game && ninja -f
 build/native-vpk.ninja` gera `build/VPK/khrecoded-vita-0.1.0-native.vpk`.
 O boot no aparelho ainda não foi testado.
+
+
+### Continuação: primeiro boot no aparelho e endereços DS crus
+
+Primeiro teste no Vita: tela branca. O log mostrou data abort logo após
+`NitroMain`, em `far=02fffc40`: `NitroMain → InitEngine → OS_Init →
+OS_InitArenaEx → OS_GetConsoleType → OSi_DetectDeviceType → OS_GetBootType`,
+que lê o ponteiro devolvido por `OS_GetBootInfo`. Esse corpo `leaf_research` guarda
+o endereço numa variável (`u32 value0 = 0x2fffc40U`), padrão que o classificador
+herdado do Days não reconhece como endereço.
+
+`prepare_native_abi.py` passa a usar `RECODED_HW_SITES`: a lista revisada dos
+literais da `hardware-review.txt` que são endereços fora de cast. Inclui
+corpos leaf (boot info, cabeçalhos de ROM, DISPCNT/BGxCNT/BLDCNT), os helpers
+`GXx_SetMasterBrightness_`, `GXx_GetMasterBrightness_` e
+`G2x_SetBlendBrightness[Ext]_` (chamados pelos aliases `func_`), destinos de DMA
+(GX_Init, G3X_InitTable, FIFO GX), bases de VRAM/paleta/OAM dos loaders e a pilha
+do launcher em DTCM (`OS_InitThread`, `0x027e0280`). O restante da lista são
+máscaras, flags, palavras de controle de DMA, tabelas de ponto fixo ou código não
+compilado. Verificado no ELF: `OS_GetBootInfo` relocado para
+`kh_ds_shared_area+0xc40`.
+
+`compile_native.py` agora classifica as falhas conhecidas em vez de contá-las:
+`cw-asm` (48 corpos CodeWarrior `asm`, substituídos por backend ou sem
+referência), `sdk-unit` (9 compiladas por `link_native_sdk.py` com views locais)
+e `replaced` (tick do timer 0, releitura de ROM do reset e as duas rotinas RC4 do
+DSProt). Resultado: 0 falhas. O link SDK continua sem nenhum nome original pendente.
+
+
+### Continuação: protection unit do ARM946E
+
+Segundo teste no aparelho: undefined instruction em
+`OS_Init → CTRDG_Enable → OS_EnableICacheForProtectionRegion` (`mrc p15`).
+O Days só tinha alguns `OS_SetProtectionRegion*` como no-op; no Re:coded a família
+inteira compilava do decomp com `__builtin_arm_mrc/mcr`. `asm_replacements.c` agora
+mantém um shadow do CP15 (regiões 0–7, cache I/D, write buffer e permissões D),
+iniciado com os valores de `INITi_InitCp15`: os setters guardam, os getters
+devolvem, nada é aplicado. Uma varredura do ELF confirma que não sobra MRC/MCR
+p15 nem outra instrução privilegiada no código do jogo.
+
+Os `udf #0` restantes (82 funções) são traps que o GCC insere após uma leitura de
+NULL comprovada em caminhos de erro (ex.: material inexistente em
+`NNS_G3dMdlGetMdlAlpha`). A leitura de NULL já falha no Vita antes do trap; no DS ela
+leria o ITCM. Ficam como estão até um caso real aparecer no log.
+
+
+### Continuação: boot emulado no host e argumentos perdidos
+
+`tools/boot_emu/run.py` roda o ELF final do Vita no Unicorn (Cortex-A9): carrega os
+segmentos, responde às 267 importações SCE (blocos de memória, mspaces e
+`sceClib*` do newlib, I/O do log, TLS, IDs; o resto retorna 0), serve `rom_read` e
+`rom_header` do dump, executa `_start` até `main`, o `boot_state` sem vídeo/áudio e
+então `NitroMain`. Para no primeiro acesso inválido ou instrução indefinida, com
+pilha simbolizada e o log do port. `--trace f,g` mostra argumentos e retornos;
+`--vblank N` gera uma VBlank virtual a cada N esperas. Threads Vita criadas pelo
+jogo não são executadas.
+
+Achados e correções:
+
+- `OS_GetBootType` lia 0: ninguém preenchia o `bootType` de `HW_WM_BOOT_BUF`, que o
+  firmware do DS grava. `FSi_InitRomArchive` só monta o arquivo `rom` com
+  `OS_BOOTTYPE_ROM`; com 0 nenhum caminho resolvia e `SoundMgr_Init` escrevia em
+  `NULL+0x9c` (próximo crash do aparelho). `boot_state` agora grava 1.
+- Com o arquivo montado, `CARD_Init → CARDi_InitRom` lê pela CPU
+  (`CARDi_ReadRomWithCPU`, polling de MCCNT1). Agora é backend em `card.c`, lendo do
+  dump como `CARDi_ReadRom`.
+- `NNS_SndArcInit`: o decomp chamava `FS_ConvertPathToFileID(&fileId)` sem o
+  caminho, que o mwcc deixava em r1 (confirmado no código EU). Corrigido em
+  `reviewed_source_fixes.py`.
+
+`tools/check_call_arity.py` procura essa classe de erro em todo o código compilado:
+protótipos com menos parâmetros do que a definição usa, filtrados pelo código de
+máquina EU (registradores r0–r3 lidos antes de escritos, ignorando `push` de
+alinhamento e contando o ponteiro oculto de retorno de struct). `tools/ds_disasm.py`
+extrai ARM9/overlays da ROM do usuário (BLZ) e desmonta por símbolo EU. Restam 79
+chamadas em 72 arquivos para revisão (`build/native/arity.json`), cada uma com a
+origem do valor no chamador original (argumento do chamador, campo lido antes ou
+retorno da chamada anterior).
+
+
+### Continuação: argumentos perdidos corrigidos
+
+`tools/check_call_arity.py` agora calcula os argumentos reais por liveness sobre o
+grafo de fluxo do código EU (blocos básicos; `bl` destrói r0–r3; escrita condicional
+não mata; `push` de alinhamento não é uso), inclui o ITCM (autoloads extraídos por
+`tools/ds_disasm.py`, cujos parâmetros de módulo estavam deslocados em 4 bytes),
+resolve o nome EU pelos wrappers que incluem o arquivo do chamador e ignora
+`return f(...)`. A lista caiu de 79 para 59 chamadas reais; todas estão corrigidas em
+`tools/arity_fixes.py` (aplicado por `reviewed_source_fixes.py`, falha se o texto
+esperado mudar), cada uma com a origem do valor no EU. Resultado: 0 protótipos
+curtos. Ferramentas de apoio: `tools/arity_context.py` (chamada C, entrada do callee e
+código do chamador antes do `bl`) e `tools/ds_callers.py` (todos os pontos de chamada
+EU de uma rotina e o que cada um põe em r0–r3).
+
+Os que mudam comportamento visível:
+
+- `CARDi_CheckPulledOutCore()` sem o ID de `CARDi_ReadRomIDCore`: a checagem de
+  cartão removido comparava lixo com o ID real (tela de erro de cartão no DS).
+- `ComputeOneMinusSquareFraction` era `void`, mas o original devolve o `FX_Sqrt`
+  final; `ApplyCurrentFieldMode(entry)` devolve o resultado de `AddStageCaptionLine`
+  (o `menuDepth` do comando de estágio).
+- Repasses: `StopSeqArcOrDefault(arc, índice, fade)`,
+  `RenderMovieFrameIfPresent(decoder, a, b, c)` e
+  `MenuScreen_RefreshMarker(screen, dialog, w, h)`.
+- `IsSoundParamStale` recebe o modo (≠ 8) ou o `flag` testado (0), conforme o caminho.
+
+Overlays que dividem endereço: a relocação EU lista os dois
+(`module:overlays(a,b)`) e o wrapper escolheu o errado em sete chamadas, já
+corrigidas: os quatro menus ov075–ov078 chamam `SetupMainBgLayers` do ov039 (não o
+`InitBattleGaugeContext` do ov045, que alocaria 0x1a4c bytes a cada fechamento), e a
+tela de itens ov077 abre o `OpenStatusRecordList` do ov073 (não a comparação do ov041).
+No EU há 198 chamadas com relocação ambígua: 178 têm um único candidato que o overlay
+chamador referencia sem ambiguidade em outro ponto; 20 seguem ambíguas. A auditoria
+dos wrappers contra essa escolha ainda não foi feita.
+
+
+### Continuação: divisor e raiz quadrada de hardware (CP)
+
+O cálculo em `platform/hw/memmap.c` confere com o GBATEK. Ele cobre os modos 32/32,
+64/32 (e o 3, igual ao 1) e 64/64. Na divisão por zero, o quociente é ±1, com a palavra
+alta invertida no modo 32, e o resto é o numerador. O overflow `MIN/-1` também está
+tratado, o bit 14 testa o denominador inteiro de 64 bits, e a raiz é calculada em 32 ou
+64 bits. Os resultados são calculados quando lidos via `KH_HW`. Nenhuma unidade
+compilada acessa esses registradores por símbolo de linker. As rotinas FX do ITCM leem
+o resultado sempre via `KH_HW`, inclusive as que guardam um ponteiro-base para `DIVCNT`.
+
+Mudanças:
+
+- `DIVCNT` e `SQRTCNT` também sincronizam ao serem lidos (`kh_hw_map.h`). No DS, o
+  flag de divisão por zero muda assim que o denominador é escrito. Antes, ele só era
+  atualizado quando alguém lia o resultado.
+- `CP_SaveContext` e `CPi_RestoreContext` saíram de `asm_replacements.c` e foram para
+  `platform/nitro/cp.c`. O restore recalcula as duas unidades na hora, como o DS faz
+  ao reiniciá-las com os parâmetros restaurados. O `TODO(cp)` antigo foi resolvido.
+
+`tools/cp_register_test/run.sh` usa uma referência escrita a partir do GBATEK,
+independente do código do port. São 400 mil divisões aleatórias com valores-limite em
+todos os modos, 200 mil raízes, os casos do GBATEK escritos um a um e o flag lido logo
+após a escrita. O teste também roda as rotinas FX reais do decomp (`FX_Div`, `FX_Inv`,
+`FX_DivFx64c`, `FX_InvFx64c`, `FX_Sqrt`, `FX_DivAsync`/`FX_InvAsync` com
+`FX_GetDivResult[Fx64c]`) e uma troca de contexto no meio de uma divisão. Resultado:
+2.650.142 verificações, 0 falhas.
+
+
+### Continuação: primeira VBlank e handles empacotados
+
+Terceiro teste no aparelho: o jogo desenhou quadros (motor 2D ativo, DISPCNT ligado) e
+falhou na primeira VBlank: prefetch abort em `pc=0x01ff8000` na thread de IRQ.
+`InitVBlankInterrupt` registrava `OS_SetIrqFunction(1, (void *)0x1ff8000)`, o endereço
+do `OSi_VBlankInterruptHandler` no ITCM. Agora passa o símbolo
+(`tools/pointer_fixes.py`). Uma varredura das unidades compiladas por literais na faixa
+do ITCM achou mais três: `CARDi_IsRomDmaAvailable`, que só testa faixa e é inofensivo,
+e os dois decodificadores de handle abaixo.
+
+Handles de arquivo: o jogo empacota ponteiros como
+`0x80000000 | ((ptr + 0x8000) & 0xfffffc) << 7 | índice` em 328 pontos e os
+desempacota somando `0x01ff8000`. Os carregadores (`FileLoader_LoadAlloc`,
+`RequestFileLoad`, `LoadFileIntoBuffer`, `OpenAndClassifyFile`) distinguem handle de
+caminho pelo bit 31, que todo ponteiro do Vita tem. O runtime herdado do Days já
+posiciona a arena principal numa janela de 16 MiB (`os.c`) e oferece
+`kh_ds_unpack_ptr` e `kh_is_packed_handle`; no Days a ligação vinha de um patch no
+decomp. No Re:coded, `pointer_fixes.py` liga os dois decodificadores e os quatro testes.
+
+Build: `tools/build_vpk.py` sobe o patch de `VERSION` e gera
+`build/VPK/recoded_v<versão>.vpk`. O título e o STITLE do `param.sfo` incluem a versão,
+e o TITLE_ID fica fixo, então a bolha é sempre a mesma.
+
+
+### Continuação: tela de título (v0.0.1 → v0.0.2)
+
+A v0.0.1 chegou à tela de título: carregou o ov000, o ov104 e o ov027, criou o save e
+registrou os marcos `title update completed`, `title frame presented` e `title VBlank
+advancing`. Depois falhou com data abort em `far=0x06833c00` (VRAM LCDC, banco B),
+pela cadeia `Tex_LoadVram → Gfd_LoadTex → GX_LoadTex → MIi_DmaSetParameters`.
+`GX_BeginLoadTex` e `GX_BeginLoadTexPltt` calculam em tempo de execução o endereço LCDC
+dos bancos (`tabela << 12`), e o DMA recebia esse número. Agora passam por `KH_HW` no
+cálculo, como nos `HW_EDITS` do Days. `KH_HW(0)` continua 0, então o teste de "sem
+segundo bloco" do `GX_LoadTex` segue igual. Os carregadores de paleta estendida já
+usavam endereços com `KH_HW`.
+
+
+### Continuação: New Game e referências entre overlays (v0.0.3 → v0.0.4)
+
+A v0.0.3 já mostrava a tela de título com áudio e texturas. No New Game, carregou o
+ov003 e falhou em `Obj_Construct`, lendo `0xeb000573` (uma instrução ARM) como
+ponteiro. `UpdateTitleOverlayLoad` criava a tarefa da cena com
+`UpdateMenuTouchSelect`, uma função do ov002. O alvo certo é `gMovieSceneTaskClass`,
+dados do ov003 no mesmo endereço; a relocação EU é `module:overlays(2,3)`.
+
+`tools/check_overlay_targets.py` audita as referências com relocação ambígua.
+Escolhe o candidato pelos overlays que o módulo chamador alcança sem ambiguidade em
+outros pontos, e só depois pelo tipo (chamada exige função). Depois compara com o
+nome que o C usa, via wrapper EU e `#define`. Resultado:
+
+- 46 referências no código nomeavam o overlay errado, corrigidas em
+  `tools/overlay_target_fixes.py` (tabela revisada). Nos menus ov073–ov085, havia 18
+  chamadas a `SetupStageParams` (ov034) no lugar de `SetupScrollList` (ov039), além
+  de `SetScreenBrightness`, `UpdateScrollListInput`, `LoadSlotBgCharacters` e
+  `InitScrollListWidgets`. No campo, `GetCameraFollowFlags`, `GetCameraFlag800` e
+  outros do ov042/ov043. Em quase todos, o candidato do decomp tem 0 referências
+  inequívocas a partir do módulo chamador, e o escolhido tem de 2 a 50.
+  `InstallSessionOv029Handlers` ficou como está (o nome indica ov029).
+- `LoadPanelOverlay14/15` chamavam o init do ov013. Agora chamam o do próprio overlay.
+- Registros de menu do ov039 (`gSecondaryMenuRegistryTail`, `gPrimaryMenuRegistryTail`):
+  são pares `{id do overlay, descritor}`, e o decomp nomeou todos os descritores com
+  nomes de outros overlays. Foram reconstruídos pelo id de cada par
+  (`pointer_fixes.MENU_REGISTRIES`): 12 + 19 descritores.
+- Ficam como estão os casos "assumed" (o nome ou o contexto confirma a escolha do C).
+
+
+### Continuação: após as CGs (v0.0.7 → v0.0.8)
+
+A v0.0.7 passou pelas duas primeiras CGs (ov003 e ov022/MobiClip) e falhou ao montar
+o primeiro campo. O caminho foi `InitFieldManager → CreateFieldHudWidgets →
+InitFieldPanelScene → FS_LoadOverlayImageAsync`, que terminou numa leitura de
+0xbfa00 bytes para `0x020b5820`, o endereço de RAM DS do overlay. O backend cobria
+`FS_LoadOverlayImage` e `FS_StartOverlay`, mas não a versão assíncrona do SDK
+(`InitOverlayFromPair`). `overlay.c` agora a implementa: abre o arquivo do overlay
+como o SDK, para que `FS_WaitAsync`/`FS_CloseFile`/`FS_StartOverlay` do chamador
+funcionem, e restaura o estado do overlay linkado sem gravar no endereço DS.
+
+Auditoria da API gráfica, nas unidades compiladas de GX/G2D/G3D/GFD e do jogo:
+
+- Endereços DS literais: todos passam por `KH_HW`. Revisado antes.
+- Endereços calculados em tempo de execução: os únicos eram os bancos LCDC de
+  `GX_BeginLoadTex[Pltt]`, já corrigidos. Os demais cálculos com deslocamento são
+  valores (frações, máscaras, campos de registrador) ou offsets somados a bases já
+  convertidas, como `G2_GetBGxCharPtr`/`ScrPtr` e `G2S_GetBG0ScrPtr() + …`.
+- Referências entre overlays: auditadas na v0.0.4.
+- Caminhos do SDK que escrevem no endereço DS de um overlay
+  (`FS_LoadOverlayImage[Async]`, `FS_StartOverlay`): todos no backend.
+
+
+### Continuação: chamadas sem argumento (v0.0.8 → v0.0.10)
+
+- v0.0.8: o heap corrompeu em `FreeFieldObjectClassAnimationBuffers`, que chamava
+  `NNSi_FndFreeFromDefaultHeap()` sem o buffer. `tools/check_call_sites.py` passou a
+  verificar cada chamada nas unidades compiladas: arquivos só-EU, protótipos `()` e
+  nomes já resolvidos por `#define`. Um caso só entra quando o chamador EU prepara o
+  registrador antes do `bl`. As correções estão em `tools/zero_arg_fixes.py`, em três
+  formas: o valor testado no `if`, o primeiro operando dos
+  `ResolveTaggedValueRef(ctx, ops)` e alguns casos isolados.
+- v0.0.9: a v0.0.9 travou em `UnloadSubsceneOverlayAndDestroyTask →
+  DestroyRegisteredObject`, que saltou para dados do heap. `DestroyTaskObjectWrapper`
+  é um trampolim (`ldr ip, =f; bx ip`), e a liveness o tratava como sem argumentos.
+  Agora `check_call_arity.original_live_args` herda os argumentos do destino de cada
+  veneer e de cada tail call, o que expôs essa função e outras. As 3 chamadas foram
+  corrigidas, e o padrão do valor testado passou a aceitar também `!= -1`.
+- Pendentes de revisão: cerca de 20 chamadas sem argumento com evidência ambígua (por
+  exemplo `GetActiveMenuScene` em callbacks, `GetPrimaryMenuSubOverlayIndex` e
+  `UpdateMenuTouch`), 22 protótipos curtos marcados depois da mudança na liveness (a
+  maioria parece colisão de endereço entre overlays na análise) e as chamadas com
+  argumentos parciais (pares de 64 bits geram ruído).
+
+
+### Continuação: despachantes de overlay (v0.0.10 → v0.0.11)
+
+A v0.0.10 jogou mais de 150 s: campo, troca de área e menu. Ao sair do menu, travou em
+`ShutdownHandlersAndExit` (ov039) → `HasOv029ObjectField28` → `Obj_GetWord28(NULL)`.
+A chamada do ov039 vai para `0x020baa60`, que é a função do ov029 (sessão) ou do ov033
+(retomada), conforme o overlay carregado. No DS isso se resolve sozinho; uma escolha
+estática erra em um dos contextos. Pelo mesmo motivo, `UpdateOverlayFrame` alterna
+entre ov075, ov076 e ov080.
+
+O runtime herdado do Days já tinha a solução: `tools/ovdisp.py` gera um despachante
+por endereço compartilhado, e `kh_ovdisp_resolve` (`overlay.c`) desvia para a função
+do candidato carregado por último. No Days isso vinha de um passo do reescritor do
+decomp. No Re:coded esse passo não estava ligado. `prepare_native_abi.py` agora:
+
+- gera `build/native/gen/ovdisp.S` (61 endereços, 111 candidatos), compilado e linkado
+  por `link_native.py`;
+- faz cada arquivo fora do overlay dono de um candidato referenciá-lo pelo
+  despachante (`#define nome kh_ovd_nome`, 180 arquivos). A exceção são os nomes que o
+  próprio arquivo define, seja como função ou com `#define`.
+
+Isso cobre todas as chamadas e todos os ponteiros de função para endereços
+compartilhados, inclusive os casos "assumed" e "undecided" da auditoria. As escolhas
+estáticas de `overlay_target_fixes.py` continuam válidas para os casos de dados
+(`gMovieSceneTaskClass` e os registros de menu).
+
+Link final: `tools/link_vita_elf.py` mede a folga entre o fim do código e o início dos
+dados. Quando ela fica abaixo de 8 KiB, refaz o link com um enchimento no código, para
+que o `vita-elf-create` tenha onde gravar os dados SCE. Na v0.0.11 sobravam 0x620 bytes.
+
+Em aberto:
+- o 3D aparece com polígonos esticados ao infinito, enquanto o HUD 2D está correto;
+- a arma não aparece;
+- as falas pulam sozinhas. Nesses trechos, os canais 11/12 (PCM16 a 16 kHz, 2 KiB em
+  anel) são reiniciados a cada 0,25–1 s, então a verificação de fim de stream de que o
+  texto depende deve estar retornando "terminou" cedo demais.
+
+
+### Continuação: containers de bitfield (v0.0.11 → v0.0.12)
+
+Log da v0.0.11, ao apertar Start numa cena: `TryEnterFieldPause →
+SuspendFieldForPause → SetTweenPaused` falhou por alinhamento (`fsr=0x801`), com um
+`strd` do tick de 64 bits em `0x8245255e`. O ponteiro do `FieldManager` estava certo; o
+layout não. No mwcc, um grupo de bitfields ocupa o tipo declarado inteiro: depois de
+`u32 a:1 … :1` (10 bits em 0x480), o `u8 pad_484[]` começa em 0x484. O GCC (AAPCS)
+coloca o membro `u8`/`u16` seguinte no primeiro byte livre (0x482), e todos os campos
+depois dele ficam 2 bytes antes: o tween ia para 0x552 em vez de 0x554.
+
+`portable_rewrites.bitfield_containers` (aplicado por `prepare_native_abi.py` em todo o
+código) insere `TIPO : 0;` depois de cada grupo de bitfields seguido de um membro
+comum, fechando o container como faz o mwcc. São 799 structs em 612 arquivos. Quando o
+membro seguinte já está alinhado, o layout não muda. Verificado no ELF:
+`SuspendFieldForPause` passa `manager + 0x550 + 4`.
+
+Outros sintomas da v0.0.11 que podem vir do mesmo layout:
+- crash ao pegar a arma: `ActorSlot_AddPriorityByIndex` encontrou o slot do ator nulo
+  (`ScriptCmd_ReleaseOrDisableStageEvent`), embora o C confira com o original;
+- 3D destruído e falas pulando.
+Ainda não confirmados no aparelho.
+
+
+### Continuação: ABI de float, slot nulo e rastro do script (v0.0.12 → v0.0.13)
+
+Log da v0.0.12: falas ainda pulando; crash ao começar a primeira batalha, de novo em
+`ScriptCmd_ReleaseOrDisableStageEvent → ActorSlot_AddPriorityByIndex(14, -1)`; e um
+`call to 00000002` a partir de `NewtonSolveFloat`.
+
+- **ABI de float.** O mwcc passava floats em r0–r3 como inteiros; o Vita é hard-float
+  (floats em s0–s15). `NthRootFloat` declarava `NewtonSolveFloat(float, int n, …)`
+  contra a definição `(float, float target, …)`: `n` caía em r0, onde a definição lê o
+  ponteiro de função. Além disso os dois callbacks (`PowThenAddFloat`,
+  `PowDerivativeTimesN`) são soft-float (u32 em r0–r2). `tools/float_abi_fixes.py`
+  compara classes float/inteiro de cada declaração com a definição (só nas posições
+  que o chamador passa: `Fabs_02022ac4(double x, double y)` lê o mesmo registrador) e
+  reescreve `NthRootFloat` com `powf` nativo (raiz real; n ímpar mantém o sinal).
+- **Slot nulo.** `ReleaseOrDisableStageEvent` libera o ator e o comando, logo em
+  seguida, soma prioridade no mesmo slot, já `NULL`. No DS o `strb` vai para
+  `0x0000000b` (espelho do ITCM) sem falhar; aqui a escrita é ignorada e registrada
+  uma vez (`ds: ActorSlot_AddPriorityByIndex(14): NULL object …`).
+- **Rastro do VM de script** (`platform/core/script_trace.c`). `ScriptVm_RunFrame`
+  passa cada handler por `kh_script_run`/`kh_script_resume`: as primeiras 6000
+  execuções vão para o log (`script: cmd GG:II len … handler … -> resultado`) e as
+  últimas 128 são despejadas em cada FAULT. `tools/symbolize.py` (ELF padrão agora
+  `build/native/khrecoded.elf`) dá nome aos handlers. Serve para achar qual espera
+  (resultado 0) termina cedo demais nas falas.
+- `tools/check_void_returns.py`: rotinas que o decomp define `void` mas cujo original
+  deixa um valor em r0 no retorno. 50 casos, nenhum handler de script; a maioria são
+  cálculos de bitfield/switch sem uso do resultado.

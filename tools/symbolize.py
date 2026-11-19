@@ -33,7 +33,7 @@ def text_range(elf):
     lo, hi = None, None
     for line in out.splitlines():
         p = line.split()
-        if len(p) >= 4 and (p[1] == ".text" or p[1].startswith(".kh_ov_text")):
+        if len(p) >= 4 and (p[1] == ".text" or re.fullmatch(r"\.kh_ov(?:\d{3})?_text", p[1])):
             start, size = int(p[3], 16), int(p[2], 16)
             lo = start if lo is None else min(lo, start)
             hi = start + size if hi is None else max(hi, start + size)
@@ -56,7 +56,7 @@ def addr2line(elf, addrs):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("log")
-    ap.add_argument("--elf", default=str(ROOT / "build" / "khrecoded.elf"))
+    ap.add_argument("--elf", default=str(ROOT / "build" / "native" / "khrecoded.elf"))
     args = ap.parse_args()
     elf = Path(args.elf)
     elf_main = elf_symbol(elf, "main")
@@ -97,7 +97,7 @@ def main():
     m = re.search(r"\(main=([0-9a-f]{8})\)", text)
     if m:
         bias = int(m.group(1), 16) - elf_main
-        pat = re.compile(r"(?:entry| at) ([0-9a-f]{8})")
+        pat = re.compile(r"(?:entry| at|handler) ([0-9a-f]{8})")
         # a return address ("at") points after the call: look up the call itself
         keyed = [(l, int(pat.search(l).group(1), 16) - bias - (2 if " at " in l else 0))
                  for l in text.splitlines() if pat.search(l)]

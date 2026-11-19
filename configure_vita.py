@@ -66,7 +66,12 @@ def main():
         sys.exit(subprocess.call([sys.executable, str(ROOT / "tools/link_native.py")]))
     version = (ROOT / "VERSION").read_text().strip()
     major, minor, patch = map(int, version.split("."))
-    app_ver = f"{major:02d}.{minor * 10 + min(patch, 9):02d}"
+    # APP_VER is XX.YY on the Vita: the minor and patch numbers share YY (capped at 99)
+    app_ver = f"{major:02d}.{min(minor * 100 + patch, 99):02d}"
+    # the LiveArea bubble shows the version, so the console says which build is installed;
+    # the TITLE_ID stays the same: every build replaces the one bubble
+    title = f"{TITLE} v{version}"
+    short_title = f"Re:coded v{version}"
     q = lambda xs: " ".join(shlex.quote(str(x)) for x in xs)
     esc = lambda p: str(p).replace("$", "$$").replace(" ", "$ ")
     sources = sorted([*(ROOT / "platform/core").glob("*.c"), *(ROOT / "platform/audio").glob("*.c")])
@@ -79,11 +84,11 @@ def main():
         lines.extend([f"rule {name}", "  command = " + command, f"  description = {name.upper()} $out"])
     rule("cc", "$cc $cflags -MMD -MF $out.d -c $in -o $out")
     lines.extend(["  depfile = $out.d", "  deps = gcc"])
-    rule("link", "$cc -Wl,-q -Wl,--gc-sections -Wl,--no-enum-size-warning $in $libs -o $out && python3 tools/check_elf.py $out || (rm -f $out; false)")
+    rule("link", "python3 tools/link_vita_elf.py $cc $out -Wl,-q -Wl,--gc-sections -Wl,--no-enum-size-warning $in $libs && python3 tools/check_elf.py $out || (rm -f $out; false)")
     rule("velf", q([BIN / "vita-elf-create"]) + " $in $out")
     rule("fself", q([BIN / "vita-make-fself"]) + " -c $in $out")
     rule("sfo", q([BIN / "vita-mksfoex", "-s", "TITLE_ID=" + TITLE_ID, "-s", "APP_VER=" + app_ver,
-                    "-d", "ATTRIBUTE2=12", TITLE]) + " $out")
+                    "-s", "STITLE=" + short_title, "-d", "ATTRIBUTE2=12", title]) + " $out")
     rule("livearea", "python3 tools/make_livearea.py sce_sys")
     art = ["sce_sys/icon0.png", "sce_sys/livearea/contents/bg.png", "sce_sys/livearea/contents/startup.png"]
     template = "sce_sys/livearea/contents/template.xml"
@@ -113,7 +118,7 @@ def main():
         "build " + " ".join(art) + ": livearea | tools/make_livearea.py",
     ])
     suffix = "-native" if args.with_game else ""
-    vpk = f"build/VPK/khrecoded-vita-{version}{suffix}.vpk"
+    vpk = f"build/VPK/recoded_v{version}.vpk" if args.with_game else f"build/VPK/khrecoded-vita-{version}{suffix}.vpk"
     lines.extend([f"build {vpk}: vpk {eboot} | build/param.sfo " + " ".join(art + [template]),
                   f"default {vpk}"])
     (ROOT / ("build/native-vpk.ninja" if args.with_game else "build.ninja")).write_text("\n".join(lines) + "\n")

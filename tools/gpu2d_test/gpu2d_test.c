@@ -234,6 +234,43 @@ static void scene_extpal(void)
     save("extpal", 0);
 }
 
+/* the main memory display FIFO (display mode 3): the frame a timing-4 DMA feeds from main RAM
+ * must match the same image shown from a VRAM bank (mode 2); empty, the screen is black */
+volatile uintptr_t kh_display_fifo_src;
+static uint16_t s_mmem_image[256 * 192];
+
+static int scene_mmem_fifo(void)
+{
+    static uint32_t from_bank[256 * 192], from_fifo[256 * 192];
+    int failures = 0;
+    reset();
+    for (int y = 0; y < 192; y++)
+        for (int x = 0; x < 256; x++)
+            s_mmem_image[y * 256 + x] = (uint16_t)(RGB(x / 8, y / 6, (x ^ y) & 31) | (y & 1) << 15);
+    memcpy(kh_vram_bank_home(0), s_mmem_image, sizeof(s_mmem_image));
+    w32(0x04000000, 0x00020000);                /* mode 2, bank A */
+    kh_gpu2d_render_lines(0, from_bank, 0, 192);
+    kh_display_fifo_src = (uintptr_t)s_mmem_image;
+    w32(0x04000000, 0x00030000);                /* mode 3 */
+    kh_gpu2d_render_lines(0, from_fifo, 0, 192);
+    save("mmem_fifo", 0);
+    if (memcmp(from_bank, from_fifo, sizeof(from_bank)) != 0) {
+        printf("FAIL mmem_fifo: the FIFO frame differs from the same image in bank A\n");
+        failures++;
+    }
+    kh_display_fifo_src = 0;
+    kh_gpu2d_render_lines(0, from_fifo, 0, 192);
+    for (int i = 0; i < 256 * 192; i++)
+        if (from_fifo[i] & 0xffffff) {
+            printf("FAIL mmem_fifo: empty FIFO is not black at pixel %d (%08x)\n", i, from_fifo[i]);
+            failures++;
+            break;
+        }
+    if (!failures)
+        printf("ok mmem_fifo: matches mode 2 pixel for pixel, black when empty\n");
+    return failures;
+}
+
 int main(void)
 {
     scene_text();
@@ -242,5 +279,5 @@ int main(void)
     scene_bitmap();
     scene_brightness();
     scene_extpal();
-    return 0;
+    return scene_mmem_fifo();
 }

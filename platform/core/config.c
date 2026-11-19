@@ -15,8 +15,8 @@ static const KhConfig s_defaults = {
     .render_scale = 3, .layout = 0, .inset_width = 224, .aspect = KH_ASPECT_4_3,
     .frame_interpolation = 0, .dynamic_res = 1, .partner_swap = 0, .swap_roxas_items = 0, .swap_roxas_magic = 0, .texture_filter = 1, .filter_2d = 2, .hud = 0, .screen_effect = 0,
     .inset_corner = 0, .inset_opacity = 100, .rear_touch = 0, .stick_deadzone = 2, .r_toggle = 0,
-    .fast_forward = 2, .camera_stick = 0, .camera_speed = 2,
-    .camera_invert_x = 0, .camera_invert_y = 0, .camera_follow = 0, .dpad_deck = 0, .show_fps = 0, .volume = 100,
+    .fast_forward = 2, .camera_stick = 1, .camera_speed = 2,
+    .camera_invert_x = 0, .camera_invert_y = 0, .camera_follow = 0, .dpad_deck = 1, .show_fps = 0, .volume = 100,
     .button_icons = 0, .confirm_cross = 1, .single_screen = 0, .panel_opacity = 90, .language = 1, .hud_size = 100,
     /* the mission screen's bottom-screen parts (sx sy sw sh anchor dx dy scale), measured on
      * the DS's bottom screen in a mission: the INFORMATION bar top-left, the map in the

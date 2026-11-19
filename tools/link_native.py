@@ -132,8 +132,10 @@ def main():
     # Reuse Days' DS-order rule, but derive owners/addresses from EU delinks
     # and select actual staged archive members, including renamed weak objects.
     script=out/'gen/ordered-overlays.ld';script.write_text(section_script(objects,ordered))
+    # shared-address overlay dispatchers (tools/prepare_native_abi.py writes gen/ovdisp.S)
+    subprocess.run([str(BIN/'arm-vita-eabi-gcc'),*COMMON_CFLAGS,'-c',str(out/'gen/ovdisp.S'),'-o',str(out/'gen/ovdisp.o')],check=True)
     cmd=[str(BIN/'arm-vita-eabi-ld'),'-r','--wrap=UpdateTitlePanel','--no-enum-size-warning','-T',str(script),'-o',str(out/'recoded.partial.o'),
-         str(out/'gen/ds_bss.o'),str(out/'gen/dtcm_init.o'),str(out/'gen/overlays.o'),
+         str(out/'gen/ds_bss.o'),str(out/'gen/dtcm_init.o'),str(out/'gen/overlays.o'),str(out/'gen/ovdisp.o'),
          '--whole-archive',*[str(p) for p in libs],'--no-whole-archive']
     # Backends are included once, even if many DS routines map to one provider.
     cmd+=sorted({str(ROOT/p) for p in report['backend_exports'].values()})

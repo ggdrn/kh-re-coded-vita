@@ -6,7 +6,8 @@
  * The result is an integer (uintptr_t), as the literal was, so casts and arithmetic around it
  * keep working. With a constant address the chain folds to `symbol + offset`: no run-time cost,
  * and it stays a constant expression for static initializers. Only the registers whose value
- * the hardware computes on read (divider and square-root results, VCOUNT/DISPSTAT) go through
+ * the hardware computes on read (divider and square-root results and their control registers'
+ * flags, VCOUNT/DISPSTAT) go through
  * a function, which refreshes them first; that branch is never evaluated for other addresses,
  * so it does not break constant initializers either.
  *
@@ -44,8 +45,8 @@ extern unsigned char kh_ds_gba_slot[0x20000];
 extern unsigned char kh_ds_bios9[0x100];
 
 /* refresh a computed register block and return its host address */
-extern uintptr_t kh_hw_sync_div(void);   /* 0x040002a0: DIV_RESULT, DIVREM_RESULT */
-extern uintptr_t kh_hw_sync_sqrt(void);  /* 0x040002b4: SQRT_RESULT */
+extern uintptr_t kh_hw_sync_div(void);   /* 0x040002a0: DIV_RESULT, DIVREM_RESULT; DIVCNT's flags */
+extern uintptr_t kh_hw_sync_sqrt(void);  /* 0x040002b4: SQRT_RESULT; SQRTCNT's busy bit */
 extern uintptr_t kh_hw_sync_disp(void);  /* 0x04000004: DISPSTAT, VCOUNT */
 extern uintptr_t kh_hw_sync_timers(void); /* 0x04000100: TM0CNT_L .. TM3CNT_H */
 extern uintptr_t kh_hw_sync_gxstat(void); /* 0x04000600: GXSTAT */
@@ -63,6 +64,8 @@ extern void kh_vram_sync_cleanup(int *unused);
 #define KH_HW(a)                                                                              \
     (KH__IN(a, 0x040002a0, 0x10)  ? kh_hw_sync_div() + (KH__A(a) - 0x040002a0u) :             \
      KH__IN(a, 0x040002b4, 4)     ? kh_hw_sync_sqrt() + (KH__A(a) - 0x040002b4u) :            \
+     KH__IN(a, 0x04000280, 2)     ? kh_hw_sync_div() - 0x20u + (KH__A(a) - 0x04000280u) :     \
+     KH__IN(a, 0x040002b0, 2)     ? kh_hw_sync_sqrt() - 4u + (KH__A(a) - 0x040002b0u) :       \
      KH__IN(a, 0x04000004, 4)     ? kh_hw_sync_disp() + (KH__A(a) - 0x04000004u) :            \
      KH__IN(a, 0x04000100, 0x10)  ? kh_hw_sync_timers() + (KH__A(a) - 0x04000100u) :          \
      KH__IN(a, 0x04000600, 4)     ? kh_hw_sync_gxstat() + (KH__A(a) - 0x04000600u) :          \

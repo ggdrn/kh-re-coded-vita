@@ -1070,8 +1070,23 @@ static int render_lines(int engine, uint32_t *fb, int y0, int y1, int graphics)
         }
         return 0;
     }
-    if (mode == 3) { /* main memory display FIFO: not emulated */
-        memset(fb, 0, (size_t)(y1 - y0) * W * sizeof(*fb));
+    if (mode == 3) {
+        /* engine A shows the main memory display FIFO: a 256x192 direct-colour image a
+         * repeating DMA feeds it from main RAM (dma.c). Without that transfer the FIFO is
+         * empty and the screen shows black. */
+        extern volatile uintptr_t kh_display_fifo_src;
+        const uintptr_t src = __atomic_load_n(&kh_display_fifo_src, __ATOMIC_ACQUIRE);
+        if (!src) {
+            memset(fb, 0, (size_t)(y1 - y0) * W * sizeof(*fb));
+            return 0;
+        }
+        for (line = y0; line < y1; line++, fb += W) {
+            uint16_t row[W];
+            memcpy(row, (const uint8_t *)src + line * W * 2, sizeof(row));
+            for (x = 0; x < W; x++)
+                row[x] &= 0x7fff;
+            row_out(row, fb, mmode, mf);
+        }
         return 0;
     }
     for (line = y0; line < y1; line++, fb += W) {

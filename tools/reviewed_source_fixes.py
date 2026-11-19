@@ -1,4 +1,10 @@
 """Compatibility fixes limited to reviewed failures, preserving function bodies."""
+import arity_fixes
+import pointer_fixes
+import overlay_target_fixes
+import zero_arg_fixes
+import float_abi_fixes
+import check_local_addr
 import json
 import re
 from dsprot_rewrites import adapt as adapt_dsprot
@@ -18,6 +24,255 @@ ITCM_MEMORY_ROUTINES = {
 }
 
 def apply(relative,text):
+    text = arity_fixes.apply(relative, text)
+    text = pointer_fixes.apply(relative, text)
+    text = overlay_target_fixes.apply(relative, text)
+    text = zero_arg_fixes.apply(relative, text)
+    text = check_local_addr.fix(text)
+    text = float_abi_fixes.apply(relative, text)
+    if relative == 'src/ov047/camera/Camera_UpdateFollowInput_020c3b5c.c':
+        # Feed the same request bits as touch/look controls, before the game
+        # checks whether the active camera takes manual turns.
+        old = '        camera->flags &= ~0x1000000;'
+        if text.count(old) != 1:
+            raise ValueError('Unexpected camera input point')
+        text = 'extern unsigned int kh_vita_camera_bits(void);\n' + text.replace(
+            old, '        const unsigned stick = kh_vita_camera_bits();\n'
+                 '        if (stick & 0xc) mask = (mask & ~0xc) | (stick & 0xc);\n'
+                 '        if (stick & 3) mask = (mask & ~3) | (stick & 3);\n' + old)
+    if relative == 'eu/src/overlays/ov001/calls/TryCycleFieldMenuCursor.c':
+        text += """
+/* Vita D-pad uses the game's two cursor transitions and field menu pages. */
+extern int kh_vita_command_nav(void);
+extern BOOL TryEnterFieldMenuState3(void);
+extern int GetFieldMenuListMode(void);
+extern void SetFieldMenuMode_02078360(int mode, int animate);
+extern BOOL PlaySoundEffect(int archive, int index);
+
+void kh_vita_update_command_deck(BOOL canSwitchMode)
+{
+    FieldMenu *menu = gFieldCommandMenuGlobals.menu;
+    if (menu == NULL || menu->unk_138 == 0 || !IsModeSetOrFlag370aClear() ||
+        IsHudFlag7Set() || IsFieldFlag10Set() || IsLeadEntryFlag80Set()) {
+        return;
+    }
+    int direction = kh_vita_command_nav();
+    if (direction == 1) {
+        if (TryEnterFieldMenuState3()) PlaySoundEffect(0, 0);
+    } else if (direction == 2) {
+        if (TryCycleFieldMenuCursor()) PlaySoundEffect(0, 0);
+    } else if (canSwitchMode && (direction == 3 || direction == 4)) {
+        int mode = direction == 4;
+        if (GetFieldMenuListMode() == 1 - mode) {
+            SetFieldMenuMode_02078360(mode, 1);
+            if (GetFieldMenuListMode() == mode) PlaySoundEffect(0x1a0, 0x27);
+        }
+    }
+}
+"""
+    deck_hooks = {
+        'src/ov021/unclassified_helpers/UpdateFieldButtonInput_020a70a8.c': (
+            '    if (!func_ov021_020a752c(input, 0x100) && func_ov001_0206c504() > 0x9000) {',
+            '        if (!func_ov001_02072040()) {\n'
+            '            u32 deckMode = func_ov001_02077bcc();\n'
+            '            kh_vita_update_command_deck(mode == 6 && deckMode != 6 && deckMode != 9);\n'
+            '        }\n'),
+        'eu/src/overlays/ov041/calls/HandleCommandMenuShortcuts.c': (
+            '    if (!settings->useDirectionPad) {',
+            ''),
+    }
+    if relative in deck_hooks:
+        hook, after = deck_hooks[relative]
+        if text.count(hook) != 1:
+            raise ValueError(f'Unexpected command menu input: {relative}')
+        before = '' if after else '    if (!(gPadHeldAndPrevious & 0x100)) kh_vita_update_command_deck(canSwitchMode);\n'
+        decl = 'extern void kh_vita_update_command_deck(int canSwitchMode);\n'
+        text = decl + text.replace(hook, before + hook + ('\n' + after if after else ''))
+    if relative == 'eu/src/overlays/ov001/calls/ScriptCmd_UnpauseFieldEntriesIfFlag20Clear.c':
+        # Returning control to the field must also wake the session timer.
+        # Otherwise delayed tutorial triggers can sit idle until LeaveFieldMenu.
+        old = '    SetFieldEntriesPaused(0);'
+        if text.count(old) != 1:
+            raise ValueError('Unexpected script-to-field unpause')
+        text = 'extern void ResumeSessionTimerUpdates(void);\n' + text.replace(
+            old, old + '\n    ResumeSessionTimerUpdates();')
+    if relative == 'src/ov001/shared_engine/SpawnStageEventGroups_0209895c.c':
+        # Preserve the room's own spawn predicates and report the first gate
+        # that rejects a record. Use an exclusive chain to avoid dereferencing
+        # an unavailable record in the subsequent checks.
+        begin = text.index('            if (record == NULL) {')
+        end = text.index('                SpawnStageGroup_02094f60', begin)
+        text = text[:begin] + '''            if (record == NULL) {
+                kh_trace_stage_spawn(eventId, "missing record", picker->entryId, 0);
+                ok = FALSE;
+            } else if (record->actorId != 0) {
+                ok = FALSE;
+            } else if (record->hidden) {
+                kh_trace_stage_spawn(eventId, "hidden", picker->entryId, 0);
+                ok = FALSE;
+            } else if (state->spawnCounts[side->defIndex] >= def->spawnLimit) {
+                kh_trace_stage_spawn(eventId, "spawn limit", state->spawnCounts[side->defIndex], def->spawnLimit);
+                ok = FALSE;
+            } else if (record->remaining <= 0) {
+                kh_trace_stage_spawn(eventId, "no HP", picker->entryId, record->remaining);
+                ok = FALSE;
+            }
+            if (ok) {
+''' + text[end:]
+        hook = '                    actor = GetStageActor_0209c040((s16)record->actorId);'
+        text = ('extern void kh_trace_stage_spawn(unsigned, const char *, int, int);\n'
+                + text.replace(hook, '                    kh_trace_stage_spawn(eventId, "actor created", picker->entryId, record->actorId);\n' + hook))
+    if relative == 'src/ov001/shared_engine/SpawnStageGroup_02094f60.c':
+        hook = '    parentId = 0;'
+        text = ('extern void kh_trace_stage_spawn(unsigned, const char *, int, int);\n' + text.replace(hook, '''    if (spawner != NULL) {
+        unsigned record = GetStageRowIndex_0209c228((int)spawner);
+        if (spawner->state != 1) {
+            kh_trace_stage_spawn(record, "spawner state", spawner->state, spawner->entryId);
+        } else if (spawner->busy != 0 || GetStageEntry_0209c074(spawner->entryId) == NULL) {
+            kh_trace_stage_spawn(record, "spawner link", spawner->entryId, spawner->busy);
+        }
+    }
+''' + hook))
+        text = text.replace('extern StageEntry *GetStageEntry_', 'extern u16 GetStageRowIndex_0209c228(int record);\nextern StageEntry *GetStageEntry_', 1)
+    if relative == 'eu/src/overlays/ov001/calls/SpawnStageGroup.c':
+        text = '#define GetStageRowIndex_0209c228 GetStageRowIndex\n' + text
+    if relative == 'src/ov001/shared_engine/SpawnStageGroupActor_020950f8.c':
+        hook = '    if (object == 0) {\n'
+        text = ('extern void kh_trace_stage_spawn(unsigned, const char *, int, int);\n'
+                + text.replace(hook, hook + '        kh_trace_stage_spawn(GetStageRowIndex_0209c228((int)record), "missing model", record->slot, index);\n'))
+    if relative in STAGE_LOOKUP_LAYOUTS:
+        # These arrays are followed by other fields, so GCC can assume index 0
+        # is the only valid index in the reconstructed declarations. Match the
+        # actual table capacities while keeping the count fields at their DS offsets.
+        old, new = STAGE_LOOKUP_LAYOUTS[relative]
+        if text.count(old) != 1:
+            raise ValueError(f'Unexpected stage lookup layout: {relative}')
+        text = text.replace(old, new)
+    if relative == 'src/ov001/field_manager/StartFieldSession_02061468.c':
+        hook = '    initRequest(args);'
+        if text.count(hook) != 1:
+            raise ValueError('Unexpected field session request')
+        text = ('extern void kh_trace_field_resume(int, int, int, int);\n' + text.replace(hook,
+            '    BOOL restoring = func_ov001_020645c8(0x1a05);\n' + hook + '\n'
+            '    kh_trace_field_resume(args->stageId, session->roomB, restoring, func_ov001_020645c8(0x1a05));'))
+    if relative == 'src/ov046/shared_engine/EventCamera_Update_020c2d20.c':
+        # EU 0x020c2d46 forwards r1 untouched from the camera controller.
+        # ov049 uses it as the output for orbit motion when returning to gameplay.
+        for old, new in (
+            ('func_ov049_020c377c(EventCameraWork *work)', 'func_ov049_020c377c(EventCameraWork *work, void *camera)'),
+            ('EventCamera_Update_020c2d20(EventCameraWork *work)', 'EventCamera_Update_020c2d20(EventCameraWork *work, void *camera)'),
+            ('func_ov049_020c377c(work)', 'func_ov049_020c377c(work, camera)'),
+        ):
+            if text.count(old) != 1:
+                raise ValueError(f'Unexpected event camera call: {old}')
+            text = text.replace(old, new)
+    stage_traces = {
+        'src/ov001/shared_engine/BeginStageEntries_02099aec.c': (
+            '    data_ov001_020a0508->entryCount = source->entryCount;',
+            '    kh_trace_stage_event("entry table ready", source->entryCount, 0, 0);\n'),
+        'src/ov001/shared_engine/StageEvents_Trigger_020876e4.c': (
+            '    if (g_stageEventsState_0209f2c8 != -1) {',
+            '    kh_trace_stage_event("dispatch pair", eventIndex, param, g_stageEventsState_0209f2c8);\n'),
+        'src/ov001/shared_engine/StartStageEvent_0209a174.c': (
+            '    if (eventId < g_stageManager_020a0508->eventCount) {',
+            '    kh_trace_stage_event("start group", eventId, param, g_stageManager_020a0508->eventCount);\n'),
+        'eu/src/overlays/ov001/calls/ReleaseOrDisableStageEvent.c': (
+            '    mode = GetFieldSessionState();\n',
+            '    kh_trace_stage_event("release/disable", value, flag, mode);\n'),
+        'src/ov001/shared_engine/StageEvent_ReleaseHoldBit1_020876fc.c': (
+            '    if (g_stageEventsState_0209f2c8 != -1) {',
+            '    kh_trace_stage_event("release hold", eventIndex, 0, g_stageEventsState_0209f2c8);\n'),
+        'eu/src/overlays/ov001/calls/SetSavedTaskFlag.c': (
+            '    if (useAltCall != 0) {',
+            '    kh_trace_stage_event("saved flag", index, useAltCall, useSecondSet);\n'),
+        'src/ov001/shared_engine/PollEventTriggerList_02068f64.c': (
+            '            scene->firedIds[scene->firedCount] = node->eventId;',
+            '            kh_trace_stage_event("trigger fired", node->eventId, node->config, scene->firedCount);\n'),
+    }
+    if relative in stage_traces:
+        hook, trace = stage_traces[relative]
+        if text.count(hook) != 1:
+            raise ValueError(f'Unexpected stage trace hook: {relative}')
+        text = ('extern void kh_trace_stage_event(const char *, int, int, int);\n'
+                + text.replace(hook, trace + hook))
+    if relative in ('eu/src/overlays/ov039/calls/InitOverlayState.c',
+                    'eu/src/overlays/ov039/calls/ShutdownOverlay.c'):
+        initializing = relative.endswith('/InitOverlayState.c')
+        hook = ('    gMenuOverlayWork = state;\n' if initializing
+                else '    UnloadOverlayAfterGeometryTransfer(0, (int)OVERLAY_27_ID);\n')
+        if text.count(hook) != 1:
+            raise ValueError(f'Unexpected menu overlay lifetime hook: {relative}')
+        active = int(initializing)
+        text = 'extern void kh_overlay_set_menu_active(int active);\n' + text.replace(
+            hook, hook + f'    kh_overlay_set_menu_active({active});\n')
+    if relative == 'src/ov036/text_rendering/GetTextWindowStatus_020c3080.c':
+        # Scripts can open a window and check it in the same frame. The active
+        # slot is still idle until the panel consumes the queued request.
+        old = '    int status;'
+        if text.count(old) != 1:
+            raise ValueError('Unexpected GetTextWindowStatus')
+        text = text.replace(old, '    extern u8 *gTextWindowResourceTable[];\n'
+                            '    int status = 1;\n'
+                            '    const u8 *work = gTextWindowResourceTable[0];')
+        text = text.replace('        status = 0;',
+                            '        status = *(const s32 *)(work + 0x689c) > 0 ? 1 : 0;')
+    if relative == 'src/ov001/shared_engine/CreateStageManagerTask_02099ad0.c':
+        # CreateTaskObject runs the constructor that sets gStageManager.
+        # EU 0x02099b04 loads the manager after the call has returned.
+        original = '    g_stageManager_020a0508->task = func_0202a448(data_ov001_020a0340, userData);'
+        if text.count(original) != 1:
+            raise ValueError('Unexpected CreateStageManagerTask assignment')
+        text = text.replace(original, '    void *task = func_0202a448(data_ov001_020a0340, userData);\n'
+                                      '    g_stageManager_020a0508->task = task;')
+    ACTOR_TRACE = {
+        # Player actor trace (platform/core/script_trace.c kh_actor_trace)
+        'src/ov052/unclassified_helpers/ChangeActorState_020ce0c0.c':
+            ('    int current = *(int *)(entity + 0x75c);\n', '"ChangeActorState"', '(unsigned int)entity', 'state', 'frames'),
+        'src/ov052/unclassified_helpers/SetSubModelsEnabled_020ceaf4.c':
+            ('    int i;\n', '"SetSubModelsEnabled"', '(unsigned int)entity', 'enable', '0'),
+        'src/ov052/model_display/SetSlotDisplayMode_020ca7d0.c':
+            ('    int i;\n', '"SetSlotDisplayMode"', '(unsigned int)actor', 'mode', 'actor->mode'),
+        'src/ov052/model_display/ActivateSlotModelGroup_020d1170.c':
+            ('    int motion;\n', '"ActivateSlotModelGroup"', '(unsigned int)entity', 'index', '0'),
+    }
+    if relative in ACTOR_TRACE:
+        anchor_line, what, ent, a, b = ACTOR_TRACE[relative]
+        if anchor_line not in text: raise ValueError('Unexpected ' + relative)
+        text = 'extern void kh_actor_trace(const char *what, unsigned int entity, int a, int b);\n' + text
+        text = text.replace(anchor_line, anchor_line + f'    kh_actor_trace({what}, {ent}, {a}, {b});\n', 1)
+    if relative == 'eu/src/calls/ActorSlot_AddPriorityByIndex.c':
+        # ScriptCmd_ReleaseOrDisableStageEvent releases the stage event's actor and then
+        # lowers that slot's priority: the slot is NULL by then. On the DS the byte store
+        # lands at 0x0000000b (the ITCM mirror); on the Vita it is a data abort (0.0.12, at the
+        # first battle). The store is dropped and logged once per slot index.
+        old = '    ActorSlot *slot = gActorRegistry->slots[index];\n'
+        if old not in text: raise ValueError('Unexpected ActorSlot_AddPriorityByIndex')
+        text = text.replace(old, old + '    if (slot == NULL) {\n'
+                            '        extern void kh_ds_null_store(const char *what, int index);\n'
+                            '        kh_ds_null_store("ActorSlot_AddPriorityByIndex", index);\n'
+                            '        return amount & 0xff;\n'
+                            '    }\n')
+    if relative == 'src/arm9/shared_engine/ScriptVm_RunFrame_02025b18.c':
+        # Trace (platform/core/script_trace.c): each command and each wait that ends.
+        decl = 'extern void func_0202599c(ScriptVm *vm);'
+        hooks = ((decl, decl + '\nextern int kh_script_run(void *fn, ScriptVm *vm, u8 *operands);'
+                        '\nextern int kh_script_resume(void *fn, ScriptVm *vm, s32 arg);'),
+                 ('handler->run(vm, cmd + 4)', 'kh_script_run((void *)handler->run, vm, cmd + 4)'),
+                 ('frame->slots[0].fn(vm, frame->slots[0].arg)',
+                  'kh_script_resume((void *)frame->slots[0].fn, vm, frame->slots[0].arg)'),
+                 ('frame->slots[i + 1].fn(vm, frame->slots[i + 1].arg)',
+                  'kh_script_resume((void *)frame->slots[i + 1].fn, vm, frame->slots[i + 1].arg)'))
+        for old, new in hooks:
+            if old not in text: raise ValueError('Unexpected ScriptVm_RunFrame: ' + old)
+            text = text.replace(old, new)
+    if relative == 'src/arm9/library_nns_snd/OpenSoundArchive_0201e780.c':
+        # mwcc left the path in r1 for FS_ConvertPathToFileID(fileId, path) (EU 0x0201e780
+        # reaches the BL with r1 untouched since entry); the decomp's call shows one argument.
+        for old, new in (('extern int func_0200b408(FileId *fileId);',
+                          'extern int func_0200b408(FileId *fileId, const char *path);'),
+                         ('func_0200b408(&arc->fileId) != 0', 'func_0200b408(&arc->fileId, filePath) != 0')):
+            if old not in text: raise ValueError('Unexpected NNS_SndArcInit call')
+            text = text.replace(old, new)
     if relative == 'src/ov022/movie/get_cached_movie_decoder_code_020aa8fc.c':
         # The original fallback executes the linked position-independent code in place.
         # A Vita work arena is data memory.
@@ -162,6 +417,19 @@ def apply(relative,text):
     if relative in FONT_SOURCES:
         text=text.replace('->cbCharSpliter','->splitCharacter')
     return adapt_dsprot(relative, text)
+
+STAGE_LINK_LAYOUT = (
+    '    StageLink links[1];\n    u8 pad_00010[0x18dec - 0x10];',
+    '    StageLink links[64];\n    u8 pad_00208[0x18dec - 0x208];',
+)
+STAGE_LOOKUP_LAYOUTS = {
+    'src/ov001/shared_engine/FindStageLink_02099584.c': STAGE_LINK_LAYOUT,
+    'src/ov001/shared_engine/FindStageLinkIndex_02099544.c': STAGE_LINK_LAYOUT,
+    'src/ov001/shared_engine/FindStageObjectByOwner_020995c4.c': (
+        '    StageObjectRecord records[1];\n    u8 pad_00338[0x18dea - 0x338];',
+        '    StageObjectRecord records[64];\n    u8 pad_04b14[0x18dea - 0x4b14];',
+    ),
+}
 
 FORWARD_SOURCES = ['src/arm9/library_nns_g2d/NNS_G2dInitImageProxy_0201528c.c', 'src/arm9/library_nns_g2d/func_020152b8.c', 'src/arm9/library_nns_g2d/func_020152e4.c', 'src/arm9/library_nns_g3d/func_02019d00.c', 'src/arm9/library_nns_g3d/func_02019e38.c']
 COLOR_ENUM_SOURCES = ['eu/src/overlays/ov076/calls/SlotMenu_DrawHintText.c', 'eu/src/overlays/ov076/calls/SlotMenu_DrawRecordLabel.c', 'eu/src/overlays/ov077/calls/ItemScreen_DrawHintText.c']

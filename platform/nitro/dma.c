@@ -6,7 +6,9 @@
  *
  *   immediate timing       copied at once (the DS also finished before the code went on)
  *   GX FIFO timing         the words go to the geometry FIFO
- *   VBlank/HBlank/display  noted in the log; not used by the boot path (TODO(dma))
+ *   main memory display    the channel's source is the 256x192 image the 2D renderer shows in
+ *                          display mode 3 (kh_display_fifo_src, gpu2d.c)
+ *   VBlank/HBlank/start    noted in the log; Re:coded's code never programs them
  *   card timing            the card path is native (card.c), never reached
  *
  * Asynchronous transfers complete like the DMA-end interrupt: the callback runs at the next
@@ -28,7 +30,15 @@ typedef void (*MIDmaCallback)(void *arg);
 #define CNT_SRC(c) (((c) >> 23) & 3)
 #define CNT_DST(c) (((c) >> 21) & 3)
 
-enum { TIMING_IMM = 0, TIMING_VBLANK = 1, TIMING_HBLANK = 2, TIMING_GXFIFO = 7 };
+enum { TIMING_IMM = 0, TIMING_VBLANK = 1, TIMING_HBLANK = 2, TIMING_MMEM_DISPLAY = 4, TIMING_GXFIFO = 7 };
+
+/* The main memory display FIFO (DISPCNT display mode 3): the DS feeds DISP_MMEM_FIFO
+ * (0x04000068) with a repeating DMA on timing 4, four words (8 pixels) at a time, from a
+ * 256x192 direct-colour image in main RAM; each frame restarts at the image's first word.
+ * The source of the channel that does it, read by the 2D renderer as the frame (gpu2d.c);
+ * 0 while no such transfer is enabled. */
+volatile uintptr_t kh_display_fifo_src;
+static int s_display_fifo_ch = -1;
 
 static void callback_trampoline(void *cb, void *arg, void *unused)
 {
@@ -46,6 +56,10 @@ static void clear_enable(uint32_t ch)
 {
     if (ch < 4)
         KH_IO32(0x040000b8 + ch * 12) &= ~CNT_ENABLE;
+    if ((int)ch == s_display_fifo_ch) {
+        s_display_fifo_ch = -1;
+        __atomic_store_n(&kh_display_fifo_src, 0, __ATOMIC_RELEASE);
+    }
 }
 
 /* A transfer as the channel registers describe it. */
@@ -82,6 +96,17 @@ static void run(uint32_t ch, uint32_t src, uint32_t dst, uint32_t ctrl)
         for (i = 0; i < count; i++, src += sstep)
             kh_io_fifo_write32((volatile void *)(uintptr_t)dst, *(volatile uint32_t *)(uintptr_t)src);
         break;
+    case TIMING_MMEM_DISPLAY:
+        /* stays enabled (repeat) and runs as the screen draws: the renderer reads the image
+         * from its source each frame instead of word by word */
+        if (src != 0) {
+            if (s_display_fifo_ch < 0)
+                LOG("dma: main memory display FIFO from %08x on channel %u", (unsigned)src,
+                    (unsigned)ch);
+            s_display_fifo_ch = (int)ch;
+            __atomic_store_n(&kh_display_fifo_src, (uintptr_t)src, __ATOMIC_RELEASE);
+        }
+        return;
     default: {
         static int warned[8];
         if (!warned[CNT_TIMING(ctrl)]++)

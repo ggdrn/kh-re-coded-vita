@@ -21,6 +21,45 @@ ASSEMBLY_SOURCES = {
     'libs/mobiclip/video/asm_stubs/auto/MobiClip_BlitRows.s',
 }
 
+# C units GCC cannot build from the EU tree whose code the port provides another way.
+# A failure here is classified, not counted; the SDK link report proves nothing original
+# stays unresolved (original_remaining == 0).
+SDK_UNITS = {  # compiled by tools/link_native_sdk.py with their local type views
+    'libs/nns/fnd/calls/AllocatorAllocForSDKHeap.c', 'libs/nns/fnd/calls/AllocatorFreeForSDKHeap.c',
+    'libs/nns/gfd/calls/NNS_GfdDumpFrmTexVramManager.c', 'libs/nns/gfd/calls/NNS_GfdDumpFrmTexVramManagerEx.c',
+    'libs/nns/gfd/calls/NNS_GfdDumpFrmPlttVramManagerEx.c', 'libs/nns/gfd/calls/NNS_GfdSetFrmPlttVramState.c',
+    'libs/nns/snd/calls/BankDisposeCallback.c', 'libs/nns/snd/calls/WaveArcDisposeCallback.c',
+    'src/calls/GetBGExtPlttSlot_0202aef8.c',
+}
+REPLACED_UNITS = {
+    'libs/nitro/os/calls/OSi_CountUpTick.c': 'timer-0 tick IRQ; the port tick backend counts host time',
+    'src/calls/Boot_ReadRom.c': 'ROM reload of the DS reset; OSi_DoResetSystem restarts the eboot',
+    'src/overlays/ov104/calls/Encryptor_DecryptFunction.c': 'DSProt RC4 self-decryption of ARM code; unreferenced',
+    'src/overlays/ov104/calls/Encryptor_EncryptFunction.c': 'DSProt RC4 self-encryption of ARM code; unreferenced',
+}
+CW_ASM = re.compile(r'(?m)^\s*(?:static\s+)?asm\b(?!\s*(?:volatile|__volatile__)?\s*\()|\basm\s*\{')
+
+def is_codewarrior_asm(source, decomp):
+    """A CodeWarrior `asm` function or block, in the unit or the common source it includes."""
+    text = source.read_text(errors='replace')
+    for inc in re.findall(r'#include "((?:src|libs)/[^"]+\.[ch])"', text):
+        for base in (decomp, decomp/'eu'):
+            if (base/inc).exists():
+                text += (base/inc).read_text(errors='replace')
+                break
+    return bool(CW_ASM.search(text))
+
+def classify_failure(e, source, decomp):
+    if e['source'] in SDK_UNITS:
+        return {'status': 'sdk-unit', 'provider': 'tools/link_native_sdk.py'}
+    if e['source'] in REPLACED_UNITS:
+        return {'status': 'replaced', 'reason': REPLACED_UNITS[e['source']]}
+    if is_codewarrior_asm(source, decomp):
+        return {'status': 'cw-asm', 'reason': 'CodeWarrior assembly: native backend or unreferenced'}
+    return None
+
+STATUSES = ['compiled', 'failed', 'backend', 'sdk-unit', 'replaced', 'cw-asm', 'generated-bss', 'non-c-pending']
+
 def run(cmd, log):
     p=subprocess.run([str(x) for x in cmd],capture_output=True,text=True)
     log.write_text(p.stdout+p.stderr)
@@ -71,7 +110,7 @@ def main():
         previous=json.loads((out/'compile.json').read_text())
         failed = {
             unit['source'] for unit in previous['units']
-            if unit['status'] == 'failed' or (unit['status'] == 'non-c-pending' and
+            if unit['status'] in ('failed', 'sdk-unit', 'replaced', 'cw-asm') or (unit['status'] == 'non-c-pending' and
                 (unit['source'].endswith('.cpp') or unit['source'] in ASSEMBLY_SOURCES))
         }
         if a.refresh_abi:
@@ -114,8 +153,11 @@ def main():
         log=obj.with_suffix('.log')
         rc=run(cmd,log)
         if rc:obj.unlink(missing_ok=True)
+        first_error=next((s for s in log.read_text().splitlines() if 'error:' in s),'')
+        known=classify_failure(e,source,d) if rc else None
+        if known:return dict(row,**known,log=str(log.relative_to(ROOT)),first_error=first_error)
         return dict(row,status='failed' if rc else 'compiled',object=str(obj.relative_to(ROOT)),log=str(log.relative_to(ROOT)),
-                    first_error=next((s for s in log.read_text().splitlines() if 'error:' in s),''))
+                    first_error=first_error)
     rows=[]
     with concurrent.futures.ThreadPoolExecutor(max_workers=a.jobs) as pool:
         for i,row in enumerate(pool.map(compile_one,entries),1):
@@ -127,7 +169,7 @@ def main():
         for row in rows:
             if row['status']=='backend' and Path(row['source']).stem in backend:
                 row['provider']=backend[Path(row['source']).stem]
-    counts={status:sum(x['status']==status for x in rows) for status in ['compiled','failed','backend','generated-bss','non-c-pending']}
+    counts={status:sum(x['status']==status for x in rows) for status in STATUSES}
     report={'mode':'original-failures' if a.failed_only else 'full','counts':counts,'backend_errors':backend_errors,'backend_exports':backend,'units':rows}
     name='retry.json' if a.failed_only else 'compile.json'
     (out/name).write_text(json.dumps(report,indent=2)+'\n')

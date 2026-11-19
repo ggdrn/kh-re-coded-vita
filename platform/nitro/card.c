@@ -64,3 +64,20 @@ uint32_t CARDi_ReadRomIDCore(void)
 {
     return KH_CARD_ID;
 }
+
+/* The CPU path of the ROM reader: the SDK sends READ_PAGE for each 512-byte page and polls
+ * MCCNT1's data-ready bit for the words, keeping the last partial page in a cache. CARD_Init
+ * uses it before the card DMA is set up (CARDi_InitRom), and CARD_ReadRom falls back to it for
+ * unaligned transfers. The offset is a cartridge address, read from the dump; the result is
+ * the length, as the original returns it. */
+int CARDi_ReadRomWithCPU(void *userdata, void *buffer, uint32_t offset, uint32_t length)
+{
+    int n;
+    (void)userdata;
+    KH_PROBE("CARDi_ReadRomWithCPU");
+    n = rom_read(offset, buffer, length);
+    kh_card_reads++;
+    if ((uint32_t)n != length)
+        LOG("card: short CPU read at %08x: %d of %u", (unsigned)offset, n, (unsigned)length);
+    return (int)length;
+}

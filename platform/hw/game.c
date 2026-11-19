@@ -61,6 +61,7 @@ extern int NitroMain(void);
 #define HW_ROM_HEADER_SIZE 0x160u
 #define HW_BUTTON_XY_BUF 0x027fffa8u
 #define HW_VBLANK_COUNT_BUF 0x027ffc3cu
+#define HW_FIRMWARE_MAC 0x027ffcf4u
 
 /* The firmware's touch calibration (NVRAMConfig.ncd.tp, user settings + 0x58): two screen
  * points and the raw ADC values they read. The port reports touches as raw = pixel * these
@@ -124,12 +125,20 @@ static int boot_state(void)
         tp[10] = (uint8_t)x2, tp[11] = (uint8_t)y2;
     }
     /* the card ID the boot read, where CARDi_CheckPulledOutCore compares it */
+    /* HW_WM_BOOT_BUF's bootType, which the DS firmware sets: OS_BOOTTYPE_ROM (1), a
+     * cartridge boot. FSi_InitRomArchive mounts "rom" from the header's FNT/FAT only for that
+     * type; left at 0 every path lookup failed and SoundMgr_Init wrote through a NULL archive. */
+    *(volatile uint16_t *)KH_SHARED(0x027ffc40) = 1;
     *(volatile uint32_t *)KH_SHARED(0x027ff800) = KH_CARD_ID;
     *(volatile uint32_t *)KH_SHARED(0x027ffc00) = KH_CARD_ID;
     /* the firmware's user settings: the language (bits 0-2 at +0x64), which the game reads at
      * boot (Game_ReadLocalProfile) to pick its text, screens and fonts: 1 English, 2 French,
      * 3 German, 4 Italian, 5 Spanish (config language). Left at 0, the game took English. */
     *(volatile uint16_t *)KH_SHARED(0x027ffc80 + 0x64) = (uint16_t)(kh_config.language & 7);
+    /* The DS boot profile includes a Wi-Fi MAC. Provide a local address for the
+     * guest, as in the Days runtime, without exposing the Vita's address. */
+    static const uint8_t firmware_mac[6] = {0x02, 0x52, 0x45, 0x43, 0x4f, 0x44};
+    memcpy(KH_SHARED(HW_FIRMWARE_MAC), firmware_mac, sizeof(firmware_mac));
     /* OS_ResetSystem's parameter survives the reset (asm_replacements.c): Boot_InitScene picks
      * the first scene from it */
     *(volatile uint32_t *)KH_SHARED(0x027ffc20) = kh_reset_parameter();

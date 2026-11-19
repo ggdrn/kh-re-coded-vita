@@ -18,6 +18,7 @@
 #include <stdio.h>
 
 extern int main(void);
+extern void kh_script_trace_dump(void);
 
 static KuKernelExceptionHandler s_prev[3];
 static uintptr_t code_base;
@@ -69,6 +70,7 @@ static void report(KuKernelExceptionContext *c)
             log_write_raw(buf, n);
         }
     }
+    kh_script_trace_dump(); /* the script commands that led here (script_trace.c) */
 }
 
 /* A call through a NULL pointer: on the DS address 0 is the ITCM mirror, where code sits, so

@@ -3,6 +3,7 @@
 #include "config.h"
 
 #include "log.h"
+#include "portmenu.h"
 #include "video.h"
 
 
@@ -76,16 +77,17 @@ static int s_front_swap;  /* that touch began on the small screen: it swaps, it 
 #define DECK_SEEN_US 150000 /* the deck counts as up this long after the game last polled it */
 
 static volatile int s_rx, s_ry;             /* right stick, -127..127 past the dead zone */
-static volatile uint64_t s_deck_seen;       /* last kh_vita_command_nav call */
+static uint32_t s_deck_seen;                /* last kh_vita_command_nav call (low 32 bits) */
+static unsigned s_deck_active;
 static volatile int s_nav_queue[8];
-static volatile unsigned s_nav_head, s_nav_tail;
+static unsigned s_nav_head, s_nav_tail;
 static int s_nav_dir;                       /* d-pad direction held: 1 down 2 up 3 left 4 right */
 static uint64_t s_nav_next;
 
 static void nav_push(int dir)
 {
-    unsigned h = s_nav_head;
-    if (h - s_nav_tail < 8) {
+    unsigned h = __atomic_load_n(&s_nav_head, __ATOMIC_RELAXED);
+    if (h - __atomic_load_n(&s_nav_tail, __ATOMIC_ACQUIRE) < 8) {
         s_nav_queue[h & 7] = dir;
         __atomic_store_n(&s_nav_head, h + 1, __ATOMIC_RELEASE);
     }
@@ -93,12 +95,22 @@ static void nav_push(int dir)
 
 int kh_vita_command_nav(void)
 {
-    unsigned t = s_nav_tail;
-    s_deck_seen = sceKernelGetProcessTimeWide();
-    if (t == __atomic_load_n(&s_nav_head, __ATOMIC_ACQUIRE))
+    if (!kh_config.dpad_deck || portmenu_is_open())
         return 0;
-    s_nav_tail = t + 1;
-    return s_nav_queue[t & 7];
+    const uint32_t now = sceKernelGetProcessTimeLow();
+    const unsigned head = __atomic_load_n(&s_nav_head, __ATOMIC_ACQUIRE);
+    const unsigned tail = __atomic_load_n(&s_nav_tail, __ATOMIC_RELAXED);
+    const int fresh = !__atomic_load_n(&s_deck_active, __ATOMIC_RELAXED) ||
+                      now - __atomic_load_n(&s_deck_seen, __ATOMIC_RELAXED) >= DECK_SEEN_US;
+    if (fresh)
+        __atomic_store_n(&s_nav_tail, head, __ATOMIC_RELEASE);
+    __atomic_store_n(&s_deck_seen, now, __ATOMIC_RELAXED);
+    __atomic_store_n(&s_deck_active, 1, __ATOMIC_RELEASE);
+    if (fresh || tail == head)
+        return 0;
+    const int dir = s_nav_queue[tail & 7];
+    __atomic_store_n(&s_nav_tail, tail + 1, __ATOMIC_RELEASE);
+    return dir;
 }
 
 /* Locked on (camera_stick on), the right stick's sideways push switches targets: a flick
@@ -120,7 +132,7 @@ int kh_vita_lockon_switch(void)
     if (now - last_call > 100000)
         armed = 0; /* not locked on just before: the stick may be held from the camera */
     last_call = now;
-    if (!kh_config.camera_stick)
+    if (!kh_config.camera_stick || portmenu_is_open())
         return 0;
     if (ax < LOCKON_REST) {
         armed = 1;
@@ -158,7 +170,7 @@ unsigned int kh_vita_camera_bits(void)
     static const int full_at[4] = { 90, 200, 90, 50 };
     const int div = full_at[kh_config.camera_speed & 3];
     int rx = s_rx * 127 / div, ry = s_ry * 127 / div;
-    if (!kh_config.camera_stick)
+    if (!kh_config.camera_stick || portmenu_is_open())
         return 0;
     /* locked on, sideways switches targets (kh_vita_lockon_switch): the camera only tilts */
     if (kh_lockon_active)
@@ -257,7 +269,9 @@ void input_poll(InputState *out)
         const uint64_t now = sceKernelGetProcessTimeWide();
         int dir = (pad.buttons & SCE_CTRL_DOWN) ? 1 : (pad.buttons & SCE_CTRL_UP) ? 2
                 : (pad.buttons & SCE_CTRL_LEFT) ? 3 : (pad.buttons & SCE_CTRL_RIGHT) ? 4 : 0;
-        if (kh_config.dpad_deck && now - s_deck_seen < DECK_SEEN_US) {
+        if (kh_config.dpad_deck && !portmenu_is_open() &&
+            __atomic_load_n(&s_deck_active, __ATOMIC_ACQUIRE) &&
+            (uint32_t)now - __atomic_load_n(&s_deck_seen, __ATOMIC_RELAXED) < DECK_SEEN_US) {
             if (dir && dir != s_nav_dir) {
                 nav_push(dir);
                 s_nav_next = now + NAV_FIRST_US;
@@ -265,13 +279,14 @@ void input_poll(InputState *out)
                 nav_push(dir);
                 s_nav_next = now + NAV_NEXT_US;
             }
+            s_nav_dir = dir;
         } else {
             if (pad.buttons & SCE_CTRL_RIGHT) held |= DS_KEY_RIGHT;
             if (pad.buttons & SCE_CTRL_LEFT) held |= DS_KEY_LEFT;
             if (pad.buttons & SCE_CTRL_UP) held |= DS_KEY_UP;
             if (pad.buttons & SCE_CTRL_DOWN) held |= DS_KEY_DOWN;
+            s_nav_dir = 0;
         }
-        s_nav_dir = dir;
     }
 
     /* Cross confirms and Circle cancels (config confirm_cross): the DS's A on Cross and B on

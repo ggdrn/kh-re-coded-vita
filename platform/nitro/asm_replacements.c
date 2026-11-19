@@ -361,32 +361,7 @@ void MTX_Copy44To43_(const int32_t *src, int32_t *dst)
     }
 }
 
-/* ---- divider / square root context (CP) ------------------------------------------------------
- * {DIV_NUMER, DIV_DENOM (16 bytes at 0x04000290), SQRT_PARAM (8 at 0x040002b8),
- *  DIVCNT & 3, SQRTCNT & 1}. */
-
-void CP_SaveContext(void *ctx)
-{
-    uint8_t *c = ctx;
-    uint16_t divcnt = KH_IO16(0x04000280) & 3, sqrtcnt = KH_IO16(0x040002b0) & 1;
-    memcpy(c, KH_IO_PTR(0x04000290), 16);
-    memcpy(c + 16, KH_IO_PTR(0x040002b8), 8);
-    memcpy(c + 24, &divcnt, 2);
-    memcpy(c + 26, &sqrtcnt, 2);
-}
-
-void CPi_RestoreContext(const void *ctx)
-{
-    const uint8_t *c = ctx;
-    uint16_t divcnt, sqrtcnt;
-    memcpy(&divcnt, c + 24, 2);
-    memcpy(&sqrtcnt, c + 26, 2);
-    /* TODO(cp): recompute the results once the divider is emulated (platform/nitro/cp.c) */
-    KH_IO16(0x04000280) = divcnt;
-    KH_IO16(0x040002b0) = sqrtcnt;
-    memcpy(KH_IO_PTR(0x04000290), c, 16);
-    memcpy(KH_IO_PTR(0x040002b8), c + 16, 8);
-}
+/* The divider / square-root context (CP_SaveContext, CPi_RestoreContext) is in cp.c. */
 
 /* ---- GX FIFO bursts ------------------------------------------------------------------------ */
 
@@ -511,9 +486,39 @@ void DC_StoreAll(void) {}
 void DC_WaitWriteBufferEmpty(void) {}
 void IC_InvalidateRange(void *p, uint32_t n) { (void)p; (void)n; }
 void IC_InvalidateAll(void) {}
-void OS_SetDPermissionsForProtectionRegion(uint32_t mask, uint32_t flags) { (void)mask; (void)flags; }
-void OS_SetProtectionRegion1(uint32_t param) { (void)param; }
-void OS_SetProtectionRegion2(uint32_t param) { (void)param; }
+/* The ARM946E protection unit (CP15 c2, c3, c5, c6). MRC/MCR to CP15 are undefined in Vita user
+ * mode, so the registers are a shadow: the setters keep what the game writes and the getters
+ * return it, starting from the values INITi_InitCp15 leaves on the DS. Nothing is enforced. */
+static struct {
+    uint32_t region[8];
+    uint32_t icache, dcache, wbuf, dperm;
+} s_cp15 = {
+    { 0x04000033, 0x02000031, 0x027ff017, 0x08000035, 0x027e001b, 0x0100002f, 0xffff001d, 0x02fff017 },
+    0x4a, 0x4a, 0x0a, 0x15111111,
+};
+
+void OS_SetDPermissionsForProtectionRegion(uint32_t mask, uint32_t flags)
+{
+    s_cp15.dperm = (s_cp15.dperm & ~mask) | flags;
+}
+#define KH_PROTECTION_REGION(n)                                                        \
+    void OS_SetProtectionRegion##n(uint32_t param) { s_cp15.region[n] = param; }       \
+    uint32_t OS_GetProtectionRegion##n(void) { return s_cp15.region[n]; }
+KH_PROTECTION_REGION(0)
+KH_PROTECTION_REGION(1)
+KH_PROTECTION_REGION(2)
+KH_PROTECTION_REGION(3)
+KH_PROTECTION_REGION(4)
+KH_PROTECTION_REGION(5)
+KH_PROTECTION_REGION(6)
+KH_PROTECTION_REGION(7)
+#undef KH_PROTECTION_REGION
+void OS_EnableICacheForProtectionRegion(uint32_t flags) { s_cp15.icache |= flags; }
+void OS_DisableICacheForProtectionRegion(uint32_t flags) { s_cp15.icache &= ~flags; }
+void OS_EnableDCacheForProtectionRegion(uint32_t flags) { s_cp15.dcache |= flags; }
+void OS_DisableDCacheForProtectionRegion(uint32_t flags) { s_cp15.dcache &= ~flags; }
+void OS_EnableWriteBufferForProtectionRegion(uint32_t flags) { s_cp15.wbuf |= flags; }
+void OS_DisableWriteBufferForProtectionRegion(uint32_t flags) { s_cp15.wbuf &= ~flags; }
 void OSi_CancelDma0(void) {}
 
 /* CP15's DTCM base: the port's DTCM block (build/gen/ds_bss.S) */
