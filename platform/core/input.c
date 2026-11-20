@@ -12,9 +12,6 @@
 #include <psp2/touch.h>
 #include <string.h>
 
-/* kept by the game's lock-on code (Ov022_SetSelectionEnabled, Ov022_ReadSelectionInput) */
-volatile int kh_lockon_active;
-
 /* Partner swap (config partner_swap, experimental; the game's side in Ov022_RefreshSlotRows):
  * the party entry player 1 plays (0 Roxas), the AI slot Roxas borrows, a scene that needs
  * Roxas (game.c), and the touches on the partner's HUD */
@@ -53,9 +50,6 @@ int kh_partner_swap_roxas_magic(void)
 {
     return kh_config.swap_roxas_magic;
 }
-/* config r_toggle in the field: R does not turn the camera (Ov002_Camera_UpdateFollow) */
-volatile int kh_r_one_click;
-
 #define STICK_DEADZONE 48
 
 /* the DS button each kh_config.button[] entry stands for */
@@ -113,50 +107,35 @@ int kh_vita_command_nav(void)
     return dir;
 }
 
-/* Locked on (camera_stick on), the right stick's sideways push switches targets: a flick
- * left or right takes the nearest one on that side (Ov022_ReadSelectionInput, as Type B's L
- * and R), held it goes on every LOCKON_REPEAT_US; back near the middle it is armed again. Read
- * by the game thread once a game frame while locked on; a stick already pushed when the lock
- * begins waits for the middle first. */
-#define LOCKON_PUSH 90  /* of 127: a flick */
-#define LOCKON_REST 50  /* under it: back in the middle */
-#define LOCKON_REPEAT_US 450000
-
-int kh_vita_lockon_switch(void)
+int kh_vita_lock_on_enabled(void)
 {
-    static int armed;
-    static uint64_t last_call, next_repeat;
-    const uint64_t now = sceKernelGetProcessTimeWide();
-    const int rx = s_rx, ax = rx < 0 ? -rx : rx;
-    int dir = 0;
-    if (now - last_call > 100000)
-        armed = 0; /* not locked on just before: the stick may be held from the camera */
-    last_call = now;
-    if (!kh_config.camera_stick || portmenu_is_open())
-        return 0;
-    if (ax < LOCKON_REST) {
-        armed = 1;
-    } else if (ax >= LOCKON_PUSH) {
-        if (armed) {
-            armed = 0;
-            dir = rx < 0 ? -1 : 1;
-            next_repeat = now + LOCKON_REPEAT_US;
-        } else if (next_repeat && now >= next_repeat) {
-            dir = rx < 0 ? -1 : 1;
-            next_repeat = now + LOCKON_REPEAT_US;
-        }
-    }
-    if (!armed && ax < LOCKON_PUSH)
-        next_repeat = 0; /* let go part of the way: no repeat until the next flick */
-    return dir;
+    return kh_config.vita_lock_on;
 }
 
-/* Ov002_Camera_UpdateFollow, Ov002_TickCamera: whether the camera turns by itself (behind a
- * walk to the left or right, or after what the game aims at), as on the DS; not while the
- * right stick turns it (config camera_follow), unless locked on */
-int kh_vita_camera_follow(void)
+/* The field polls while locked on. A horizontal flick switches once, and a stick
+ * already held when entering lock-on must return to center before it can switch. */
+int kh_vita_lockon_switch(int locked)
 {
-    return !kh_config.camera_stick || kh_config.camera_follow || kh_lockon_active;
+    static int armed;
+    static uint32_t last_call;
+
+    if (!locked || portmenu_is_open()) {
+        armed = 0;
+        return 0;
+    }
+    const uint32_t now = sceKernelGetProcessTimeLow();
+    const int rx = s_rx;
+    const int magnitude = rx < 0 ? -rx : rx;
+    if (now - last_call > 100000)
+        armed = 0;
+    last_call = now;
+    if (magnitude < 50)
+        armed = 1;
+    if (armed && magnitude >= 90) {
+        armed = 0;
+        return rx < 0 ? -1 : 1;
+    }
+    return 0;
 }
 
 /* request bits for this camera tick: each axis pulsed in proportion to its deflection */
@@ -172,9 +151,6 @@ unsigned int kh_vita_camera_bits(void)
     int rx = s_rx * 127 / div, ry = s_ry * 127 / div;
     if (!kh_config.camera_stick || portmenu_is_open())
         return 0;
-    /* locked on, sideways switches targets (kh_vita_lockon_switch): the camera only tilts */
-    if (kh_lockon_active)
-        rx = 0;
     rx = rx > 127 ? 127 : rx < -127 ? -127 : rx;
     ry = ry > 127 ? 127 : ry < -127 ? -127 : ry;
     if (kh_config.camera_invert_x)
@@ -220,9 +196,8 @@ void kh_vita_camera_state(int manual, unsigned int bits)
         if (logged < 60 && (state != last || n[0] != ticks)) {
             logged++;
             LOG("input: right stick over %u camera ticks: turning %u, no manual turns %u, "
-                "held by the stream %u, own turn %u%s", (unsigned)ticks, (unsigned)n[0],
-                (unsigned)n[1], (unsigned)n[2], (unsigned)n[3],
-                kh_lockon_active ? " (locked on)" : "");
+                "held by the stream %u, own turn %u", (unsigned)ticks, (unsigned)n[0],
+                (unsigned)n[1], (unsigned)n[2], (unsigned)n[3]);
         }
         last = state;
         ticks = 0;
@@ -289,10 +264,8 @@ void input_poll(InputState *out)
         }
     }
 
-    /* Cross confirms and Circle cancels (config confirm_cross): the DS's A on Cross and B on
-     * Circle, menus and field alike (0.4.18 kept the field's action where the buttons are
-     * placed); the fonts' and the HUD's A and B icons follow (nitro/button_glyphs.c,
-     * nitro/button_sprites.c) */
+    /* Swap A and B in both the menus and the field. The prompt mapping uses the same swap
+     * when the game loads (nitro/button_glyphs.c). */
     if (kh_config.confirm_cross) {
         const uint16_t ab = held & (DS_KEY_A | DS_KEY_B);
         held = (uint16_t)((held & ~(DS_KEY_A | DS_KEY_B)) | ((ab & DS_KEY_A) ? DS_KEY_B : 0) |
@@ -321,34 +294,6 @@ void input_poll(InputState *out)
             else
                 held |= left ? DS_KEY_SELECT : DS_KEY_START;
         }
-    }
-
-    /* One-click lock-on (config r_toggle), in the field (ov022): the game locks on, and lets
-     * go, with a quick double tap of R (Ov022_ReadSelectionInput), and a single tap turns the
-     * camera behind the player (Ov002_Camera_UpdateFollow, which kh_r_one_click turns off).
-     * A click of R becomes that double tap, each step 3 VBlanks long so that the game sees it
-     * at 30 fps too. */
-    {
-        static int was, step, steps;
-        static uint8_t pattern[12];
-        const int now_r = (held & DS_KEY_R) != 0;
-        kh_r_one_click = kh_config.r_toggle && 0 /* Days field overlay has no Re:coded binding */;
-        if (kh_r_one_click) {
-            if (now_r && !was && step >= steps) {
-                /* the game locks on, and lets go, with a quick double tap of R (a single tap
-                 * turned the camera: 0.1.9 sent one to lock on) */
-                static const uint8_t double_tap[] = { 1, 1, 1, 0, 0, 0, 1, 1, 1 };
-                steps = (int)sizeof(double_tap);
-                memcpy(pattern, double_tap, (size_t)steps);
-                step = 0;
-            }
-            held = (uint16_t)((held & ~DS_KEY_R) | (step < steps && pattern[step] ? DS_KEY_R : 0));
-            if (step < steps)
-                step++;
-        } else {
-            step = steps = 0;
-        }
-        was = now_r;
     }
 
     /* L+R+Square switches fast-forward on and off; the combination is swallowed. */

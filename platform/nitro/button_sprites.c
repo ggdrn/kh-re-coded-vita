@@ -1,173 +1,187 @@
-/* The battle HUD's A, B, X and Y sprites (the shortcut buttons, the combo prompts) redrawn as
- * the Vita's Circle, Cross, Triangle and Square, the buttons in the same places (config
- * button_icons; the text's icons are nitro/button_glyphs.c). The game decompresses its files
- * through MI_ReadUncompLZ8 (asm_replacements.c), which tells this file where each one went
- * (MI_InitUncompContextLZ) and when it is whole: its tiles are then compared with the ones to
- * redraw, by hash (the table, tools/button_sprites.py, holds no ROM data), and the matching
- * ones get their new pixels. The tiles of an NCGR are 32 bytes at 16-byte steps from the
- * file's start. */
+/* Re:coded's field HUD has baked button letters in the localized battle character sheets.
+ * The command prompts also use four A5I3 textures in ui/btl/btlui.p2. Match the original
+ * pixel data before replacing the letters with the same symbols used in the fonts. */
 #include "nitro/button_sprites.h"
 
 #include "config.h"
 #include "log.h"
+#include "nitro/button_glyphs.h"
 
-#include <stdint.h>
+#include <stddef.h>
 #include <string.h>
 
-typedef struct {
-    uint64_t hash;  /* FNV-1a of the original 32 bytes */
-    uint32_t xor;   /* their eight words XORed: the quick test */
-    /* a tile alike in two icons: the hash of the tile ctx_off bytes on (the one under it),
-     * still the original's as the scan goes forward; 0 when the tile is the only one */
-    uint32_t ctx_off;
-    uint64_t ctx_hash;
-    int variant; /* 0 always, 1 the buttons as placed, 2 with config confirm_cross (A on Cross) */
-    int n;
-    struct {
-        uint8_t at, value;
-    } edit[32];
-} TileEdit;
+static uint64_t hash_pixels(const uint8_t *data, uint32_t size)
+{
+    uint64_t hash = 0xcbf29ce484222325ull;
+    for (uint32_t i = 0; i < size; i++)
+        hash = (hash ^ data[i]) * 0x100000001b3ull;
+    return hash;
+}
 
-static const TileEdit s_edits[] = {
-#include "button_sprites.inc"
+static const uint64_t s_hud_hashes[] = {
+    0x8688a972b8a814adull, /* de */
+    0xf754f8287c6e1d39ull, /* en */
+    0xa7e128d50f0663a5ull, /* es */
+    0xba8ef2f7a78c99b6ull, /* fr */
+    0x863d06baab8a30adull, /* it */
 };
-#define NEDITS ((int)(sizeof(s_edits) / sizeof(s_edits[0])))
 
-static struct {
-    void *ctx;
-    uint8_t *dest;
-    uint32_t size;
-} s_open[8];
-static int s_logged;
+static const struct {
+    uint8_t button, x, y, width, background, letter, shadow;
+} s_hud_icons[] = {
+    { KH_BTN_X,  33,  33, 6, 1,  6,  5 },
+    { KH_BTN_B, 137,  33, 5, 0,  6,  1 },
+    { KH_BTN_B, 150,  49, 5, 0,  6,  1 },
+    { KH_BTN_X, 133,  57, 7, 0,  6,  1 },
+    { KH_BTN_Y, 248,  97, 5, 0,  6,  1 },
+    { KH_BTN_X, 233, 137, 6, 1, 14, 13 },
+};
 
-void kh_vita_uncomp_begin(void *context, void *dest, unsigned int size)
+static void set_tile_pixel(uint8_t *data, unsigned tile, unsigned x, unsigned y, unsigned color)
 {
-    int i, free_slot = 0;
-    for (i = 0; i < 8; i++) {
-        if (s_open[i].ctx == context) {
-            free_slot = i;
-            break;
-        }
-        if (!s_open[i].ctx)
-            free_slot = i;
-    }
-    s_open[free_slot].ctx = context;
-    s_open[free_slot].dest = dest;
-    s_open[free_slot].size = size;
+    uint8_t *byte = &data[tile * 32 + y * 4 + x / 2];
+    const unsigned shift = (x % 2) * 4;
+    *byte = (*byte & ~(15u << shift)) | (color << shift);
 }
 
-static uint64_t fnv64(const uint8_t *p)
+static void set_hud_pixel(uint8_t *data, unsigned x, unsigned y, unsigned color)
 {
-    uint64_t h = 0xcbf29ce484222325ull;
-    int i;
-    for (i = 0; i < 32; i++)
-        h = (h ^ p[i]) * 0x100000001b3ull;
-    return h;
+    /* The localized battle character sheet is 32 tiles wide. */
+    set_tile_pixel(data, y / 8 * 32 + x / 8, x % 8, y % 8, color);
 }
 
-/* the first entry whose quick test is x: the table is sorted by it (tools/button_sprites.py) */
-static int first_with_xor(uint32_t x)
+static void draw_command_icons(uint8_t *data)
 {
-    int lo = 0, hi = NEDITS;
-    while (lo < hi) {
-        const int mid = (lo + hi) / 2;
-        if (s_edits[mid].xor < x)
-            lo = mid + 1;
-        else
-            hi = mid;
-    }
-    return lo;
-}
-
-static void patch(uint8_t *d, uint32_t size)
-{
-    uint32_t off;
-    int k, done = 0;
-    const int variant = kh_config.confirm_cross ? 2 : 1;
-    for (off = 0; off + 32 <= size; off += 16) {
-        uint32_t w[8], x;
-        memcpy(w, d + off, 32);
-        x = w[0] ^ w[1] ^ w[2] ^ w[3] ^ w[4] ^ w[5] ^ w[6] ^ w[7];
-        for (k = first_with_xor(x); k < NEDITS && s_edits[k].xor == x; k++) {
-            if ((!s_edits[k].variant || s_edits[k].variant == variant) &&
-                s_edits[k].hash == fnv64(d + off) &&
-                (!s_edits[k].ctx_off || (off + s_edits[k].ctx_off + 32 <= size &&
-                                         s_edits[k].ctx_hash == fnv64(d + off + s_edits[k].ctx_off)))) {
-                int e;
-                for (e = 0; e < s_edits[k].n; e++)
-                    d[off + s_edits[k].edit[e].at] = s_edits[k].edit[e].value;
-                done++;
-                off += 16; /* the tile's second half is its own */
-                break;
+    /* ui/btl/btlui.p2 entry 0 maps these four-tile pieces into the command
+     * rows. Their source tiles in the localized sheet are not rectangular. */
+    static const struct {
+        int button;
+        uint16_t tiles[4];
+    } icons[] = {
+        { KH_BTN_X, { 0x140, 0x141, 0x142, 0x143 } }, /* record 31, selected command */
+        { KH_BTN_A, { 0x160, 0x161, 0x162, 0x163 } }, /* record 33, Attack */
+        { KH_BTN_X, { 0x1e6, 0x1e7, 0x17c, 0x17d } }, /* record 36, alternate layout */
+    };
+    for (unsigned i = 0; i < sizeof(icons) / sizeof(icons[0]); i++) {
+        const uint8_t *symbol = kh_button_symbol(icons[i].button);
+        for (unsigned row = 0; row < 5; row++) {
+            for (unsigned col = 0; col < 6; col++) {
+                const unsigned x = 5 + col, y = 5 + row;
+                const unsigned tile = icons[i].tiles[(y / 8) * 2 + x / 8];
+                const int ink = col < 5 && (symbol[row] & (0x10u >> col));
+                /* Keep the black badge, with the original white ink and gray bottom edge. */
+                set_tile_pixel(data, tile, x % 8, y % 8, ink ? (row == 4 ? 5 : 3) : 1);
             }
         }
     }
-    if (done && s_logged++ < 16)
-        LOG("text: %d sprite tiles drawn with the Vita's buttons (a file of %u bytes)", done,
-            (unsigned)size);
-}
 
-void kh_vita_uncomp_done(void *context)
-{
-    int i;
-    for (i = 0; i < 8; i++)
-        if (s_open[i].ctx == context) {
-            s_open[i].ctx = NULL;
-            if (kh_config.button_icons && s_open[i].dest && s_open[i].size >= 32 &&
-                s_open[i].size <= 4u * 1024 * 1024)
-                patch(s_open[i].dest, s_open[i].size);
-            return;
+    /* Record 93 uses a separate yellow A in the L+ shortcut hints. */
+    const uint8_t *symbol = kh_button_symbol(KH_BTN_A);
+    for (unsigned row = 0; row < 6; row++) {
+        const unsigned y = row + 5;
+        const unsigned tile = y < 8 ? 0xf2 : 0xf3;
+        for (unsigned x = 1; x <= 6; x++) {
+            unsigned color = 0;
+            if (row > 0 && x > 1 && (symbol[row - 1] & (0x10u >> (x - 2))))
+                color = 1;
+            if (row < 5 && x < 6 && (symbol[row] & (0x10u >> (x - 1))))
+                color = 6;
+            set_tile_pixel(data, tile, x, y % 8, color);
         }
+    }
 }
 
-/* The 3D textures: the combo prompt ("Y-COMBO" over the player, a 64x16 A3I5 texture with
- * the prompt twice: as shown and greyed) has its Y button redrawn as the Vita's Square, in
- * both. Found in a frame dump (0.4.21); named by the hash of its 1024 texel bytes, the bytes
- * drawn over it are the port's (a texel: alpha 7 << 5 | palette index; 0x0f white, 0x00 the
- * button's black, 0x08 its grey in the greyed one). */
-static const struct {
-    uint64_t hash;
-    uint32_t n;
-    int nedits;
-    struct {
-        uint16_t at;
-        uint8_t value;
-    } edit[64];
-} s_tex_edits[] = {
-    { 0xaebd117eabeed880ull, 1024, 54,
-      { { 386, 0xe0 }, { 388, 0xe0 }, { 390, 0xe0 }, { 451, 0xef }, { 452, 0xef }, { 453, 0xef },
-        { 514, 0xef }, { 515, 0xe0 }, { 517, 0xe0 }, { 518, 0xef }, { 578, 0xef }, { 579, 0xe0 },
-        { 580, 0xe0 }, { 581, 0xe0 }, { 582, 0xef }, { 642, 0xef }, { 643, 0xe0 }, { 644, 0xe0 },
-        { 645, 0xe0 }, { 646, 0xef }, { 706, 0xef }, { 707, 0xef }, { 709, 0xef }, { 710, 0xef },
-        { 770, 0xe0 }, { 772, 0xe0 }, { 774, 0xe0 }, { 418, 0xe8 }, { 420, 0xe8 }, { 422, 0xe8 },
-        { 483, 0xef }, { 484, 0xef }, { 485, 0xef }, { 546, 0xef }, { 547, 0xe8 }, { 549, 0xe8 },
-        { 550, 0xef }, { 610, 0xef }, { 611, 0xe8 }, { 612, 0xe8 }, { 613, 0xe8 }, { 614, 0xef },
-        { 674, 0xef }, { 675, 0xe8 }, { 676, 0xe8 }, { 677, 0xe8 }, { 678, 0xef }, { 738, 0xef },
-        { 739, 0xef }, { 741, 0xef }, { 742, 0xef }, { 802, 0xe8 }, { 804, 0xe8 }, { 806, 0xe8 } } },
+static void patch_hud(uint8_t *data, uint32_t size)
+{
+    if (size != 23552 || !kh_button_symbol(KH_BTN_A))
+        return;
+    const uint64_t hash = hash_pixels(data, size);
+    unsigned sheet = 0;
+    while (sheet < sizeof(s_hud_hashes) / sizeof(s_hud_hashes[0]) && s_hud_hashes[sheet] != hash)
+        sheet++;
+    if (sheet == sizeof(s_hud_hashes) / sizeof(s_hud_hashes[0]))
+        return;
+
+    for (unsigned i = 0; i < sizeof(s_hud_icons) / sizeof(s_hud_icons[0]); i++) {
+        const uint8_t *symbol = kh_button_symbol(s_hud_icons[i].button);
+        const unsigned x = s_hud_icons[i].x, y = s_hud_icons[i].y, width = s_hud_icons[i].width;
+        const unsigned left = (width - 5) / 2;
+        for (unsigned row = 0; row < 6; row++)
+            for (unsigned col = 0; col < width; col++)
+                set_hud_pixel(data, x + col, y + row, s_hud_icons[i].background);
+
+        for (unsigned row = 0; row < 5; row++)
+            for (unsigned col = 0; col < 5 && left + col + 1 < width; col++)
+                if (symbol[row] & (0x10u >> col))
+                    set_hud_pixel(data, x + left + col + 1, y + row + 1, s_hud_icons[i].shadow);
+
+        for (unsigned row = 0; row < 5; row++)
+            for (unsigned col = 0; col < 5; col++)
+                if (symbol[row] & (0x10u >> col))
+                    set_hud_pixel(data, x + left + col, y + row, s_hud_icons[i].letter);
+    }
+    draw_command_icons(data);
+    static int logged;
+    if (!logged) {
+        LOG("button icons: applied PlayStation symbols to the field Command Menu");
+        logged = 1;
+    }
+}
+
+/* Both Nitro character loaders return the CHAR payload with its pixel pointer relocated. */
+typedef struct {
+    uint16_t height, width;
+    uint32_t pixel_format, mapping_type, character_format, size;
+    uint8_t *pixels;
+} CharacterData;
+#if UINTPTR_MAX == UINT32_MAX
+_Static_assert(offsetof(CharacterData, pixels) == 0x14, "Nitro CHAR payload");
+#endif
+
+extern int __real_NNS_G2dGetUnpackedCharacterData(void *file, CharacterData **data);
+extern int __real_NNS_G2dGetUnpackedBGCharacterData(void *file, CharacterData **data);
+
+int __wrap_NNS_G2dGetUnpackedCharacterData(void *file, CharacterData **data)
+{
+    const int ok = __real_NNS_G2dGetUnpackedCharacterData(file, data);
+    if (ok && (*data)->pixel_format == 3)
+        patch_hud((*data)->pixels, (*data)->size);
+    return ok;
+}
+
+int __wrap_NNS_G2dGetUnpackedBGCharacterData(void *file, CharacterData **data)
+{
+    const int ok = __real_NNS_G2dGetUnpackedBGCharacterData(file, data);
+    if (ok && (*data)->pixel_format == 3)
+        patch_hud((*data)->pixels, (*data)->size);
+    return ok;
+}
+
+static const uint64_t s_texture_hashes[] = {
+    0x6a3c22e970cb21baull, /* button_a */
+    0xae7b0ef2cd1385a1ull, /* button_b */
+    0xed0bff96d76601beull, /* button_x */
+    0x23ee9607aae5a4a0ull, /* button_y */
 };
 
-static uint64_t fnv64n(const uint8_t *p, uint32_t n)
+int kh_button_texture(const uint8_t *texels, uint32_t size, uint8_t *out)
 {
-    uint64_t h = 0xcbf29ce484222325ull;
-    uint32_t i;
-    for (i = 0; i < n; i++)
-        h = (h ^ p[i]) * 0x100000001b3ull;
-    return h;
-}
-
-int kh_button_texture(const uint8_t *texels, uint32_t n, uint8_t *out)
-{
-    uint64_t h;
-    int k, e;
-    if (!kh_config.button_icons)
+    if (size != 32 * 32 || !kh_button_symbol(KH_BTN_A))
         return 0;
-    h = fnv64n(texels, n);
-    for (k = 0; k < (int)(sizeof(s_tex_edits) / sizeof(s_tex_edits[0])); k++) {
-        if (s_tex_edits[k].n != n || s_tex_edits[k].hash != h)
+    const uint64_t hash = hash_pixels(texels, size);
+    for (int button = KH_BTN_A; button <= KH_BTN_Y; button++) {
+        if (hash != s_texture_hashes[button])
             continue;
-        memcpy(out, texels, n);
-        for (e = 0; e < s_tex_edits[k].nedits; e++)
-            out[s_tex_edits[k].edit[e].at] = s_tex_edits[k].edit[e].value;
+        const uint8_t *symbol = kh_button_symbol(button);
+        memcpy(out, texels, size);
+        /* Preserve the bevel and alpha outside the letter. Indices 5 and 3
+         * are the original fill and ink in this A5I3 palette. */
+        for (unsigned y = 10; y <= 20; y++) {
+            for (unsigned x = 11; x <= 20; x++) {
+                const int ink = y > 10 && (symbol[(y - 11) / 2] & (0x10u >> ((x - 11) / 2)));
+                out[y * 32 + x] = ink ? 0xfb : 0xfd;
+            }
+        }
         return 1;
     }
     return 0;

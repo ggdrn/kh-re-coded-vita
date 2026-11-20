@@ -103,7 +103,7 @@ static int game_thread(SceSize args, void *argp)
 static int boot_state(void)
 {
     kh_romfs_init();
-    kh_button_glyphs_init();
+    kh_button_icons_init();
     kh_gx3d_init();
     audio_out_init();
     s_gpu3d = kh_gpu3d_init(kh_config.render_scale);
@@ -521,8 +521,6 @@ static void present(void)
     const int movie = kh_overlay_loaded(3);
     const int lock30 = (!kh_config.frame_interpolation || movie) &&
                        (!dual || dual_field) && !portmenu_is_open();
-    /* config confirm_cross (input.c): the fonts' A and B drawn to match */
-    kh_button_glyphs_menu(kh_config.confirm_cross);
     video_set_swap_interval(lock30 ? 2 : 1);
     s_locked += (uint32_t)lock30;
     /* Scripted scenes can cut to another camera and rebuild runs of one material in a

@@ -88,6 +88,35 @@ FIXES = {
         (r'^', PACKED, 1),
         (r'if \(data & 0x80000000\) \{', 'if (kh_is_packed_handle(data)) {', 1),
     ],
+    # The shared-record cache keys a record by file name or by packed handle, told apart by
+    # bit 31. A Vita name buffer (stack 0x898xxxxx) has it set: every motion file of the
+    # player (def/ab/jp/ref/la/etc.p.z, one stack buffer) matched the first record, so the
+    # jump and dodge roll tables held the idle/run animations (0.0.24 log).
+    'src/arm9/shared_records/FindSharedRecordSlot_0202c6cc.c': [
+        (r'^', PACKED, 1),
+        (r'keyIsId = \(u32\)key & 0x80000000;', 'keyIsId = kh_is_packed_handle((u32)key) ? 0x80000000 : 0;', 1),
+    ],
+    'src/arm9/shared_records/RetainOrInitializeSharedRecord_0202c80c.c': [
+        (r'^', PACKED, 1),
+        (r'if \(a & 0x80000000\) \{', 'if (kh_is_packed_handle(a)) {', 1),
+    ],
+    'src/arm9/shared_records/AcquireSharedRecord_0202c764.c': [
+        (r'^', PACKED, 1),
+        (r'if \(a & 0x80000000\) \{', 'if (kh_is_packed_handle(a)) {', 1),
+    ],
+    # a load request keeps a handle as is and copies a path (and frees it at the end)
+    'eu/src/overlays/ov027/calls/QueueFileLoadRequest.c': [
+        (r'^', PACKED, 1),
+        (r'if \(\(u32\)path & 0x80000000\) \{', 'if (kh_is_packed_handle((u32)path)) {', 1),
+    ],
+    'eu/src/overlays/ov027/calls/DestroyFileLoadRequest.c': [
+        (r'^', PACKED, 1),
+        (r'if \(\(u32\)request->pathOrId & 0x80000000\) \{', 'if (kh_is_packed_handle((u32)request->pathOrId)) {', 1),
+    ],
+    'eu/src/overlays/ov027/calls/ClearOverlayLoadQueues.c': [
+        (r'^', PACKED, 1),
+        (r'if \(\(\(u32\)request->pathOrId & 0x80000000\) != 0\) \{', 'if (kh_is_packed_handle((u32)request->pathOrId)) {', 1),
+    ],
     'src/arm9/filesystem/func_0202cb7c.c': [
         (r'^', PACKED, 1),
         (r'if \(fileId & 0x80000000\) \{', 'if (kh_is_packed_handle(fileId)) {', 1),

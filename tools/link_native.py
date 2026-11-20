@@ -134,7 +134,10 @@ def main():
     script=out/'gen/ordered-overlays.ld';script.write_text(section_script(objects,ordered))
     # shared-address overlay dispatchers (tools/prepare_native_abi.py writes gen/ovdisp.S)
     subprocess.run([str(BIN/'arm-vita-eabi-gcc'),*COMMON_CFLAGS,'-c',str(out/'gen/ovdisp.S'),'-o',str(out/'gen/ovdisp.o')],check=True)
-    cmd=[str(BIN/'arm-vita-eabi-ld'),'-r','--wrap=UpdateTitlePanel','--no-enum-size-warning','-T',str(script),'-o',str(out/'recoded.partial.o'),
+    hooks = ('UpdateTitlePanel', 'NNSi_G2dGetUnpackedFont', 'NNS_G2dGetUnpackedCharacterData',
+             'NNS_G2dGetUnpackedBGCharacterData')
+    cmd=[str(BIN/'arm-vita-eabi-ld'),'-r',*('--wrap='+name for name in hooks),
+         '--no-enum-size-warning','-T',str(script),'-o',str(out/'recoded.partial.o'),
          str(out/'gen/ds_bss.o'),str(out/'gen/dtcm_init.o'),str(out/'gen/overlays.o'),str(out/'gen/ovdisp.o'),
          '--whole-archive',*[str(p) for p in libs],'--no-whole-archive']
     # Backends are included once, even if many DS routines map to one provider.
@@ -145,6 +148,7 @@ def main():
     runtime_sources = sorted(source for group in ('hw','audio','core')
                              for source in (ROOT/'platform'/group).glob('*.c')
                              if source.name not in ('shared_area.c','recoded_boot.c'))
+    runtime_sources.extend(ROOT/'platform/nitro'/name for name in ('button_glyphs.c','button_sprites.c'))
     for source in runtime_sources:
         obj = runtime_dir / (source.parent.name+'_'+source.stem+'.o')
         subprocess.run([str(BIN/'arm-vita-eabi-gcc'), *COMMON_CFLAGS, *PORT_CFLAGS,

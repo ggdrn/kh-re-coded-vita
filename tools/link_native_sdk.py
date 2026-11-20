@@ -99,12 +99,6 @@ def main():
         obj = build / ('sdk' + asm.stem + '.o')
         subprocess.run([BIN/'arm-vita-eabi-gcc', *COMMON_CFLAGS, '-c', asm, '-o', obj], check=True)
         helpers.append(obj)
-    for name in ('button_sprites','button_glyphs'):
-        obj = build / (name+'.o')
-        subprocess.run([BIN/'arm-vita-eabi-gcc', *COMMON_CFLAGS, '-O2',
-                        '-I'+str(ROOT/'platform'), '-I'+str(ROOT/'platform/core'),
-                        '-c', ROOT/'platform/nitro'/(name+'.c'), '-o', obj], check=True)
-        helpers.append(obj)
     includes = ['-I'+str(path) for path in (ROOT/'platform/compat/recoded',
                 build/'adapted/eu',build/'adapted',ROOT/'platform/compat',eu,eu.parent)]
     compat = ROOT/'platform/compat/recoded'

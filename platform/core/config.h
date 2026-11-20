@@ -64,11 +64,11 @@ typedef struct {
     int inset_opacity;  /* the small screen's opacity, 50-100 % */
     int rear_touch;     /* rear touchpad halves: 0 off, 1 L / R, 2 Select / Start */
     int stick_deadzone; /* 1 small, 2 normal, 3 large */
-    int r_toggle;       /* the DS's R: 0 held as on the DS, 1 a press latches it until the next */
+    int vita_lock_on;   /* 0 original controls, 1 tap R to lock and use the right stick to switch */
     int fast_forward;   /* the speed L+R+Square switches to: 2 or 3 times */
     int confirm_cross;  /* 1 the DS's A on Cross and B on Circle (Cross confirms, Circle cancels;
                          * menus and field), 0 as the buttons are placed (A on Circle) */
-    int button_icons;   /* the text's A, B, X, Y icons: 0 the DS's letters, 1 the Vita's symbols */
+    int button_icons;   /* A, B, X, Y prompts: 0 Nintendo DS, 1 PlayStation (applied at boot) */
     int mission_balance; /* Mission Mode's enemies: 0 as the game has them (HP x3 and harder
                           * hits, made for four players, solo too), 1 as in the story (enemy HP, and
                           * damage taken as in the story, by the save's difficulty) */

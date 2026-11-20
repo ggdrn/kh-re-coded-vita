@@ -26,7 +26,7 @@ static uint32_t s_px[W * H];
 /* s_px holds the frame-rate label (not the menu, which draws over it) */
 static int s_px_fps;
 static volatile int s_open;
-static int s_boot_language; /* the language this run started with (config language) */
+static int s_boot_language, s_boot_button_icons;
 static int s_tab, s_sel[8];
 static uint32_t s_prev;
 static uint64_t s_repeat_at;
@@ -36,7 +36,7 @@ static char s_note[64]; /* feedback after an action ("Defaults restored.") */
 enum {
     IT_PRESET, IT_SCALE, IT_FPS, IT_DYNRES, IT_SWAP, IT_SWAP_ITEMS, IT_SWAP_MAGIC, IT_TEXFILTER, IT_FILTER2D, IT_EFFECT, IT_SHOWFPS,
     IT_ASPECT, IT_HUD, IT_LAYOUT, IT_INSET, IT_CORNER, IT_OPACITY, IT_SINGLE, IT_PANELOP, IT_HUDSIZE,
-    IT_CAMERA, IT_CAMSPEED, IT_CAMFOLLOW, IT_INVX, IT_INVY, IT_DEADZONE, IT_DPAD, IT_RMODE, IT_REAR,
+    IT_CAMERA, IT_CAMSPEED, IT_CAMFOLLOW, IT_INVX, IT_INVY, IT_DEADZONE, IT_DPAD, IT_LOCKON, IT_REAR,
     IT_BUTTON, /* + the DS button index */
     IT_LANGUAGE, IT_VOLUME, IT_FFWD, IT_ICONS, IT_CONFIRM, IT_MISSION, IT_DEFAULTS, IT_CLOSE,
 };
@@ -65,6 +65,8 @@ static const Item s_screen[] = {
     { IT_OPACITY, 0, "Small screen opacity", "See the game through the small screen." },
 };
 static const Item s_controls[] = {
+    { IT_LOCKON, 0, "Lock-on controls", NULL },
+    { IT_ICONS, 0, "Button icons", "Button prompts in menus and combat. Restart to apply." },
     { IT_DEADZONE, 0, "Stick dead zone", "How far the sticks move before they count." },
     { IT_REAR, 0, "Rear touchpad", "The rear touchpad's halves as two more buttons." },
 };
@@ -78,7 +80,7 @@ static const Item s_system[] = {
     { IT_LANGUAGE, 0, "Language", "The game's language. Applied the next time it starts." },
     { IT_VOLUME, 0, "Volume", NULL },
     { IT_FFWD, 0, "Fast-forward speed", "L+R+Square turns fast-forward on and off." },
-    { IT_CONFIRM, 0, "Confirm button", "Cross: A on Cross, B on Circle. HUD: next area." },
+    { IT_CONFIRM, 0, "Confirm button", "Cross maps A to Cross and B to Circle. Restart for icons." },
     { IT_DEFAULTS, 0, "Restore defaults", "Press Cross to set every option to its default." },
     { IT_CLOSE, 0, "Save and return", "Press Cross (or L+R+Select) to save and go back." },
 };
@@ -172,6 +174,11 @@ static void value(const Item *it, char *out, size_t n)
     case IT_INSET: snprintf(out, n, "%d", kh_config.inset_width); break;
     case IT_CORNER: snprintf(out, n, "%s", corners[kh_config.inset_corner & 3]); break;
     case IT_OPACITY: snprintf(out, n, "%d%%", kh_config.inset_opacity); break;
+    case IT_LOCKON: snprintf(out, n, "%s", kh_config.vita_lock_on ? "Vita" : "Original"); break;
+    case IT_ICONS:
+        snprintf(out, n, "%s%s", kh_config.button_icons ? "PlayStation" : "Nintendo DS",
+                 kh_config.button_icons != s_boot_button_icons ? " (restart)" : "");
+        break;
     case IT_DEADZONE: snprintf(out, n, "%s", zones[kh_config.stick_deadzone & 3]); break;
     case IT_REAR: snprintf(out, n, "%s", rear[kh_config.rear_touch % 3]); break;
     case IT_BUTTON:
@@ -242,6 +249,8 @@ static void change(const Item *it, int d)
     case IT_OPACITY:
         kh_config.inset_opacity = wrap(kh_config.inset_opacity, 50, 100, d * 25);
         break;
+    case IT_LOCKON: kh_config.vita_lock_on ^= 1; break;
+    case IT_ICONS: kh_config.button_icons ^= 1; break;
     case IT_DEADZONE: kh_config.stick_deadzone = wrap(kh_config.stick_deadzone, 1, 3, d); break;
     case IT_REAR: kh_config.rear_touch = wrap(kh_config.rear_touch, 0, 2, d); break;
     case IT_BUTTON: {
@@ -276,8 +285,10 @@ static void close_menu(void)
 
 void portmenu_toggle(void)
 {
-    if (!s_boot_language)
+    if (!s_boot_language) {
         s_boot_language = kh_config.language;
+        s_boot_button_icons = kh_config.button_icons;
+    }
     if (s_open) {
         close_menu();
         return;
@@ -431,7 +442,10 @@ const uint32_t *portmenu_render(void)
     if (s_note[0])
         text(8, H - 30, s_note, 0xff80ff80u);
     else if (items[sel].kind == IT_BUTTON)
-        text(8, H - 30, "The Vita button that acts as this DS button.", C_HELP);
+        text(8, H - 30, "Remap a DS button. Restart to refresh its icons.", C_HELP);
+    else if (items[sel].kind == IT_LOCKON)
+        text(8, H - 30, kh_config.vita_lock_on ? "Tap R to lock/unlock. Right stick changes target."
+                                              : "Use the original DS controls for lock-on.", C_HELP);
     else if (single_help && kh_config.single_screen == KH_SINGLE_SIMPLE) {
         text(8, H - 46, "Static panels, fewer 2D texture effects and filters.", C_HELP);
         text(8, H - 30, "Lighter composition for better performance.", C_HELP);

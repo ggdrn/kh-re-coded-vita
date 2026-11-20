@@ -135,3 +135,24 @@ void kh_actor_trace(const char *what, unsigned int entity, int a, int b)
     s_what = what, s_entity = entity, s_a = a, s_b = b, s_repeat = 0;
     LOG("actor: %s %08x %d %d", what, (unsigned)entity, a, b);
 }
+
+/* Motion file loads (ov021 AcquireSharedRecordState) and body animation picks
+ * (ov052 SetBlendTableAndBlendTrack): the counts are the five u16 track counts at the start
+ * of a blend table (0 = the track has no animation and the pick is ignored). */
+void kh_motion_trace(const char *what, const void *obj, const char *name, int a, const void *table)
+{
+    static int s_logged;
+    const unsigned short *c = (const unsigned short *)table;
+    (void)name; /* the key is not always a string: a file id in some callers (0.0.23) */
+    if (s_logged >= 4000)
+        return;
+    s_logged++;
+    if (what[0] == 'l' && what[4] == 0) /* "load": a = initialized, table = the key */
+        LOG("motion: load %08x key %08x initialized %d", (unsigned)(uintptr_t)obj,
+            (unsigned)(uintptr_t)table, a);
+    else if (c)
+        LOG("motion: %s %08x %d counts %u %u %u %u %u", what, (unsigned)(uintptr_t)obj,
+            a, c[0], c[1], c[2], c[3], c[4]);
+    else
+        LOG("motion: %s %08x %d table NULL", what, (unsigned)(uintptr_t)obj, a);
+}

@@ -30,16 +30,63 @@ def apply(relative,text):
     text = zero_arg_fixes.apply(relative, text)
     text = check_local_addr.fix(text)
     text = float_abi_fixes.apply(relative, text)
+    lock_on_decl = 'extern int kh_vita_lock_on_enabled(void);\n'
+    lock_on_stick_decl = 'extern int kh_vita_lockon_switch(int locked);\n'
+    if relative == 'src/ov001/shared_engine/HandleShoulderLockOn_0206bd30.c':
+        old = '    trigger = data_02060500;\n'
+        if text.count(old) != 1:
+            raise ValueError('Unexpected shoulder lock-on input')
+        text = lock_on_decl + lock_on_stick_decl + text.replace(old, old + '''
+    if (kh_vita_lock_on_enabled()) {
+        state->flags &= ~0x20;
+        if (selectTarget || (trigger & 0x100)) {
+            kh_vita_lockon_switch(0);
+        }
+        if (trigger & 0x100) {
+            if (selectTarget) {
+                SelectNearestTarget_0206afec();
+            } else {
+                SetMenuOpenState_0206bb74(0, TRUE);
+            }
+            state->holdTimer = 0;
+        }
+        return;
+    }
+''')
+    if relative == 'eu/src/overlays/ov001/calls/HandleSideTargetButtons.c':
+        old = '    if ((held & TARGET_PAD_R) && (held & TARGET_PAD_L)) {'
+        if text.count(old) != 1:
+            raise ValueError('Unexpected side target input')
+        text = lock_on_decl + lock_on_stick_decl + text.replace(old, '''    if (kh_vita_lock_on_enabled()) {
+        const int side = kh_vita_lockon_switch(1);
+        if (side != 0) {
+            direction = side < 0 ? TARGET_PAD_L : TARGET_PAD_R;
+        }
+    } else if ((held & TARGET_PAD_R) && (held & TARGET_PAD_L)) {''')
+    if relative == 'src/ov047/camera/Camera_ShouldStartManualTurn_020c3ad8.c':
+        old = '    if (Camera_GetFocusPosition_020c1780() != func_ov001_0206dc4c(0)) {'
+        if text.count(old) != 1:
+            raise ValueError('Unexpected camera recenter input')
+        text = lock_on_decl + text.replace(
+            old, '    if (kh_vita_lock_on_enabled() ||\n'
+                 '        Camera_GetFocusPosition_020c1780() != func_ov001_0206dc4c(0)) {')
     if relative == 'src/ov047/camera/Camera_UpdateFollowInput_020c3b5c.c':
         # Feed the same request bits as touch/look controls, before the game
         # checks whether the active camera takes manual turns.
         old = '        camera->flags &= ~0x1000000;'
         if text.count(old) != 1:
             raise ValueError('Unexpected camera input point')
-        text = 'extern unsigned int kh_vita_camera_bits(void);\n' + text.replace(
+        text = lock_on_decl + 'extern unsigned int kh_vita_camera_bits(void);\n' + text.replace(
             old, '        const unsigned stick = kh_vita_camera_bits();\n'
-                 '        if (stick & 0xc) mask = (mask & ~0xc) | (stick & 0xc);\n'
+                 '        if ((stick & 0xc) && !(kh_vita_lock_on_enabled() && func_ov001_0206c2c8())) {\n'
+                 '            mask = (mask & ~0xc) | (stick & 0xc);\n'
+                 '        }\n'
                  '        if (stick & 3) mask = (mask & ~3) | (stick & 3);\n' + old)
+        old = '        if ((data_020604fc & 0x100) && Camera_GetFocusPosition_020c1780()'
+        if text.count(old) != 1:
+            raise ValueError('Unexpected shoulder camera input')
+        text = text.replace(old, '        if (!kh_vita_lock_on_enabled() && (data_020604fc & 0x100) &&\n'
+                                 '            Camera_GetFocusPosition_020c1780()')
     if relative == 'eu/src/overlays/ov001/calls/TryCycleFieldMenuCursor.c':
         text += """
 /* Vita D-pad uses the game's two cursor transitions and field menu pages. */
@@ -235,6 +282,30 @@ void kh_vita_update_command_deck(BOOL canSwitchMode)
         'src/ov052/model_display/ActivateSlotModelGroup_020d1170.c':
             ('    int motion;\n', '"ActivateSlotModelGroup"', '(unsigned int)entity', 'index', '0'),
     }
+    if relative == 'src/ov021/animation/SelectAnimationById_020ac8f4.c':
+        # id -> index through the selector's lookup (b = the lookup routine, symbolized by
+        # tools/symbolize.py from "handler"), then the index that is played (-1: none)
+        old = '    int index = selector->lookup(id);\n'
+        if old not in text: raise ValueError('Unexpected SelectAnimationById')
+        text = 'extern void kh_actor_trace(const char *what, unsigned int entity, int a, int b);\n' + text
+        text = text.replace(old, old + '    kh_actor_trace("SelectAnimationById lookup handler", (unsigned int)selector->lookup, id, index);\n', 1)
+        old = '        selectJointAnimationBlend_0202f2cc(selector, 0, selector->blendTable, index);\n'
+        if old not in text: raise ValueError('Unexpected SelectAnimationById blend')
+        text = text.replace(old, old + '        kh_actor_trace("SelectAnimationById plays", (unsigned int)selector, id, index);\n', 1)
+    if relative == 'src/ov021/object_state/AcquireSharedRecordState_020a9054.c' or \
+            relative.endswith('/AcquireSharedRecordState_020a9054.c'):
+        decl = 'void AcquireSharedRecordState_020a9054(SharedRecordState *obj, s32 key, u32 initArg, u32 context)\n{\n'
+        if decl not in text: raise ValueError('Unexpected AcquireSharedRecordState')
+        text = 'extern void kh_motion_trace(const char *what, const void *obj, const char *name, int a, const void *table);\n' + text
+        text = text.replace(decl, decl + '    kh_motion_trace("load", obj, 0, (int)obj->initialized, (const void *)key);\n', 1)
+        end = '        obj->initialized = 1;\n'
+        if end not in text: raise ValueError('Unexpected AcquireSharedRecordState end')
+        text = text.replace(end, end + '        kh_motion_trace("loaded", obj, 0, key, obj->state);\n', 1)
+    if relative.endswith('/SetBlendTableAndBlendTrack_020cbf58.c'):
+        anchor = '    BlendToAnimationTrack_0202f374(actor->model->fadeState'
+        if anchor not in text: raise ValueError('Unexpected SetBlendTableAndBlendTrack')
+        text = 'extern void kh_motion_trace(const char *what, const void *obj, const char *name, int a, const void *table);\n' + text
+        text = text.replace(anchor, '    kh_motion_trace("body", actor->blendTable, 0, blendIndex * 1000 + frameCount, actor->blendTable);\n' + anchor, 1)
     if relative in ACTOR_TRACE:
         anchor_line, what, ent, a, b = ACTOR_TRACE[relative]
         if anchor_line not in text: raise ValueError('Unexpected ' + relative)

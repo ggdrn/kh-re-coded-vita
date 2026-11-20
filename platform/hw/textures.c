@@ -303,9 +303,8 @@ void kh_tex_decode(uint32_t teximage, uint32_t pltt, uint32_t *out)
         memset(out, 0, n * 4);
         return;
     }
-    /* the port's own pixels over some of the game's (nitro/button_sprites.c: the Vita's
-     * buttons in the combo prompt) */
-    if (fmt == 1 && n == sizeof(fixed) && kh_button_texture(p, n, fixed))
+    /* Re:coded's 32x32 combat button textures use A5I3. */
+    if (fmt == 6 && w == 32 && h == 32 && kh_button_texture(p, n, fixed))
         p = fixed;
     if (fmt != 7) {
         const uint32_t base = pal_base(fmt, pltt), ne = pal_entries(fmt);

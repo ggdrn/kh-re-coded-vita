@@ -437,7 +437,7 @@ def main():
     boot.override('rom_read', boot.rom_read)
     boot.override('rom_header', boot.rom_header)
     for skipped in ('kh_gpu3d_init', 'kh_gpu2d_init', 'audio_out_init', 'workers_init',
-                    'kh_button_glyphs_init', 'video_init'):
+                    'video_init'):
         if skipped in boot.sym.by_name:
             boot.override(skipped, lambda: 0)
     # cpu.c's pending-IRQ word: the s_pending in kh_irq_raise's literal pool
@@ -465,6 +465,7 @@ def main():
     log_dir = boot.sce_sceKernelAllocMemBlock_raw(0x100)
     boot.cpu.mem_write(log_dir, b'ux0:data/khrecoded\0')
     steps = [('config_defaults', ()), ('log_init', (log_dir,)), ('kh_romfs_init', ()),
+             ('kh_button_icons_init', ()),
              ('kh_gx3d_init', ()),
              ('kh_hw_reset', ())]
     print('== port start-up (boot_state without video and audio)')

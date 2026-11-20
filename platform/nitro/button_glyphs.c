@@ -1,173 +1,145 @@
-/* The Vita's face buttons in the game's text: the fonts' A, B, X and Y icons (a filled circle
- * with the letter cut out) drawn again as Circle, Cross, Triangle and Square, the buttons in
- * the same places on the Vita (config.c maps A to Circle, B to Cross, X to Triangle, Y to
- * Square). The icons are there twice: glyphs 0x3349, 0x3314, 0x3322 and 0x334d of the
- * European fonts, and 0xe000-0xe003 of the 10-pixel "all" fonts (European and Japanese), the
- * ones the camp menu's help and buttons use (0.4.16-0.4.22 drew only the first: a frame dump
- * of the camp menu showed the DS's X and Y). The fonts are changed as the game reads them from
- * the dump (rom_patch); config button_icons = 0 keeps the DS's letters. */
+/* Redraw Re:coded's controller glyphs before the Nitro font loader relocates the file. */
 #include "nitro/button_glyphs.h"
 
 #include "config.h"
-#include "log.h"
-#include "nitro/romfs.h"
-#include "rom.h"
 
-#include <stdlib.h>
 #include <string.h>
 
-/* in the fonts' style: a 9x9 filled circle, the symbol cut out ('#' set, 1 bit a pixel) */
-static const struct {
-    uint16_t code, code2; /* the European fonts' code, and the private-use one */
-    const char *rows[10];
-} s_icons[] = {
-    /* A (right) -> Circle */
-    { 0x3349, 0xe000, { "  #####   ", " ##   ##  ", "## ### ## ", "# ##### # ", "# ##### # ",
-                "# ##### # ", "## ### ## ", " ##   ##  ", "  #####   ", "          " } },
-    /* B (bottom) -> Cross */
-    { 0x3314, 0xe001, { "  #####   ", " #######  ", "## ### ## ", "### # ### ", "#### #### ",
-                "### # ### ", "## ### ## ", " #######  ", "  #####   ", "          " } },
-    /* X (top) -> Triangle */
-    { 0x3322, 0xe002, { "  #####   ", " ### ###  ", "### # ### ", "## ### ## ", "# ##### # ",
-                "#       # ", "######### ", " #######  ", "  #####   ", "          " } },
-    /* Y (left) -> Square */
-    { 0x334d, 0xe003, { "  #####   ", " #######  ", "##     ## ", "## ### ## ", "## ### ## ",
-                "## ### ## ", "##     ## ", " #######  ", "  #####   ", "          " } },
+static const uint8_t s_symbols[KH_VITA_BUTTONS][5] = {
+    { 0x11, 0x0a, 0x04, 0x0a, 0x11 }, /* Cross */
+    { 0x0e, 0x11, 0x11, 0x11, 0x0e }, /* Circle */
+    { 0x1f, 0x11, 0x11, 0x11, 0x1f }, /* Square */
+    { 0x04, 0x0a, 0x0a, 0x11, 0x1f }, /* Triangle */
+    { 0x10, 0x10, 0x10, 0x10, 0x1f }, /* L */
+    { 0x1e, 0x11, 0x1e, 0x14, 0x12 }, /* R */
+    { 0x04, 0x06, 0x07, 0x06, 0x04 }, /* Start */
+    { 0x00, 0x00, 0x1f, 0x00, 0x00 }, /* Select */
 };
-#define NICONS ((int)(sizeof(s_icons) / sizeof(s_icons[0])))
 
-/* the fonts, and whether their 0x33xx codes are the icons (in the Japanese font they are
- * other characters: only its 0xe00x) */
-static const struct {
-    const char *path;
-    int letters;
-} s_fonts[] = {
-    { "/text/font_eu_10.nftr", 1 }, { "/text/font_eu_10s.nftr", 1 },
-    { "/text/font_eu_10all.nftr", 1 }, { "/text/font_jp_10all.nftr", 0 },
-};
-#define NFONTS ((int)(sizeof(s_fonts) / sizeof(s_fonts[0])))
+static const uint8_t *s_mapping[4];
 
-/* the patches of the A and B glyphs (rom_patch ids) and their sizes: config confirm_cross
- * (kh_button_glyphs_menu) draws them the other way round in memory */
-#define AB_MAX 16
-static int s_patch_ab[AB_MAX], s_ab_is_a[AB_MAX], s_nab;
-static uint16_t s_ab_size[AB_MAX];
-static uint8_t s_bits_circle[32], s_bits_cross[32];
-
-static void icon_bits(int i, uint8_t *bits)
+void kh_button_icons_init(void)
 {
-    int x, y;
-    memset(bits, 0, 32);
-    for (y = 0; y < 10; y++)
-        for (x = 0; x < 10; x++)
-            if (s_icons[i].rows[y][x] == '#')
-                bits[(y * 10 + x) >> 3] |= (uint8_t)(0x80 >> ((y * 10 + x) & 7));
+    for (int button = KH_BTN_A; button <= KH_BTN_Y; button++) {
+        const int mapped = kh_config.confirm_cross && button <= KH_BTN_B
+                         ? button ^ 1 : button;
+        s_mapping[button] = kh_config.button_icons
+                          ? s_symbols[config_vita_button_index(kh_config.button[mapped])] : NULL;
+    }
 }
 
-static uint32_t rd32(const uint8_t *p) { return p[0] | p[1] << 8 | p[2] << 16 | (uint32_t)p[3] << 24; }
-static uint16_t rd16(const uint8_t *p) { return (uint16_t)(p[0] | p[1] << 8); }
-
-/* the glyph index of code in the NFTR's character maps, -1 when it has none */
-static int glyph_of(const uint8_t *d, uint32_t size, uint32_t cmap, uint16_t code)
+const uint8_t *kh_button_symbol(int ds_button)
 {
-    int guard = 0;
-    while (cmap >= 8 && cmap + 0x14 <= size && guard++ < 256) {
-        const uint8_t *m = d + cmap - 8;
-        const uint16_t first = rd16(m + 8), last = rd16(m + 10), type = rd16(m + 12);
-        const uint32_t next = rd32(m + 16);
-        if (type == 0 && code >= first && code <= last) {
-            return rd16(m + 20) + (code - first);
-        } else if (type == 1 && code >= first && code <= last) {
-            const uint32_t at = cmap - 8 + 20 + (uint32_t)(code - first) * 2;
-            if (at + 2 <= size) {
-                const uint16_t g = rd16(d + at);
-                return g == 0xffff ? -1 : g;
-            }
-        } else if (type == 2) {
-            const uint16_t n = rd16(m + 20);
-            uint32_t i;
-            for (i = 0; i < n && cmap - 8 + 22 + i * 4 + 4 <= size; i++)
-                if (rd16(m + 22 + i * 4) == code)
-                    return rd16(m + 24 + i * 4);
+    return s_mapping[ds_button];
+}
+
+static uint16_t read16(const uint8_t *p)
+{
+    return p[0] | p[1] << 8;
+}
+
+static uint32_t read32(const uint8_t *p)
+{
+    return read16(p) | (uint32_t)read16(p + 2) << 16;
+}
+
+/* The CMAP payload can be a contiguous range, a table or a list of pairs. */
+static int glyph_index(const uint8_t *map, uint32_t size, uint16_t code)
+{
+    const uint16_t first = read16(map), last = read16(map + 2);
+    if (code < first || code > last)
+        return -1;
+    const uint8_t *entries = map + 12;
+    const unsigned index = code - first;
+    switch (read16(map + 4)) {
+    case 0:
+        return read16(entries) + index;
+    case 1:
+        if (14 + index * 2 <= size)
+            return read16(entries + index * 2);
+        break;
+    case 2: {
+        const unsigned count = read16(entries);
+        if (14 + count * 4 > size)
+            break;
+        for (unsigned i = 0; i < count; i++) {
+            if (read16(entries + 2 + i * 4) == code)
+                return read16(entries + 4 + i * 4);
         }
-        cmap = next;
+        break;
+    }
     }
     return -1;
 }
 
-static int patch_font(const char *path, int letters)
+static void draw_glyph(uint8_t *dst, unsigned width, const uint8_t *symbol)
 {
-    uint32_t off, size, finf, cglp, cmap;
-    uint8_t *d;
-    int i, done = 0;
-    if (!kh_romfs_find(path, &off, &size) || size < 0x40 || size > 1024 * 1024)
-        return 0;
-    d = malloc(size);
-    if (!d)
-        return 0;
-    if (rom_read(off, d, size) != (int)size || memcmp(d, "RTFN", 4)) {
-        free(d);
-        return 0;
-    }
-    finf = rd16(d + 0xc);
-    if (finf + 0x1c > size || memcmp(d + finf, "FNIF", 4)) {
-        free(d);
-        return 0;
-    }
-    cglp = rd32(d + finf + 0x10) - 8; /* the block's header */
-    cmap = rd32(d + finf + 0x18);
-    if (cglp + 0x10 <= size && !memcmp(d + cglp, "PLGC", 4)) {
-        const int w = d[cglp + 8], h = d[cglp + 9], bpp = d[cglp + 0xe];
-        const uint16_t gsize = rd16(d + cglp + 10);
-        for (i = 0; i < NICONS * 2 && w == 10 && h == 10 && bpp == 1; i++) {
-            uint8_t bits[32];
-            const int k = i / 2;
-            const uint16_t code = (i & 1) ? s_icons[k].code2 : s_icons[k].code;
-            int g, id;
-            if (!(i & 1) && !letters)
-                continue;
-            g = glyph_of(d, size, cmap, code);
-            if (g < 0 || gsize > sizeof(bits) || cglp + 0x10 + (uint32_t)(g + 1) * gsize > size)
-                continue;
-            /* 1 bit a pixel, rows one after the other, the first pixel in the top bit */
-            icon_bits(k, bits);
-            id = rom_patch(off + cglp + 0x10 + (uint32_t)g * gsize, bits, gsize);
-            if (k < 2 && id >= 0 && s_nab < AB_MAX) {
-                s_patch_ab[s_nab] = id;
-                s_ab_is_a[s_nab] = k == 0;
-                s_ab_size[s_nab] = gsize;
-                s_nab++;
-            }
-            done++;
+    static const uint16_t disc8[] = { 0x3c, 0x7e, 0xff, 0xff, 0xff, 0xff, 0x7e, 0x3c };
+    static const uint16_t disc10[] = { 0x0f8, 0x1fc, 0x3fe, 0x3fe, 0x3fe, 0x3fe, 0x3fe, 0x1fc, 0x0f8 };
+    const uint16_t *rows = width == 8 ? disc8 : disc10;
+    const unsigned height = width == 8 ? 8 : 9;
+    /* The Japanese 10 px 0x33xx glyphs start one row lower than the other icons. */
+    const unsigned top = width == 10 && dst[0] == 0 && (dst[1] & 0xc0) == 0 ? 1 : 0;
+    memset(dst, 0, width == 8 ? 8 : 13);
+    for (unsigned y = 0; y < height; y++) {
+        unsigned row = rows[y];
+        if (y >= 2 && y < 7)
+            row &= ~((unsigned)symbol[y - 2] << (width - 7));
+        for (unsigned x = 0; x < width; x++) {
+            const unsigned bit = (y + top) * width + x;
+            if (row & (1u << (width - 1 - x)))
+                dst[bit / 8] |= 0x80 >> (bit % 8);
         }
     }
-    free(d);
-    return done;
 }
 
-void kh_button_glyphs_init(void)
+static void patch_font(uint8_t *file)
 {
-    int i, n = 0;
-    if (!kh_config.button_icons)
+    static const uint16_t legacy_codes[] = { 0x3349, 0x3314, 0x3322, 0x334d };
+    if (!s_mapping[0] || !file || memcmp(file, "RTFN", 4) != 0)
         return;
-    icon_bits(0, s_bits_circle);
-    icon_bits(1, s_bits_cross);
-    for (i = 0; i < NFONTS; i++)
-        n += patch_font(s_fonts[i].path, s_fonts[i].letters);
-    LOG("text: %d button icons drawn as the Vita's (%d fonts)", n, NFONTS);
+    const uint32_t size = read32(file + 8), head = read16(file + 12);
+    if (head < 16 || size < head || size > 1024 * 1024)
+        return;
+
+    uint8_t *table = NULL;
+    unsigned width = 0, stride = 0, count = 0;
+    /* The Nintendo font format stores CGLP before its CMAP blocks. */
+    for (uint32_t off = head; off + 8 <= size; ) {
+        uint8_t *block = file + off;
+        const uint32_t length = read32(block + 4);
+        if (length < 8 || length > size - off)
+            return;
+
+        if (length >= 16 && memcmp(block, "PLGC", 4) == 0) {
+            width = block[8];
+            stride = read16(block + 10);
+            if (block[9] != width || block[14] != 1 || block[15] != 0 ||
+                !((width == 8 && stride == 8) || (width == 10 && stride == 13)))
+                return;
+            table = block + 16;
+            count = (length - 16) / stride;
+        } else if (table && length >= 22 && memcmp(block, "PAMC", 4) == 0) {
+            for (int button = KH_BTN_A; button <= KH_BTN_Y; button++) {
+                const int private_glyph = glyph_index(block + 8, length - 8, 0xe000 + button);
+                if (private_glyph >= 0 && (unsigned)private_glyph < count)
+                    draw_glyph(table + stride * private_glyph, width, s_mapping[button]);
+                if (width == 10) {
+                    const int legacy_glyph = glyph_index(block + 8, length - 8, legacy_codes[button]);
+                    if (legacy_glyph >= 0 && (unsigned)legacy_glyph < count && legacy_glyph != private_glyph)
+                        draw_glyph(table + stride * legacy_glyph, width, s_mapping[button]);
+                }
+            }
+        }
+        off += length;
+    }
 }
 
-/* The fonts' A and B in memory: Circle and Cross as the buttons are placed (swap 0), or the
- * other way round while the menus confirm with Cross (swap 1; input.c). Only where the font a
- * patch was read into still holds one of the two (it may have been freed and used since). */
-void kh_button_glyphs_menu(int swap)
+typedef struct NNSG2dFontInformation NNSG2dFontInformation;
+extern int __real_NNSi_G2dGetUnpackedFont(void *file, NNSG2dFontInformation **result);
+
+int __wrap_NNSi_G2dGetUnpackedFont(void *file, NNSG2dFontInformation **result)
 {
-    int i;
-    for (i = 0; i < s_nab; i++) {
-        uint8_t *p = rom_patch_last_dst(s_patch_ab[i]);
-        const uint16_t n = s_ab_size[i];
-        const uint8_t *want = s_ab_is_a[i] == !swap ? s_bits_circle : s_bits_cross;
-        if (p && (!memcmp(p, s_bits_circle, n) || !memcmp(p, s_bits_cross, n)) && memcmp(p, want, n))
-            memcpy(p, want, n);
-    }
+    patch_font(file);
+    return __real_NNSi_G2dGetUnpackedFont(file, result);
 }
