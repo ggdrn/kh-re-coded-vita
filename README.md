@@ -6,16 +6,23 @@ provides a compatibility layer for DS graphics, audio, input, and cartridge
 access. vitaGL drives rendering on the Vita GPU. The port reads game data from
 your own cartridge dump at runtime.
 
-## Run on PS Vita
+## Install on PS Vita
 
-1. On a homebrew-enabled Vita, install the shader compiler
-   (`libshacccg.suprx`) from your console. See the
-   [vitaGL setup instructions](https://github.com/Rinnegatamante/vitaGL#prerequisites).
-2. Install `recoded_v<version>.vpk` with VitaShell.
-3. Copy your European (`BK9P`) ROM dump to `ux0:data/khrecoded/coded.nds`.
-   The expected SHA-1 is `b9d45dcd654265fc7b8ba83f1bb3c15f011d6acf`.
-4. Launch the game from LiveArea. Press **L + R + Select** for port settings.
-   In the field, the left stick moves and the right stick controls the camera.
+1. On a homebrew-enabled PS Vita with VitaShell, set up the shader compiler
+   (`libshacccg.suprx`). Follow the [vitaGL setup instructions](https://github.com/Rinnegatamante/vitaGL#prerequisites).
+2. Copy `recoded_v<version>.vpk` to the Vita over USB or FTP. Open the file in
+   VitaShell to install it. If you need a VPK, see [Build the VPK](#build-the-vpk).
+3. Create `ux0:data/khrecoded/` and copy your own European Nintendo DS ROM dump
+   into it as `coded.nds`. The cartridge code is `BK9P`, and the dump's expected
+   SHA-1 is `b9d45dcd654265fc7b8ba83f1bb3c15f011d6acf`.
+4. Launch **Kingdom Hearts Re:coded** from the LiveArea bubble. Press
+   **L + R + Select** to open the Port Menu.
+
+With the default controls, use the left stick to move and the right stick to
+turn the camera. Tap **R** to lock onto or release a target. Flick the right
+stick left or right while locked on to switch targets. You can change
+**Lock-on controls** and **Button icons** under **Gameplay** in the Port Menu.
+Restart the game after changing the icon style.
 
 ## Build the VPK
 
