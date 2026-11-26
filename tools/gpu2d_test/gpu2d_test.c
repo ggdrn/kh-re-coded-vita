@@ -271,6 +271,165 @@ static int scene_mmem_fifo(void)
     return failures;
 }
 
+static int scene_field_caption(void)
+{
+    static uint32_t fb[256 * 192];
+    reset();
+    w32(0x04000000, 0x00010000 | 0x0908); /* engine A, 3D and tiled BG3 */
+    w16(0x04000008, 3); /* BG0 3D behind BG3 */
+    w16(0x0400000e, 31 << 8);
+    tile4(kh_vram_bg_a, 0, 1, 2);
+    tile4(kh_vram_bg_a, 0, 958, 2);
+    tile4(kh_vram_bg_a, 0, 967, 2);
+    const uint16_t deck = 1, caption_left = 0xf000 | 958, caption_right = 0xf000 | 967;
+    uint8_t *row = kh_vram_bg_a + 31 * 0x800 + 21 * 64;
+    memcpy(row + 2 * 2, &deck, 2);
+    memcpy(row + 11 * 2, &caption_left, 2);
+    memcpy(row + 20 * 2, &caption_right, 2);
+    memcpy(row + 29 * 2, &deck, 2);
+    row = kh_vram_bg_a + 31 * 0x800;
+    memcpy(row + (6 * 32 + 2) * 2, &deck, 2); /* Obtained */
+    memcpy(row + (6 * 32 + 29) * 2, &deck, 2); /* Level Up */
+    memcpy(row + (1 * 32 + 29) * 2, &deck, 2); /* enemy HP */
+    memcpy(row + (2 * 32 + 29) * 2, &deck, 2);
+    memcpy(row + (2 * 32 + 18) * 2, &deck, 2); /* full-width notice on the same row */
+    memcpy(row + (11 * 32 + 2) * 2, &deck, 2); /* Tree unlock notice */
+    kh_gpu2d_hud_mode = 1;
+    kh_gpu2d_hud_edges = 1;
+    kh_gpu2d_tree_notice = 1;
+    kh_gpu2d_right_notice = 1;
+    kh_gpu2d_render(0, fb);
+    kh_gpu2d_hud_mode = 0;
+    kh_gpu2d_hud_edges = 0;
+    kh_gpu2d_tree_notice = 0;
+    kh_gpu2d_right_notice = 0;
+    if ((fb[168 * 256 + 16] >> 24) != 0xfe || (fb[168 * 256 + 232] >> 24) != 0xfe ||
+        (fb[168 * 256 + 88] >> 24) != 0xff || (fb[168 * 256 + 160] >> 24) != 0xff) {
+        printf("FAIL field_caption: HUD %02x/%02x, caption %02x/%02x\n",
+               fb[168 * 256 + 16] >> 24, fb[168 * 256 + 232] >> 24,
+               fb[168 * 256 + 88] >> 24, fb[168 * 256 + 160] >> 24);
+        return 1;
+    }
+    if ((fb[48 * 256 + 16] >> 24) != 0xfe || (fb[8 * 256 + 232] >> 24) != 0xfe ||
+        (fb[16 * 256 + 232] >> 24) != 0xff ||
+        (fb[88 * 256 + 16] >> 24) != 0xfe ||
+        kh_gpu2d_hud_box[KH_FIELD_HUD_TREE_NOTICE][1] != 88 ||
+        (fb[48 * 256 + 232] >> 24) != 0xfe ||
+        kh_gpu2d_hud_box[KH_FIELD_HUD_RIGHT_NOTICE][1] != 48) {
+        printf("FAIL field_hud: corner HUD and timed notices must move, full-width notices stay\n");
+        return 1;
+    }
+    printf("ok field_hud: relocates corner HUD and preserves area captions and full-width notices\n");
+    return 0;
+}
+
+static int scene_combo_limit_arrows(void)
+{
+    static uint32_t fb[256 * 192];
+    reset();
+    w32(0x04000000, 0x00010000 | 0x0908); /* engine A, 3D and tiled BG3 */
+    w16(0x04000008, 3);
+    w16(0x0400000e, 31 << 8);
+    tile4(kh_vram_bg_a, 0, 1, 2);
+    const uint16_t tile = 1;
+    uint8_t *row = kh_vram_bg_a + 31 * 0x800 + 16 * 64;
+    for (int col = 14; col < 18; col++)
+        memcpy(row + col * 2, &tile, 2);
+    row += 5 * 64;
+    memcpy(row + 2 * 2, &tile, 2);
+    memcpy(row + 29 * 2, &tile, 2);
+    kh_gpu2d_hud_mode = 1;
+    kh_gpu2d_hud_edges = 1;
+    kh_gpu2d_arrow_prompt = 1;
+    memset((void *)kh_gpu2d_zone_rows, 0, sizeof(kh_gpu2d_zone_rows));
+    kh_gpu2d_render(0, fb);
+    int ok = !kh_gpu2d_zone_rows[0][128] && !kh_gpu2d_zone_rows[1][128] &&
+             (fb[168 * 256 + 16] >> 24) == 0xfe && (fb[168 * 256 + 232] >> 24) == 0xfe;
+    for (int x = 112; x < 144; x++)
+        ok &= (fb[128 * 256 + x] >> 24) == 0xff;
+    kh_gpu2d_arrow_prompt = 0;
+    kh_gpu2d_render(0, fb);
+    ok &= (fb[128 * 256 + 128] >> 24) == 0xfe && (fb[128 * 256 + 142] >> 24) == 0xfe;
+    kh_gpu2d_hud_mode = 0;
+    kh_gpu2d_hud_edges = 0;
+    puts(ok ? "ok combo_limit: center arrows stay put while corner HUD moves"
+            : "FAIL combo_limit: center arrows and corner HUD lost their positions");
+    return !ok;
+}
+
+static int scene_sector_gauge(void)
+{
+    static uint32_t fb[256 * 192];
+    reset();
+    w32(0x04000000, 0x00010000 | 0x0908); /* engine A, 3D and tiled BG3 */
+    w16(0x04000008, 3);
+    w16(0x0400000e, 31 << 8);
+    tile4(kh_vram_bg_a, 0, 1, 2);
+    const uint16_t gauge = 1;
+    uint8_t *row = kh_vram_bg_a + 31 * 0x800 + 64;
+    memcpy(row + 2 * 2, &gauge, 2); /* status label */
+    memcpy(row + 13 * 2, &gauge, 2); /* bar */
+    memcpy(row + 64 + 2 * 2, &gauge, 2); /* unrelated row immediately below */
+    kh_gpu2d_hud_mode = 1;
+    kh_gpu2d_hud_edges = 1;
+    kh_gpu2d_sector = 1;
+    kh_gpu2d_render(0, fb);
+    int ok = (fb[8 * 256 + 16] >> 24) == 0xfe && (fb[8 * 256 + 104] >> 24) == 0xfe &&
+             (fb[16 * 256 + 16] >> 24) == 0xff;
+    kh_gpu2d_sector = 0;
+    kh_gpu2d_render(0, fb);
+    ok &= (fb[8 * 256 + 16] >> 24) == 0xff && (fb[8 * 256 + 104] >> 24) == 0xff;
+    kh_gpu2d_sector = 1;
+    kh_gpu2d_hud_edges = 0;
+    kh_gpu2d_render(0, fb);
+    ok &= (fb[8 * 256 + 16] >> 24) == 0xff && (fb[8 * 256 + 104] >> 24) == 0xff;
+    kh_gpu2d_sector = 0;
+    kh_gpu2d_hud_mode = 0;
+    puts(ok ? "ok sector_gauge: label and bar are relocated together in widescreen"
+            : "FAIL sector_gauge: label and bar lost their positions");
+    return !ok;
+}
+
+static int scene_coliseum_hud(void)
+{
+    static uint32_t fb[256 * 192];
+    reset();
+    w32(0x04000000, 0x00010000 | 0x0908);
+    w16(0x04000008, 3);
+    w16(0x0400000e, 31 << 8);
+    tile4(kh_vram_bg_a, 0, 1, 2);
+    tile4(kh_vram_bg_a, 0, 958, 2);
+    uint16_t *map = (uint16_t *)(kh_vram_bg_a + 31 * 0x800);
+    map[14 * 32 + 0] = 1;           /* command header */
+    map[23 * 32 + 9] = 1;           /* command row */
+    for (int col = 17; col < 32; col++)
+        map[21 * 32 + col] = 1;     /* HP frame and fill cross the field split at x=140 */
+    map[20 * 32 + 20] = 0xf000 | 958; /* centered caption inside the right rectangle */
+    map[2 * 32 + 29] = 1;           /* upper battle notice */
+
+    for (int z = 0; z < KH_FIELD_HUD_BOX_COUNT; z++) {
+        kh_gpu2d_hud_box[z][0] = 256;
+        kh_gpu2d_hud_box[z][1] = 192;
+        kh_gpu2d_hud_box[z][2] = 0;
+        kh_gpu2d_hud_box[z][3] = 0;
+    }
+    kh_gpu2d_hud_mode = KH_HUD_COLISEUM;
+    kh_gpu2d_render(0, fb);
+    const int ok = (fb[112 * 256] >> 24) == 0xfe &&
+                   (fb[184 * 256 + 79] >> 24) == 0xfe &&
+                   (fb[168 * 256 + 136] >> 24) == 0xfe &&
+                   (fb[168 * 256 + 255] >> 24) == 0xfe &&
+                   (fb[160 * 256 + 160] >> 24) == 0xff &&
+                   (fb[16 * 256 + 232] >> 24) == 0xff &&
+                   kh_gpu2d_hud_box[KH_HUD_COMMANDS][2] == 80 &&
+                   kh_gpu2d_hud_box[KH_HUD_PLAYER_HP][0] == 136 &&
+                   kh_gpu2d_hud_box[KH_HUD_PLAYER_HP][2] == 256;
+    kh_gpu2d_hud_mode = KH_HUD_OFF;
+    puts(ok ? "ok coliseum_hud: complete command and HP blocks, notices in place"
+            : "FAIL coliseum_hud: a block was split or a notice was moved");
+    return !ok;
+}
+
 int main(void)
 {
     scene_text();
@@ -279,5 +438,10 @@ int main(void)
     scene_bitmap();
     scene_brightness();
     scene_extpal();
-    return scene_mmem_fifo();
+    int failures = scene_mmem_fifo();
+    failures |= scene_field_caption();
+    failures |= scene_combo_limit_arrows();
+    failures |= scene_sector_gauge();
+    failures |= scene_coliseum_hud();
+    return failures;
 }

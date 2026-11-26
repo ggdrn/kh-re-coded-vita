@@ -39,7 +39,8 @@ typedef struct {
     int layout;         /* starting screen layout: 0 top main, 1 bottom main, 2 side by side */
     int inset_width;    /* width in pixels of the small screen (4:3), 128-480 */
     int aspect;         /* KH_ASPECT_*: widescreen 3D, the DS picture stretched, or 4:3 */
-    int frame_interpolation; /* 3D at 60 fps with frames mixed in between: 0 off, 1 on */
+    int fullscreen_3d;  /* 16:9 field camera; stretch the authored picture outside it */
+    int frame_interpolation; /* interpolate gameplay 3D at 60 fps: 0 off, 1 on */
     int dynamic_res;    /* 60 fps: the 3D drawn smaller (to 2x) while the GPU falls behind: 0/1 */
     int partner_swap;   /* experimental: touching the partner's HUD in a story mission with a
                          * partner gives player 1 the partner, Roxas played by the AI: 0/1 */
@@ -81,6 +82,8 @@ typedef struct {
      * contents change (autohide 1; Start and Select pin it). sw 0: unused. */
     int panel[KH_PANELS][KH_PANEL_FIELDS];
     int hud_size;       /* the field HUD's blocks (commands, HP, chain, target), 60-100 % */
+    int one_screen_map_size;  /* normal and digital maps, 60-100 % */
+    int one_screen_tree_size; /* interactive Tree panel, 80-100 % */
     int language;       /* the game's language, read at boot: 1 English, 2 French, 3 German,
                          * 4 Italian, 5 Spanish (the European cartridge's five) */
     int debug;          /* debug hotkeys and the detailed log: 0 off (default), 1 on */

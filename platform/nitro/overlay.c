@@ -45,7 +45,12 @@ static int s_menu_active;
 
 void kh_overlay_set_menu_active(int active)
 {
-    s_menu_active = active;
+    __atomic_store_n(&s_menu_active, active, __ATOMIC_RELAXED);
+}
+
+int kh_overlay_menu_active(void)
+{
+    return __atomic_load_n(&s_menu_active, __ATOMIC_RELAXED);
 }
 
 static void mark_loaded(const KhOverlay *ov)
@@ -79,7 +84,7 @@ void *kh_ovdisp_resolve(const uint32_t *tab)
         void *fn = (void *)(uintptr_t)tab[3 + i * 2];
         if (!fn)
             continue;
-        if (id == 39 && s_menu_active)
+        if (id == 39 && kh_overlay_menu_active())
             return fn;
         if (!first)
             first = fn;

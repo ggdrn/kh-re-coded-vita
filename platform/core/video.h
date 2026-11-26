@@ -33,6 +33,15 @@ int video_on_inset(int px, int py);
 /* Experimental single screen (config single_screen): on, the top screen alone over the display
  * and the config's panels (parts of the bottom screen) over it; game.c turns it on in missions. */
 void video_set_single_screen(int on);
+enum {
+    VIDEO_FIELD_MAP = 0, VIDEO_FIELD_BOARD = 1, VIDEO_FIELD_TREE = 2,
+    VIDEO_FIELD_MODE_MASK = 0xff,
+    VIDEO_FIELD_MAP_VISIBLE = 1 << 8,
+    VIDEO_FIELD_PANEL_HIDDEN = 1 << 9,
+};
+void video_set_field_display(int widescreen, int single, int stretch, unsigned panel);
+int video_map_field_touch(int px, int py, int first, int *x, int *y);
+unsigned video_take_field_tab_request(void);
 /* config single_screen before the game (the title's overlay): one screen at a time, the
  * title's menu on the left over the player's picture (ux0:data/khrecoded/menu_bg.png). */
 void video_set_single_menus(int on);
@@ -49,15 +58,10 @@ void video_set_panel_visibility(int i, float vis);
 /* Single screen: the bottom screen holds a tutorial page, shown whole in the middle instead of
  * the panels. */
 void video_set_tutorial(int on);
-/* In the field: the top screen's HUD blocks drawn at config hud_size, each in its corner. */
-void video_set_hud_shrink(int on);
-/* the boxes (x0 y0 x1 y1, DS pixels) the HUD fills in its top-left, bottom-left and
- * bottom-right corners in the picture about to be shown (gpu2d kh_gpu2d_hud_box) */
-void video_set_hud_boxes(const int boxes[3][4]);
-/* the same corners' notices standing apart from the HUD (gpu2d kh_gpu2d_note_box), drawn at
- * their own size at the display's edge with config hud 2 */
-void video_set_note_boxes(const int boxes[3][4]);
-
+/* The game HUD blocks drawn at config hud_size, each in its corner. */
+void video_set_hud_shrink(int on, int coliseum);
+/* The boxes the HUD fills in each corner, in DS pixels. */
+void video_set_hud_boxes(const int boxes[][4]);
 int video_single_screen(void);
 int video_single_scene(void);
 /* Single screen in the field: khdays-port's HUD pieces (hw/fieldhud.c) drawn over the top screen

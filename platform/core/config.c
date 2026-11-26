@@ -18,6 +18,7 @@ static const KhConfig s_defaults = {
     .fast_forward = 2, .camera_stick = 1, .camera_speed = 2,
     .camera_invert_x = 0, .camera_invert_y = 0, .camera_follow = 0, .dpad_deck = 1, .show_fps = 0, .volume = 100,
     .button_icons = 1, .confirm_cross = 1, .single_screen = 0, .panel_opacity = 90, .language = 1, .hud_size = 100,
+    .one_screen_map_size = 100, .one_screen_tree_size = 100,
     /* the mission screen's bottom-screen parts (sx sy sw sh anchor dx dy scale), measured on
      * the DS's bottom screen in a mission: the INFORMATION bar top-left, the map in the
      * top-right corner with the target beside it (below the top screen's enemy name and HP),
@@ -83,7 +84,8 @@ static int clampi(int v, int lo, int hi)
 static const struct { const char *key; size_t offset; int lo, hi; } settings[] = {
 #define SET(k, lo, hi) { #k, offsetof(KhConfig, k), lo, hi }
     SET(render_scale,1,4), SET(layout,0,4), SET(inset_width,128,480),
-    SET(aspect,0,2), SET(frame_interpolation,0,1), SET(dynamic_res,0,1),
+    SET(aspect,0,2), SET(fullscreen_3d,0,1), SET(single_screen,0,1), SET(hud_size,60,100), SET(frame_interpolation,0,1), SET(dynamic_res,0,1),
+    SET(one_screen_map_size,60,100), SET(one_screen_tree_size,80,100),
     SET(texture_filter,0,1), SET(filter_2d,0,2), SET(screen_effect,0,2),
     SET(inset_corner,0,3), SET(inset_opacity,50,100), SET(rear_touch,0,2),
     SET(stick_deadzone,1,3), SET(vita_lock_on,0,1), SET(fast_forward,2,3),
@@ -109,6 +111,9 @@ void config_load(void)
     kh_config = s_defaults;
     FILE *f = fopen(KH_CONFIG_PATH, "r");
     if (!f) { config_save(); return; }
+    /* Existing configs stored both panel sizes in hud_size. */
+    kh_config.one_screen_map_size = 0;
+    kh_config.one_screen_tree_size = 0;
     char line[256], key[64], val[64];
     while (fgets(line,sizeof(line),f)) {
         if (sscanf(line," %63[a-zA-Z0-9_] = %63s",key,val)!=2) continue;
@@ -124,6 +129,12 @@ void config_load(void)
                     if (!strcmp(val,s_vita_buttons[j].name)) kh_config.button[i]=s_vita_buttons[j].mask;
     }
     fclose(f);
+    kh_config.hud_size = (kh_config.hud_size / 10) * 10;
+    kh_config.one_screen_map_size = kh_config.one_screen_map_size ?
+                                    kh_config.one_screen_map_size / 10 * 10 : kh_config.hud_size;
+    kh_config.one_screen_tree_size = kh_config.one_screen_tree_size ?
+                                     kh_config.one_screen_tree_size / 10 * 10 :
+                                     clampi(kh_config.hud_size, 80, 100);
     kh_log_verbose=kh_config.debug;
 }
 int kh_vita_mission_balance(void) { return 0; }

@@ -30,6 +30,178 @@ def apply(relative,text):
     text = zero_arg_fixes.apply(relative, text)
     text = check_local_addr.fix(text)
     text = float_abi_fixes.apply(relative, text)
+    if relative == 'src/ov001/field_manager/RefreshFieldLayerIfUnbound_020736d0.c':
+        # EU 0x0207370a returns the bound screen or the fallback tile row in r0.
+        old = '''    if (screen == NULL) {
+        UpdateWidgetLayerDefault_020b9df0(data_ov001_020a04a4.manager, layer);
+    }'''
+        new = '''    if (screen == NULL) {
+        return (u16 *)UpdateWidgetLayerDefault_020b9df0(data_ov001_020a04a4.manager, layer);
+    }
+    return screen;'''
+        signature = 'void RefreshFieldLayerIfUnbound_020736d0(int layer)'
+        if text.count(signature) != 1 or text.count(old) != 1:
+            raise ValueError('Unexpected field layer fallback')
+        text = text.replace(signature, signature.replace('void ', 'u16 *')).replace(old, new)
+    if relative == 'src/ov001/field_manager/UpdateFieldWidgetLayer_020736b4.c':
+        # EU 0x020736ca has the same return contract after GetPanelLayerScreen.
+        old = '''void UpdateFieldWidgetLayer_020736b4(int layer)
+{
+    if (func_ov001_0206ea08(layer) == 0) {
+        UpdateWidgetLayerDefault_020b9df0(data_ov001_020a04a4.manager, layer);
+    }
+}'''
+        new = '''u16 *UpdateFieldWidgetLayer_020736b4(int layer)
+{
+    void *screen = func_ov001_0206ea08(layer);
+    if (screen == NULL) {
+        return (u16 *)UpdateWidgetLayerDefault_020b9df0(data_ov001_020a04a4.manager, layer);
+    }
+    return screen;
+}'''
+        if text.count(old) != 1 or text.count('extern u32 func_ov001_0206ea08(int layer);') != 1:
+            raise ValueError('Unexpected panel layer fallback')
+        text = text.replace('extern u32 func_ov001_0206ea08(int layer);',
+                            'extern void *func_ov001_0206ea08(int layer);').replace(old, new)
+    if relative == 'eu/src/overlays/ov041/calls/InitSlotGroups.c':
+        old = 'extern void RegisterSessionCallback(int callback);'
+        new = 'extern void UpdateStageMarkers(void);\nextern void RegisterSessionCallback(void (*callback)(void));'
+        call = 'RegisterSessionCallback(0x20bdb75);'
+        if text.count(old) != 1 or text.count(call) != 1:
+            raise ValueError('Unexpected Olympus stage marker callback registration')
+        text = text.replace(old, new).replace(call, 'RegisterSessionCallback(UpdateStageMarkers);')
+    if relative == 'eu/src/overlays/ov041/calls/FreeSceneGroupObjects.c':
+        old = 'extern int RemoveTaggedListEntries();'
+        new = 'extern void UpdateStageMarkers(void);\nextern void RemoveTaggedListEntries(int tag);'
+        call = 'RemoveTaggedListEntries(0x20bdb75);'
+        if text.count(old) != 1 or text.count(call) != 1:
+            raise ValueError('Unexpected Olympus stage marker callback removal')
+        text = text.replace(old, new).replace(call, 'RemoveTaggedListEntries((int)UpdateStageMarkers);')
+    if relative == 'src/ov076/matrix_menu/SlotMenu_DrawSlotModels_020c7708.c':
+        # The command icon is at z=0 in an ortho view whose eye and far clip
+        # are both at 1024. Move only this quad off the Vita's clear depth.
+        text = text.replace('(x << 16) | (u16)y, 0);',
+                            '((u32)(u16)x << 16) | (u16)y, FX32_ONE);')
+    if relative == 'src/ov077/unclassified_helpers/DrawPartySlotIcons_020c56f4.c':
+        # Gear Matrix uses the same orthographic far plane as Command Matrix.
+        text = text.replace('(u16)(s16)x | ((s16)y << 16), 0);',
+                            '(u16)x | ((u32)(u16)y << 16), 0x1000);')
+    if relative == 'src/ov016/field_objects/UpdateSlidingFieldObject_020a393c.c':
+        # At 020a3a6e both DS operands point to the mover's position.
+        # Averaging in the target instead bypasses the sweep when it stalls.
+        text = text.replace('                VecFx32 middle;', '                VecFx32 settled = object->position;')
+        text = text.replace(
+            '                VEC_Add_01ff9e0c(&object->position, &target->position, &middle);\n'
+            '                DivideVecFx32ByScalar_0204a700(&middle, 2);\n'
+            '                func_ov016_020a6cc4(object, &middle);',
+            '                func_ov016_020a6cc4(object, &settled);')
+        text = text.replace('extern void VEC_Add_01ff9e0c(const VecFx32 *a, const VecFx32 *b, VecFx32 *out);\n', '')
+        text = text.replace('extern void DivideVecFx32ByScalar_0204a700(VecFx32 *vec, int divisor);\n', '')
+    if relative == 'src/ov046/shared_engine/Camera_UpdateViewAxes_020c0c34.c':
+        # The first two normals test the horizontal edges. The other two
+        # come from the vertical angle and keep the authored FOV.
+        text = text.replace('void Camera_UpdateViewAxes_020c0c34(void)',
+                            'extern s32 kh_gx3d_field_width_fx(void);\n\n'
+                            'void Camera_UpdateViewAxes_020c0c34(void)')
+        text = text.replace(
+            '    side = *(VecFx32 *)view.m[0];',
+            '    const fx32 width = kh_gx3d_field_width_fx();\n'
+            '    if (width < FX32_ONE) {\n'
+            '        /* Keep a small margin outside the picture as the camera turns. */\n'
+            '        scale = FixedPointMultiply12(scale, width * 19 / 20);\n'
+            '    }\n'
+            '    side = *(VecFx32 *)view.m[0];')
+    if relative == 'src/arm9/graphics/camera_commit_projection_0202a814.c':
+        text = text.replace('void camera_commit_projection_0202a814(CamActor *camera)',
+                            'static void commit_projection(CamActor *camera, int farClip)')
+        text = text.replace('camera->farClip, 0x1000, data_0205a92c',
+                            'farClip, 0x1000, data_0205a92c')
+        text += '''
+
+extern int kh_gx3d_field_width_fx(void);
+
+void camera_commit_projection_0202a814(CamActor *camera)
+{
+    commit_projection(camera, camera->farClip);
+}
+
+void kh_camera_commit_field_projection(void *work)
+{
+    CamActor *camera = work;
+    int farClip = camera->farClip;
+    if (kh_gx3d_field_width_fx() < 0x1000 && farClip > 0 && farClip <= 0x55555555)
+        farClip += farClip / 2;
+    commit_projection(camera, farClip);
+}
+'''
+    if relative == 'src/ov046/shared_engine/Camera_CommitView_020c0b34.c':
+        text = text.replace('camera_commit_projection_0202a814', 'kh_camera_commit_field_projection')
+    if relative == 'eu/src/overlays/ov001/calls/DrawLodSceneObject.c':
+        text = text.replace('void DrawLodSceneObject(LodObject *object)',
+                            'extern s32 kh_gx3d_field_width_fx(void);\n\n'
+                            'void DrawLodSceneObject(LodObject *object)')
+        text = text.replace(
+            '    if (object->flags & 0x8000) {',
+            '    /* Keep the detailed model 25% farther away in widescreen. Scale\n'
+            '     * the measured distance to preserve both LOD thresholds. */\n'
+            '    if (kh_gx3d_field_width_fx() < FX32_ONE)\n'
+            '        distance -= distance / 5;\n\n'
+            '    if (object->flags & 0x8000) {')
+    if relative == 'src/ov016/field_objects/MoveFieldObjectWithCollision_020a34fc.c':
+        # The DS passes the shape at SP+0xF0, followed by its delta and swept
+        # bounds at +0x110 and +0x11C. The query reads the complete sweep.
+        replacements = (
+            ('''typedef struct CollisionShape {
+    void *data;
+    s32 bounds[6];
+    s32 kind;
+} CollisionShape;''', '#include "src/collision/CollisionGeometry.h"'),
+            ('''    s32 swept[6];
+    VecFx32 sweepDelta;
+    CollisionShape shape;''', '    SweptCollisionShape sweep;'),
+            ('extern void OffsetBoxByDelta_0203ac70(s32 *src, s32 *dst, VecFx32 *delta);',
+             'extern void OffsetBoxByDelta_0203ac70(const CollisionBounds *src, CollisionBounds *dst, const VecFx32 *delta);'),
+            ('InitBoxShape_0203ad54(&shape, &box, &center, &extent, &data_02053444);',
+             'InitBoxShape_0203ad54(&sweep.shape, &box, &center, &extent, &data_02053444);'),
+            ('''        sweepDelta = velocity;
+        OffsetBoxByDelta_0203ac70(shape.bounds, swept, &sweepDelta);''',
+             '''        sweep.delta = velocity;
+        OffsetBoxByDelta_0203ac70(&sweep.shape.bounds, &sweep.sweptBounds, &sweep.delta);'''),
+            ('0, 1, &shape, &workspace, NULL);', '0, 1, &sweep, &workspace, NULL);'),
+            ('    s32 bounds[6];\n    s32 kind;\n    VecFx32 velocity;\n    s32 sweptBounds[6];',
+             '    CollisionBounds bounds;\n    s32 kind;\n    VecFx32 velocity;\n    CollisionBounds sweptBounds;'),
+            ('OffsetBoxByDelta_0203ac70(actor->bounds, actor->sweptBounds, &actor->velocity);',
+             'OffsetBoxByDelta_0203ac70(&actor->bounds, &actor->sweptBounds, &actor->velocity);'),
+        )
+        for old, new in replacements:
+            if text.count(old) != 1:
+                raise ValueError(f'Unexpected moving field object collision layout: {old}')
+            text = text.replace(old, new)
+    # The 40-byte digital-sector records contain packed gameplay values.
+    # These words only look like DS addresses. Relocating them changes board
+    # population and challenge parameters. Literals verified against BK9P.
+    stage_data_relocations = {
+        'eu/src/ov034/data/Data_ov034_020bfca0.c': 10,
+        'eu/src/ov034/data/Data_ov034_020c056c.c': 4,
+    }
+    if relative in stage_data_relocations:
+        literals = {
+            '(void *)sOv001_EnPaDDP2f_020a0404': '0x020A0404',
+            '(void *)data_ov015_02080303': '0x02080303',
+            '(void *)data_ov015_02080404': '0x02080404',
+            '(void *)data_ov015_02080504': '0x02080504',
+            '(void *)data_ov015_02080605': '0x02080605',
+            '(void *)data_ov015_02080606': '0x02080606',
+            '(u8 *)gModelDictionaryNameScratch + 0x1': '0x020A0505',
+            '(void *)gModelDictionaryNameScratch': '0x020A0504',
+            '(void *)ScriptCmd_CreateElevatorObject': '0x020A0605',
+        }
+        replaced = 0
+        for reference, word in literals.items():
+            replaced += text.count(reference)
+            text = text.replace(reference, '(void *)' + word)
+        if replaced != stage_data_relocations[relative]:
+            raise ValueError(f'Unexpected digital-sector data relocations: {relative}')
     lock_on_decl = 'extern int kh_vita_lock_on_enabled(void);\n'
     lock_on_stick_decl = 'extern int kh_vita_lockon_switch(int locked);\n'
     if relative == 'src/ov001/shared_engine/HandleShoulderLockOn_0206bd30.c':
@@ -465,6 +637,31 @@ void kh_vita_update_command_deck(BOOL canSwitchMode)
     if relative == 'eu/libs/nitro/fs/calls/FS_NormalizePath.c':
         text='char fsi_path_separator[2] = "/";\n'+text.replace('"/"','fsi_path_separator')
     if relative == 'eu/libs/nitro/fs/calls/FSi_ReadRomCallback.c':
+        old = '''int FSi_ReadRomCallback(int archive, int dst, int src, int len)
+{
+    CARDi_ReadRom(fsi_rom_archive_state.defaultDmaNo, src, dst, len,
+                  (int)FSi_OnRomReadDone, archive, 1);
+    return 0x100;
+}'''
+        new = '''extern int CARD_IsPulledOut(void);
+
+FSResult FSi_ReadRomCallback(FSArchive *archive, void *dst, u32 src, u32 len)
+{
+    const FSFile *file = archive->list;
+    if (file && (file->status & FS_FILE_STATUS_BLOCKING)
+            && FSi_GetCurrentCommand(file) == FS_COMMAND_READFILE) {
+        /* The Vita backend copies the bytes before returning. A blocking
+         * read can complete here without waiting for emulated card DMA. */
+        CARDi_ReadRom(fsi_rom_archive_state.defaultDmaNo, src, (int)dst, len, 0, 0, 0);
+        return CARD_IsPulledOut() ? FS_RESULT_ERROR : FS_RESULT_SUCCESS;
+    }
+    CARDi_ReadRom(fsi_rom_archive_state.defaultDmaNo, src, (int)dst, len,
+                  (int)FSi_OnRomReadDone, (int)archive, 1);
+    return FS_RESULT_PROC_ASYNC;
+}'''
+        if text.count(old) != 1:
+            raise ValueError('Unexpected ROM archive read callback')
+        text = text.replace(old, new)
         for name,offset in [('fsi_overlay_rom_name',0),('fsi_path_root_suffix',4),('fsi_rom_archive_name',8),('fsi_rom_root_path',12)]:
             text+='\n__asm__(".global '+name+'\\n.type '+name+', %object\\n.set '+name+', fsi_path_strings + '+str(offset)+'\\n.size '+name+', 0\\n");\n'
 

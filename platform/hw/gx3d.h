@@ -16,6 +16,9 @@
  * several characters overflowed and lost polygons (0.0.66: parts of characters vanishing). */
 #define KH_GX_MAX_VERTICES 24576
 #define KH_GX_MAX_POLYGONS 8192
+#define KH_GX_VERTEX_CAMERA (UINT32_C(1) << 31)
+#define KH_GX_VERTEX_RUN_START (UINT32_C(1) << 30)
+#define KH_GX_VERTEX_WIDE (UINT32_C(1) << 29)
 
 typedef struct {
     /* clip space with the polygon's viewport folded in: x/w, y/w are GL NDC over the whole
@@ -24,8 +27,7 @@ typedef struct {
     float s, t;       /* texture coordinates in texels */
     uint8_t r, g, b;  /* 0-63, the rasterizer's 6-bit vertex colour */
     uint8_t a;        /* the polygon's alpha (POLYGON_ATTR 16-20), 0-31 */
-    uint32_t tag;     /* what it belongs to (attributes, texture, primitive): matches the
-                       * same vertex in the next frame, for the 60 fps interpolation */
+    uint32_t tag;     /* interpolation flags and primitive/material signature */
 } KhGxVertex;
 
 typedef struct {
@@ -33,12 +35,26 @@ typedef struct {
     uint8_t count;     /* 3 or 4 */
     uint8_t translucent;
     int16_t ytop, ybottom; /* screen rows, for the translucent sort */
-    uint8_t flat;      /* built with an orthographic projection: laid out on the screen itself
-                        * (the HUD's 3D pieces), never widened */
+    uint8_t flat;      /* built with an orthographic projection */
+    uint8_t field_hud; /* flat geometry emitted by a field HUD draw call */
     uint32_t attr;     /* POLYGON_ATTR latched at BEGIN_VTXS */
     uint32_t teximage; /* TEXIMAGE_PARAM */
     uint32_t pltt;     /* PLTT_BASE */
 } KhGxPolygon;
+
+enum KhGxFieldGeometry {
+    KH_GX_FIELD_GEOMETRY_DEFAULT,
+    KH_GX_FIELD_HUD,
+    KH_GX_FIELD_MARKER,
+};
+
+void kh_gx3d_set_field_geometry(enum KhGxFieldGeometry geometry);
+
+typedef struct {
+    int32_t view[12], projection[16]; /* Nitro 20.12, row-vector convention */
+    float wide_x;
+    int valid;
+} KhGxCamera;
 
 typedef struct {
     KhGxVertex vtx[KH_GX_MAX_VERTICES];
@@ -50,9 +66,13 @@ typedef struct {
     uint8_t regs[0x90];   /* 0x04000330-0x040003bf: edge, alpha test, clear, fog, toon */
     uint32_t serial;      /* counts published frames */
     int built_a_top;      /* POWCNT's engine-A-on-top bit while the game built it */
+    float wide_x;         /* factor already applied to vertices marked KH_GX_VERTEX_WIDE */
+    KhGxCamera camera;
 } KhGxFrame;
 
 void kh_gx3d_init(void);
+/* Nitro's scene camera matrices, read on the game thread while it emits geometry. */
+void kh_gx3d_track_camera(const int32_t view[12], const int32_t projection[16]);
 
 /* Called on every SWAP_BUFFERS before the frame is published: the platform holds the game
  * there until a VBlank has passed since the previous swap, as the DS's geometry engine does
@@ -68,6 +88,7 @@ const KhGxFrame *kh_gx3d_pinned(void);
  * drawn (1 = the DS's 4:3), and the box test sees the wider view. The game's own reads of
  * the matrices and position tests stay as on the DS. Set by the display loop. */
 extern volatile float kh_gx3d_wide_x;
+int32_t kh_gx3d_field_width_fx(void);
 /* Dual 3D (kh_gx3d_dual set): a frame built with engine A on the top screen is shown with it
  * on the bottom one, and the other way round; the factor is taken per frame from the screen
  * it is built for, kh_gx3d_wide_screen[POWCNT's bit 15 while building] (0 top, 1 bottom).

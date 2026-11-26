@@ -27,6 +27,8 @@ static uint8_t s_valid[256];
 /* ---- engine state ---------------------------------------------------------------------- */
 
 static Mtx s_proj, s_pos, s_vec, s_tex, s_clip;
+static const int32_t *s_camera_view, *s_camera_proj;
+static int s_prim_camera, s_prim_start;
 volatile float kh_gx3d_wide_x = 1.0f;
 volatile float kh_gx3d_wide_screen[2] = { 1.0f, 1.0f };
 volatile int kh_gx3d_dual;
@@ -41,11 +43,18 @@ static float wide_k(void)
     return s_wide_frame;
 }
 
-/* a perspective projection (w taken from z): the field's camera, not a flat 2D-like layout */
-static int wide_now(void)
+int32_t kh_gx3d_field_width_fx(void)
 {
-    return wide_k() < 0.999f && s_proj[11] != 0;
+    return (int32_t)(s_wide_frame * 4096.0f + 0.5f);
 }
+
+/* In a combined view-projection matrix, clip w can depend on x or y instead of z
+ * (e.g. with the camera turned 90 degrees). */
+static int perspective(const int32_t matrix[16])
+{
+    return (matrix[3] | matrix[7] | matrix[11]) != 0;
+}
+
 static Mtx s_proj_stack[1], s_pos_stack[32], s_vec_stack[32], s_tex_stack[1];
 static int s_proj_sp, s_pos_sp, s_tex_sp, s_mtx_mode, s_stack_error;
 static int s_clip_dirty = 1;
@@ -62,6 +71,27 @@ static uint8_t s_shine[128];
 static int16_t s_light_dir[4][3]; /* transformed, 1.9 */
 static uint16_t s_light_color[4];
 static int s_vp_x1, s_vp_y1, s_vp_w = 256, s_vp_h = 192;
+static enum KhGxFieldGeometry s_field_geometry;
+
+void kh_gx3d_set_field_geometry(enum KhGxFieldGeometry geometry)
+{
+    s_field_geometry = geometry;
+}
+
+static int full_viewport(void)
+{
+    return !s_vp_x1 && !s_vp_y1 && s_vp_w == 256 && s_vp_h == 192;
+}
+
+static int wide_vertex(void)
+{
+    return full_viewport() && (perspective(s_clip) || s_field_geometry == KH_GX_FIELD_MARKER);
+}
+
+static int wide_now(void)
+{
+    return wide_k() < 0.999f && wide_vertex();
+}
 
 /* primitive assembly */
 static int s_prim = -1, s_prim_n, s_strip_odd;
@@ -103,6 +133,8 @@ void kh_gx3d_pin(void)
     dst->disp3dcnt = src->disp3dcnt;
     dst->serial = src->serial;
     dst->built_a_top = src->built_a_top;
+    dst->wide_x = src->wide_x;
+    dst->camera = src->camera;
     memcpy(dst->regs, src->regs, sizeof(dst->regs));
     memcpy(dst->vtx, src->vtx, sizeof(KhGxVertex) * (size_t)src->nvtx);
     memcpy(dst->poly, src->poly, sizeof(KhGxPolygon) * (size_t)src->npoly);
@@ -143,6 +175,12 @@ static void mtx_identity(Mtx m)
 {
     memset(m, 0, sizeof(Mtx));
     m[0] = m[5] = m[10] = m[15] = 0x1000;
+}
+
+void kh_gx3d_track_camera(const int32_t view[12], const int32_t projection[16])
+{
+    s_camera_view = view;
+    s_camera_proj = projection;
 }
 
 static inline int sext(uint32_t v, int bits) { return (int32_t)(v << (32 - bits)) >> (32 - bits); }
@@ -498,7 +536,8 @@ static void emit_polygon(const int *idx, int n, int odd)
     for (i = 0; i < n; i++)
         poly->v[i] = (uint16_t)idx[i];
     poly->count = (uint8_t)n;
-    poly->flat = s_proj[11] == 0;
+    poly->flat = !perspective(s_clip);
+    poly->field_hud = poly->flat && s_field_geometry == KH_GX_FIELD_HUD;
     poly->attr = s_attr;
     poly->teximage = s_teximage;
     poly->pltt = s_pltt;
@@ -511,6 +550,35 @@ static void emit_polygon(const int *idx, int n, int odd)
     poly->ybottom = (int16_t)(96.0f - ymin * 96.0f);
     s_stats.polygons++;
     publish_counts();
+}
+
+static int perspective_camera(void)
+{
+    KhGxCamera *camera = &s_f->camera;
+    if (!s_camera_view || !s_camera_proj || !perspective(s_proj) ||
+        !perspective(s_camera_proj) || !full_viewport())
+        return 0;
+    if (memcmp(s_proj, s_camera_proj, sizeof(Mtx))) {
+        Mtx view, view_projection;
+        int row, col;
+        /* NNS flushes either P alone or V * P into the projection register. */
+        for (row = 0; row < 4; row++) {
+            for (col = 0; col < 3; col++)
+                view[row * 4 + col] = s_camera_view[row * 3 + col];
+            view[row * 4 + 3] = row == 3 ? 4096 : 0;
+        }
+        mtx_mul(view_projection, view, s_camera_proj);
+        if (memcmp(s_proj, view_projection, sizeof(Mtx)))
+            return 0;
+    }
+    if (camera->valid)
+        return !memcmp(camera->view, s_camera_view, sizeof(camera->view)) &&
+               !memcmp(camera->projection, s_camera_proj, sizeof(camera->projection));
+    memcpy(camera->view, s_camera_view, sizeof(camera->view));
+    memcpy(camera->projection, s_camera_proj, sizeof(camera->projection));
+    camera->wide_x = wide_k();
+    camera->valid = 1;
+    return 1;
 }
 
 static void emit_vertex(void)
@@ -552,8 +620,17 @@ static void emit_vertex(void)
     out->g = c5to6(s_color[1]);
     out->b = c5to6(s_color[2]);
     out->a = (uint8_t)((s_attr >> 16) & 31);
-    out->tag = (s_attr * 0x9e3779b1u) ^ (s_teximage * 0x85ebca6bu) ^ (s_pltt * 0xc2b2ae35u) ^
-               ((uint32_t)s_prim << 28) ^ (uint32_t)s_prim_n;
+    out->tag = ((s_attr * 0x9e3779b1u) ^ (s_teximage * 0x85ebca6bu) ^
+                (s_pltt * 0xc2b2ae35u) ^ ((uint32_t)s_prim * 0x27d4eb2du)) &
+               ~(KH_GX_VERTEX_CAMERA | KH_GX_VERTEX_RUN_START | KH_GX_VERTEX_WIDE);
+    if (wide_vertex())
+        out->tag |= KH_GX_VERTEX_WIDE;
+    if (s_prim_camera)
+        out->tag |= KH_GX_VERTEX_CAMERA;
+    if (s_prim_start) {
+        out->tag |= KH_GX_VERTEX_RUN_START;
+        s_prim_start = 0;
+    }
     s_stats.vertices++;
 
     s_prim_vtx[s_prim_n++] = idx;
@@ -659,9 +736,13 @@ static void frame_begin(void)
     s_frame_a_top = (KH_IO16(0x04000304) >> 15) & 1;
     s_wide_frame = kh_gx3d_dual ? kh_gx3d_wide_screen[s_frame_a_top] : kh_gx3d_wide_x;
     s_f = &s_frames[s_build];
+    s_f->wide_x = s_wide_frame;
     s_f->nvtx = 0;
     s_f->npoly = 0;
+    s_f->camera.valid = 0;
     s_prim_n = 0;
+    s_prim_camera = 0;
+    s_prim_start = 1;
     publish_counts();
 }
 
@@ -809,6 +890,8 @@ static void execute(int cmd, const uint32_t *p)
         s_prim_n = 0;
         s_strip_odd = 0;
         s_attr = s_attr_pending;
+        s_prim_camera = perspective_camera();
+        s_prim_start = 1;
         break;
     case 0x41: break; /* END_VTXS does nothing on the hardware */
     case 0x50: swap_buffers(p[0]); break;

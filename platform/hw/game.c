@@ -76,6 +76,24 @@ static int s_console; /* the on-screen log: off at start, L+R+Start toggles it *
 static unsigned title_updated;
 
 extern int __real_UpdateTitlePanel(void);
+extern void __real_DrawGradientRect(unsigned, unsigned, unsigned, unsigned,
+                                    unsigned, unsigned, unsigned);
+extern void __real_RefreshActiveMenuObjects(void);
+
+void __wrap_DrawGradientRect(unsigned x0, unsigned y0, unsigned x1, unsigned y1,
+                             unsigned mode, unsigned color, unsigned shade)
+{
+    kh_gx3d_set_field_geometry(KH_GX_FIELD_HUD);
+    __real_DrawGradientRect(x0, y0, x1, y1, mode, color, shade);
+    kh_gx3d_set_field_geometry(KH_GX_FIELD_GEOMETRY_DEFAULT);
+}
+
+void __wrap_RefreshActiveMenuObjects(void)
+{
+    kh_gx3d_set_field_geometry(KH_GX_FIELD_MARKER);
+    __real_RefreshActiveMenuObjects();
+    kh_gx3d_set_field_geometry(KH_GX_FIELD_GEOMETRY_DEFAULT);
+}
 
 int __wrap_UpdateTitlePanel(void)
 {
@@ -361,56 +379,261 @@ void kh_dual3d_toggled(void)
     __atomic_add_fetch(&s_toggle_seq, 1, __ATOMIC_RELEASE);
 }
 
-static int s_dialog_open;
+/* Sample the field's native message tasks on the game thread before publishing a frame. */
+static unsigned s_field_panel = 0xff;
+enum { FIELD_MESSAGE_WINDOW = 1 << 10, FIELD_MESSAGE_SPRITE = 1 << 11,
+       FIELD_TREE_NOTICE = 1 << 12, FIELD_RIGHT_NOTICE = 1 << 13,
+       FIELD_ARROW_PROMPT = 1 << 14, FIELD_SECTOR = 1 << 15 };
+extern unsigned GetLoadedSubsceneMode(void);
+extern unsigned GetMessageWindowPhaseGroup(void);
+extern int IsCommonFieldMessageSpriteActive(void);
+extern int IsArrowPromptVisible(void);
+extern const void *gMessageWindowWork, *gFieldMessageSpriteManager;
+extern const void *gArrowPromptWork;
+extern const uint8_t *gMapMenuWork;
+extern const void *gBoardScreenGlobals[];
+extern const uint8_t *GetFieldSceneManager(void);
+extern int GetFieldSessionState(void);
+extern int RequestPanelModeWithStyle2(int mode);
+extern int PlaySoundEffect(int channel, int id);
+extern const void *gResultsScreenWorkPointer;
+extern const void *gContinueScreenContext;
+extern const void *gBattleGaugeGlobalStorage;
+extern const int8_t *gResultsScreenPointersPrefix[];
+extern const uint8_t *gResultsScreenTaskHandle;
+extern struct { const void *buffer, *work, *extra; } gEvent2DPanelManager;
+extern const uint8_t *gFieldSessionWork;
+extern int GetFieldSessionPhase(void);
+extern unsigned GetSessionScriptRunMask(void);
+extern int __real_CloseResultsScreen(void);
+extern int __real_UpdateResultsScreen(void);
 
-/* HUD size, after each 2D picture of engine A is finished: a dialogue box (BG3 as the HUD's
- * bars, but across the bottom middle where the HUD never is: gpu2d counted it) keeps the HUD
- * as it is in the next pictures */
+static int s_results_trace_seen;
+
+static void trace_results_transition(const char *step)
+{
+    const uint8_t *work = gResultsScreenWorkPointer;
+    if (!work)
+        return;
+
+    /* Native layouts from CloseResultsScreen and ResultsUpdateWork. */
+    uint16_t flags;
+    int32_t state, fade_ready, fade_mode, brightness, outcome;
+    memcpy(&flags, work + 6, sizeof(flags));
+    memcpy(&state, work + 0x0c, sizeof(state));
+    memcpy(&fade_ready, work + 0x64f8, sizeof(fade_ready));
+    memcpy(&fade_mode, work + 0x6bb0, sizeof(fade_mode));
+    memcpy(&brightness, work + 0x6bb8, sizeof(brightness));
+    memcpy(&outcome, work + 0x6bdc, sizeof(outcome));
+    const uint8_t *session = gFieldSessionWork;
+    const unsigned mask = session ? GetSessionScriptRunMask() : 0;
+    const int phase = session ? GetFieldSessionPhase() : -1;
+    int16_t room = -1, entry = -1, exit_kind = -1;
+    uint32_t session_flags = 0;
+    if (session) {
+        /* The pending room request consumed by EnterPendingRoom and HandleSessionScriptResult. */
+        memcpy(&room, session + 0x20c, sizeof(room));
+        memcpy(&entry, session + 0x20e, sizeof(entry));
+        memcpy(&exit_kind, session + 0x210, sizeof(exit_kind));
+        memcpy(&session_flags, session + 0x214, sizeof(session_flags));
+    }
+    uint32_t task_signal = 0;
+    const uint8_t *task = gResultsScreenTaskHandle;
+    if (task && (uintptr_t)task != UINT32_MAX)
+        memcpy(&task_signal, task + 0x28, sizeof(task_signal));
+
+    /* SessionBuffer 10 supplies CommitResultsRewards with the board's selected entry. */
+    const int8_t *board = gResultsScreenPointersPrefix[0];
+    const int node = board ? board[0x55] : -1;
+    const int board_entry = node >= 0 && node < 6 ? board[0x31 + node] : -1;
+    const unsigned main_brightness = KH_IO16(0x0400006c);
+    const unsigned sub_brightness = KH_IO16(0x0400106c);
+    const uint32_t sample[] = { flags, state, fade_ready, fade_mode, brightness, outcome,
+                                mask, main_brightness, sub_brightness, phase, room, entry,
+                                exit_kind, session_flags, task_signal, node, board_entry };
+    static uint32_t previous[sizeof(sample) / sizeof(sample[0])];
+    static const char *previous_step;
+    if (s_results_trace_seen && previous_step == step && !memcmp(previous, sample, sizeof(sample)))
+        return;
+    s_results_trace_seen = 1;
+    previous_step = step;
+    memcpy(previous, sample, sizeof(previous));
+    LOG("results: %s flags=%04x state=%d script=%02x fade_ready=%d fade_mode=%d brightness=%d display=%04x/%04x outcome=%d",
+        step, (unsigned)flags, (int)state, mask, (int)fade_ready, (int)fade_mode,
+        (int)brightness, main_brightness, sub_brightness, (int)outcome);
+    LOG("results: handoff phase=%d room=%d entry=%d exit=%d session_flags=%08x task_signal=%u board_node=%d board_entry=%d",
+        phase, room, entry, exit_kind, (unsigned)session_flags, (unsigned)task_signal, node, board_entry);
+}
+
+int __wrap_CloseResultsScreen(void)
+{
+    trace_results_transition("close");
+    return __real_CloseResultsScreen();
+}
+
+int __wrap_UpdateResultsScreen(void)
+{
+    trace_results_transition("update");
+    return __real_UpdateResultsScreen();
+}
+
+extern const uint8_t *gGroupSceneGlobals[2];
+extern int __real_SetSlotDisplayStyle(void);
+extern int __real_UpdateChallengeScene(void);
+extern void __real_UpdateStageLinkPanels(void);
+extern unsigned GetSessionCounter(int index);
+extern void *GetFieldObjectByClassAndIndex(int class_index, unsigned index);
+extern int IsObjectFlagClear(const void *object);
+extern int __real_StageEvents_CheckAllEvents(int16_t filter);
+extern unsigned __real_SubScene9_Request(uint8_t value);
+extern uint8_t __real_SetSceneEntryPrimaryBgmId(int slot, uint8_t track);
+
+static int s_sector_updating;
+static int s_sector_event_result;
+
+int __wrap_SetSlotDisplayStyle(void)
+{
+    s_sector_updating = 1;
+    int result = __real_SetSlotDisplayStyle();
+    s_sector_updating = 0;
+    return result;
+}
+
+uint8_t __wrap_SetSceneEntryPrimaryBgmId(int slot, uint8_t track)
+{
+    uint8_t previous = __real_SetSceneEntryPrimaryBgmId(slot, track);
+    if (s_sector_updating)
+        LOG("sector: primary music slot=%d track=%u previous=%u", slot,
+            (unsigned)track, (unsigned)previous);
+    return previous;
+}
+
+int __wrap_StageEvents_CheckAllEvents(int16_t filter)
+{
+    int result = __real_StageEvents_CheckAllEvents(filter);
+    if (s_sector_updating)
+        s_sector_event_result = result;
+    return result;
+}
+
+unsigned __wrap_SubScene9_Request(uint8_t value)
+{
+    unsigned result = __real_SubScene9_Request(value);
+    if (s_sector_updating)
+        LOG("sector: completion fade value=%u accepted=%u", (unsigned)value, result);
+    return result;
+}
+
+void __wrap_UpdateStageLinkPanels(void)
+{
+    __real_UpdateStageLinkPanels();
+
+    const uint8_t *board = gGroupSceneGlobals[0];
+    if (!board)
+        return;
+    const int8_t *room_ids = (const int8_t *)board + 0x31;
+    const int node = (int8_t)board[0x55];
+    const int goal_node = (int8_t)board[0x28];
+    if (node < 0 || node >= 6 || goal_node < 0 || goal_node >= 6)
+        return;
+
+    int32_t cleared;
+    int16_t required, credited;
+    memcpy(&cleared, board + 0x88, sizeof(cleared));
+    memcpy(&required, board + 0x12, sizeof(required));
+    memcpy(&credited, board + 0x10, sizeof(credited));
+
+    const int room_id = room_ids[node];
+    const void *exit_a = room_id >= 0 ? GetFieldObjectByClassAndIndex(0, room_id) : NULL;
+    const void *exit_b = room_id >= 0 ? GetFieldObjectByClassAndIndex(1, room_id) : NULL;
+    LOG("sector: portal floor=%u/%u node=%d goal_node=%d cleared=%d credited=%d required=%d defeats=%u objects=%d,%d rooms=%d,%d,%d,%d,%d,%d",
+        (unsigned)board[0x24], (unsigned)board[0x25], node, goal_node, (int)cleared,
+        (int)credited, (int)required, GetSessionCounter(0x1b),
+        exit_a ? IsObjectFlagClear(exit_a) : -1, exit_b ? IsObjectFlagClear(exit_b) : -1,
+        room_ids[0], room_ids[1], room_ids[2], room_ids[3], room_ids[4], room_ids[5]);
+}
+
+int __wrap_UpdateChallengeScene(void)
+{
+    const uint8_t *board = gGroupSceneGlobals[0];
+    const uint8_t *scene = gGroupSceneGlobals[1];
+    if (!board || !scene)
+        return __real_UpdateChallengeScene();
+    int node = (int8_t)board[0x55];
+    if (node < 0 || node >= 6)
+        return __real_UpdateChallengeScene();
+
+    /* Shared SessionBuffer 10 node codes and the ov032 scene's event gate. */
+    const int8_t *codes = (const int8_t *)board + 0x56;
+    int before = codes[node];
+    int16_t filter;
+    int32_t timer_before, timer_after;
+    memcpy(&filter, scene + 4, sizeof(filter));
+    memcpy(&timer_before, scene + 0x3c, sizeof(timer_before));
+    s_sector_event_result = -1;
+    s_sector_updating = 1;
+    int result = __real_UpdateChallengeScene();
+    s_sector_updating = 0;
+    memcpy(&timer_after, scene + 0x3c, sizeof(timer_after));
+
+    static int previous_node = -1, previous_code = -1, previous_check = -2;
+    if (node != previous_node || before != previous_code ||
+        before != codes[node] || s_sector_event_result != previous_check) {
+        LOG("sector: type=%u floor=%u node=%d code=%d->%d board=%d,%d,%d,%d,%d,%d filter=%d ready=%d timer=%d->%d",
+            (unsigned)board[0x22], (unsigned)board[0x24], node, before, codes[node],
+            codes[0], codes[1], codes[2], codes[3], codes[4], codes[5], filter,
+            s_sector_event_result, (int)timer_before, (int)timer_after);
+        previous_node = node;
+        previous_code = codes[node];
+        previous_check = s_sector_event_result;
+    }
+    return result;
+}
+
+static unsigned sample_field_panel(void)
+{
+    const unsigned mode = GetLoadedSubsceneMode() & VIDEO_FIELD_MODE_MASK;
+    unsigned panel = mode;
+
+    /* The map dimensions come from UpdateMapMenuState. */
+    if (mode <= VIDEO_FIELD_TREE && !kh_overlay_loaded(23 + mode))
+        return VIDEO_FIELD_MODE_MASK;
+    if (mode == VIDEO_FIELD_MAP && gMapMenuWork) {
+        uint16_t width, height;
+        memcpy(&width, gMapMenuWork + 0x7fbc, sizeof(width));
+        memcpy(&height, gMapMenuWork + 0x7fbe, sizeof(height));
+        if (width && height)
+            panel |= VIDEO_FIELD_MAP_VISIBLE;
+    } else if (mode == VIDEO_FIELD_BOARD && gBoardScreenGlobals[0])
+        panel |= VIDEO_FIELD_MAP_VISIBLE;
+    return panel;
+}
+
+/* Collect the HUD bounds after engine A's 2D picture is finished. */
 static void hud_after_2d(void)
 {
-    int z, boxes[3][4];
-    s_dialog_open = __atomic_exchange_n(&kh_gpu2d_center_bg3, 0, __ATOMIC_RELAXED) >= 200;
-    kh_gpu2d_banner_last = __atomic_exchange_n(&kh_gpu2d_banner_now, 0, __ATOMIC_RELAXED);
-    {
-        /* each corner's HUD: the block of lines joined to the screen's edge, gaps of a few
-         * lines allowed (between the deck's bars); anything further away is a notice */
-        static const int zone_y[3][2] = { { 0, 60 }, { 60, 192 }, { 90, 192 } };
-        int y, last, found;
-        /* top-left: down from the top (the first lines may be empty) */
-        last = -1, found = 0;
-        for (y = zone_y[0][0]; y < zone_y[0][1]; y++)
-            if (kh_gpu2d_zone_rows[0][y])
-                last = y, found = 1;
-            else if (found ? y - last > 6 : y > 16)
+    int boxes[KH_FIELD_HUD_BOX_COUNT][4];
+
+    /* The deck and Sora's HP are the blocks joined to the bottom edge. */
+    for (int z = 0; z < 2; z++) {
+        const int *zone = kh_field_hud_zone(z + 2);
+        int last = zone[3];
+        for (int y = zone[3] - 1; y >= zone[1]; y--) {
+            if (kh_gpu2d_zone_rows[z][y])
+                last = y;
+            else if (y < last - (last == zone[3] ? 24 : 8))
                 break;
-        kh_gpu2d_zone_lim[0][0] = 0, kh_gpu2d_zone_lim[0][1] = last + 1;
-        /* bottom ones: up from the bottom */
-        for (z = 1; z < 3; z++) {
-            last = zone_y[z][1], found = 0;
-            for (y = zone_y[z][1] - 1; y >= zone_y[z][0]; y--)
-                if (kh_gpu2d_zone_rows[z][y])
-                    last = y, found = 1;
-                else if (found ? last - y > 8 : zone_y[z][1] - y > 24)
-                    break;
-            kh_gpu2d_zone_lim[z][0] = last, kh_gpu2d_zone_lim[z][1] = zone_y[z][1];
         }
-        memset((void *)kh_gpu2d_zone_rows, 0, sizeof(kh_gpu2d_zone_rows));
+        kh_gpu2d_zone_start[z] = last;
     }
-    /* the boxes the HUD filled in this picture: the corners drawn again cover only those */
-    for (z = 0; z < 3; z++) {
+    memset((void *)kh_gpu2d_zone_rows, 0, sizeof(kh_gpu2d_zone_rows));
+    for (int z = 0; z < KH_FIELD_HUD_BOX_COUNT; z++) {
         boxes[z][0] = __atomic_exchange_n(&kh_gpu2d_hud_box[z][0], 256, __ATOMIC_RELAXED);
         boxes[z][1] = __atomic_exchange_n(&kh_gpu2d_hud_box[z][1], 192, __ATOMIC_RELAXED);
         boxes[z][2] = __atomic_exchange_n(&kh_gpu2d_hud_box[z][2], 0, __ATOMIC_RELAXED);
         boxes[z][3] = __atomic_exchange_n(&kh_gpu2d_hud_box[z][3], 0, __ATOMIC_RELAXED);
     }
     video_set_hud_boxes(boxes);
-    for (z = 0; z < 3; z++) {
-        boxes[z][0] = __atomic_exchange_n(&kh_gpu2d_note_box[z][0], 256, __ATOMIC_RELAXED);
-        boxes[z][1] = __atomic_exchange_n(&kh_gpu2d_note_box[z][1], 192, __ATOMIC_RELAXED);
-        boxes[z][2] = __atomic_exchange_n(&kh_gpu2d_note_box[z][2], 0, __ATOMIC_RELAXED);
-        boxes[z][3] = __atomic_exchange_n(&kh_gpu2d_note_box[z][3], 0, __ATOMIC_RELAXED);
-    }
-    video_set_note_boxes(boxes);
 }
 
 /* The trace after an enemy's defeat: some enemies (the Possessor) flash the screen white as
@@ -518,20 +741,59 @@ static void present(void)
      * one, and the scenery shook (0.5.3). 0.5.2 held it too, but drew engine B on every
      * toggle: a pair did not fit in two VBlanks. With the single screen (bottom frames
      * passed over) the toggles pace it. */
-    const int movie = kh_overlay_loaded(3);
-    const int lock30 = (!kh_config.frame_interpolation || movie) &&
-                       (!dual || dual_field) && !portmenu_is_open();
+    const unsigned panel = __atomic_load_n(&s_field_panel, __ATOMIC_ACQUIRE);
+    const int message_window = (panel & FIELD_MESSAGE_WINDOW) != 0;
+    const int dialogue = (panel & (FIELD_MESSAGE_WINDOW | FIELD_MESSAGE_SPRITE)) != 0;
+    const int native_menu = kh_overlay_menu_active();
+    const int field_engine_3d = (KH_IO32(0x04000000) & 0x108) == 0x108;
+    const int results = kh_overlay_loaded(34) &&
+                        __atomic_load_n(&gResultsScreenWorkPointer, __ATOMIC_RELAXED);
+    const int event_2d = kh_overlay_loaded(36) &&
+                         __atomic_load_n(&gEvent2DPanelManager.work, __ATOMIC_RELAXED);
+    const int battle_gauge_scene = kh_overlay_loaded(45) &&
+                                   __atomic_load_n(&gBattleGaugeGlobalStorage, __ATOMIC_RELAXED);
+    /* The continue screen has its own BG2 text and BG3 menu bars. */
+    const int continue_scene = kh_overlay_loaded(37) &&
+                               __atomic_load_n(&gContinueScreenContext, __ATOMIC_RELAXED);
+    /* The Coliseum battle has its own HUD while the field overlay remains loaded. */
+    const int turn_battle = kh_overlay_loaded(41);
+    const int standalone = results || event_2d || battle_gauge_scene || continue_scene;
+    /* A field conversation can load menu overlays while engine A still draws
+     * the world. A full menu, movie or dual-3D scene owns its own display. */
+    const int field_scene = !dual && a_on_top && kh_overlay_loaded(1) && !kh_overlay_loaded(22) &&
+                            !standalone && !video_single_scene() &&
+                            (!native_menu || (dialogue && field_engine_3d));
+    const int field_3d = field_scene && !turn_battle;
+    const int wide_scene = field_3d || (turn_battle && !dual && a_on_top);
+    const int widescreen = wide_scene && kh_config.fullscreen_3d;
+    const int single = (wide_scene || event_2d || continue_scene) && kh_config.single_screen;
+    const int stretch = !wide_scene && (kh_config.fullscreen_3d ||
+                                        (standalone && kh_config.single_screen));
+    const uint16_t blend_control = KH_IO16(0x04000050);
+    const uint16_t blend_brightness = KH_IO16(0x04000054);
+    const int field_dim = field_scene && field_engine_3d &&
+                          (blend_control & 0x00c1) == 0x00c1 && (blend_brightness & 31);
+    /* The native pause menu darkens engine A's 3D and blanks engine B. */
+    const int scene_paused = field_dim && blend_control == 0x00c1 &&
+                             (blend_brightness & 31) == 8 && KH_IO16(0x0400106c) == 0x8010;
+    const int coliseum_hud = turn_battle && field_scene && field_engine_3d &&
+                             !scene_paused && !dialogue && kh_config.hud_size < 100;
+    static int last_coliseum_hud;
+    const int coliseum_hud_changed = coliseum_hud != last_coliseum_hud;
+    last_coliseum_hud = coliseum_hud;
+    unsigned display_panel = field_3d ? panel & (VIDEO_FIELD_MODE_MASK | VIDEO_FIELD_MAP_VISIBLE) :
+                                       VIDEO_FIELD_MODE_MASK;
+    if (scene_paused || turn_battle)
+        display_panel = VIDEO_FIELD_MODE_MASK | VIDEO_FIELD_PANEL_HIDDEN;
+    video_set_pause_dim(field_dim, blend_control, blend_brightness);
+    video_set_field_display(widescreen, single, stretch, display_panel);
+    const int menu_open = portmenu_is_open();
+    const int smooth_3d = kh_config.frame_interpolation && field_scene && !menu_open && !dialogue &&
+                         !(KH_IO32(0x04000064) & 0x80000000u);
+    const int lock30 = !smooth_3d && (!dual || dual_field) && !menu_open;
     video_set_swap_interval(lock30 ? 2 : 1);
     s_locked += (uint32_t)lock30;
-    /* Scripted scenes can cut to another camera and rebuild runs of one material in a
-     * different order from one game frame to the next.  Pairing the old and new runs for the
-     * optional 60 Hz clip-space mix crosses two unrelated cameras: w passes through zero and
-     * the composed picture flashes black; it can also join two body parts (mission 24's large
-     * duplicate Genie).  ov023 is the field event script, while video_single_scene covers
-     * one-screen scenes outside it.  Present those authored 30 Hz frames directly; gameplay
-     * keeps interpolation. */
-    const int scripted_scene = kh_overlay_loaded(23) || video_single_scene();
-    kh_gpu3d_direct = dual || lock30 || s_dialog_open || scripted_scene;
+    kh_gpu3d_direct = !smooth_3d;
     {
         /* a new dual-3D scene: the screen memories are the last scene's */
         static int was_dual;
@@ -600,8 +862,7 @@ static void present(void)
     static int shortcut_l_was;
     static unsigned shortcut_sync_frames;
     /* the 2D of a new game frame is drawn by the helpers over this Vita frame and the next,
-     * and shown with the next one, where the new frame's 3D (after its halfway mix at 60 fps)
-     * is shown too; it no longer has to fit in one frame with everything else */
+     * and shown with the next one, where the authored 3D frame is shown too. */
     static int async_2d, async_top;
     int upload2d = 0, upload_mask = 0, capture_gfx = 0;
 
@@ -655,7 +916,7 @@ static void present(void)
         }
         /* dual 3D: the engines change screens with every toggle, so both are drawn each
          * time (a skipped one left the other engine's picture on its screen, 0.0.88) */
-        draw2d = dual || shortcut_sync_frames || (pending && vb != serial_vb) ||
+        draw2d = dual || coliseum_hud_changed || (!smooth_3d && shortcut_sync_frames) || (pending && vb != serial_vb) ||
                  vb - drawn_vb >= 4;
         if (draw2d) {
             pending = 0;
@@ -690,7 +951,7 @@ static void present(void)
             for (i = 0; i < 2; i++)
                 if (i == KH_ENGINE_B && skip_b)
                     continue;
-                else if (dual || i != inset_engine || (parity & 1))
+                else if (single || dual || i != inset_engine || (parity & 1))
                     f2d.eng[f2d.neng++] = i;
             parity++;
         }
@@ -711,24 +972,30 @@ static void present(void)
         }
     }
     {
-        /* widescreen in the field (ov022, the field's action code, is loaded; menus over a
-         * 3D model keep the DS's picture) when engine A's screen is drawn wider than 4:3 */
-        const int wide_ok = kh_config.aspect == KH_ASPECT_WIDE &&
-                            kh_overlay_loaded(1);
-        int k;
-        for (k = 0; k < 2; k++) {
+        const int wide_ok = wide_scene && (widescreen || single || kh_config.aspect == KH_ASPECT_WIDE);
+        for (int k = 0; k < 2; k++) {
             const float aspect = video_screen_aspect(k);
             kh_gx3d_wide_screen[k] = wide_ok && aspect > 1.4f ? (4.0f / 3.0f) / aspect : 1.0f;
         }
-        /* dual 3D: each frame takes its own screen's (gx3d.h) */
         kh_gx3d_dual = dual;
         kh_gx3d_wide_x = kh_gx3d_wide_screen[a_on_top ? 0 : 1];
-        /* config hud: the 2D kept 4:3 in the middle while the 3D is wide (1), its HUD's
-         * corners then drawn at the display's edges (2) */
-        /* (not the mission selection: its 2D, the starry sky and the banners, across the
-         * display with the world) */
-        video_set_hud_scale(kh_config.hud && kh_gx3d_wide_x < 0.999f ? kh_gx3d_wide_x
-                                                                                 : 1.0f);
+        kh_gpu3d_set_projection_width(kh_gx3d_wide_x);
+        /* Keep the turn battle's flat polygons aligned with its native BG and OBJ layers. */
+        const float hud = field_3d && wide_ok ? kh_gx3d_wide_x : 1.0f;
+        video_set_hud_scale(hud);
+        const int move_hud = field_3d && !scene_paused &&
+                             (kh_config.hud_size < 100 || video_hud_edges());
+        /* The native message window shares BG3 with the command deck. */
+        const int move_hud_2d = move_hud && !message_window;
+        kh_gpu2d_hud_mode = coliseum_hud ? KH_HUD_COLISEUM : move_hud_2d ? KH_HUD_FIELD : KH_HUD_OFF;
+        kh_gpu2d_hud_edges = video_hud_edges();
+        kh_gpu2d_tree_notice = (panel & FIELD_TREE_NOTICE) != 0;
+        kh_gpu2d_right_notice = (panel & FIELD_RIGHT_NOTICE) != 0;
+        kh_gpu2d_arrow_prompt = (panel & FIELD_ARROW_PROMPT) != 0;
+        kh_gpu2d_sector = (panel & FIELD_SECTOR) != 0;
+        video_set_hud_shrink(move_hud_2d || coliseum_hud, coliseum_hud);
+        kh_gpu3d_set_field_hud(move_hud || coliseum_hud ? kh_config.hud_size : 100,
+                              video_hud_edges() ? hud : 1.0f, coliseum_hud);
     }
     {
         const KhGxFrame *frame3d = NULL;
@@ -775,7 +1042,7 @@ static void present(void)
         else
             workers_begin(render_chunk, BANDS * f2d.neng, &f2d);
         if (f2d.neng && !dual && !lock30 && !capture_gfx) {
-            async_2d = !shortcut_sync_frames;
+            async_2d = !single && !shortcut_sync_frames && !coliseum_hud_changed;
             async_top = a_on_top;
             if (async_2d)
                 s_2d_async++;
@@ -1391,6 +1658,46 @@ static void swap_wait(void)
     while (*count == last && sceKernelGetProcessTimeWide() < give_up)
         sceKernelDelayThread(200);
     last = *count;
+    if (!kh_overlay_loaded(34) || !gResultsScreenWorkPointer)
+        s_results_trace_seen = 0;
+    unsigned panel = 0xff;
+    const unsigned tab_request = video_take_field_tab_request();
+    if (kh_overlay_loaded(1)) {
+        panel = sample_field_panel();
+        const unsigned mode = panel & VIDEO_FIELD_MODE_MASK;
+        const int sector = gFieldSessionWork && GetFieldSessionState() == 10;
+        if (video_single_screen() && !kh_overlay_loaded(41) &&
+            (!kh_overlay_loaded(36) || !gEvent2DPanelManager.work) &&
+            mode <= VIDEO_FIELD_TREE && tab_request == mode) {
+            /* HandleDefaultMenuAction returns to the digital board in session 10. */
+            const int next = mode != VIDEO_FIELD_TREE ? VIDEO_FIELD_TREE :
+                             sector ? VIDEO_FIELD_BOARD : VIDEO_FIELD_MAP;
+            if (RequestPanelModeWithStyle2(next))
+                PlaySoundEffect(0, 0x3b);
+        }
+        const uint8_t *hud = GetFieldSceneManager();
+        if (hud) {
+            int32_t banner_frame;
+            uint64_t notice_tick;
+            /* SelectSlotTitleLine starts the banner drawn by UpdateHudNoticeMessage. */
+            memcpy(&banner_frame, hud + 0x133c, sizeof(banner_frame));
+            if (banner_frame > 0)
+                panel |= FIELD_TREE_NOTICE;
+            /* UpdateHudNoticeMessage keeps the right-side notice alive with this tick. */
+            memcpy(&notice_tick, hud + 0x4d0, sizeof(notice_tick));
+            if (notice_tick)
+                panel |= FIELD_RIGHT_NOTICE;
+        }
+        if (gMessageWindowWork && GetMessageWindowPhaseGroup())
+            panel |= FIELD_MESSAGE_WINDOW;
+        if (gFieldMessageSpriteManager && IsCommonFieldMessageSpriteActive())
+            panel |= FIELD_MESSAGE_SPRITE;
+        if (gArrowPromptWork && IsArrowPromptVisible())
+            panel |= FIELD_ARROW_PROMPT;
+        if (sector)
+            panel |= FIELD_SECTOR;
+    }
+    __atomic_store_n(&s_field_panel, panel, __ATOMIC_RELEASE);
     {
         /* the 30 fps pacing: VBlanks between the game's frames (2 at its 30 fps) */
         static uint32_t vb_prev;
@@ -1443,6 +1750,8 @@ void kh_game_run(void)
     input_init();
     kh_gx3d_swap_wait = swap_wait;
     kh_gpu3d_clock = display_vblanks;
+    extern const int32_t NNS_G3dGlb_cameraMtx[12], NNS_G3dGlb_projMtx[16];
+    kh_gx3d_track_camera(NNS_G3dGlb_cameraMtx, NNS_G3dGlb_projMtx);
     portmenu_on_scale = kh_gpu3d_set_scale;
     portmenu_on_texture_filter = kh_gpu3d_reload_textures;
     portmenu_on_volume = set_volume;
@@ -1685,25 +1994,8 @@ void kh_game_run(void)
                 KhGpu3dStats rs;
                 kh_gpu3d_take_stats(&rs);
                 if (rs.interpolated)
-                    LOG("gpu3d: 10 s: %u frames shown in between (60 fps)",
-                        (unsigned)rs.interpolated);
-                {
-                    const uint32_t *m = rs.mix_reason;
-                    if (m[0] + m[1] + m[2] + m[3] + m[4] + m[5] + m[6] + m[7])
-                        LOG("gpu3d: 10 s: new frames mixed %u; not: dual 3D %u, previous shown "
-                            "once %u, previous still due %u, none before %u, 3D settings %u, "
-                            "nothing paired %u, camera cut %u; vertices paired %u%%",
-                            (unsigned)m[0], (unsigned)m[1], (unsigned)m[2], (unsigned)m[3],
-                            (unsigned)m[4], (unsigned)m[5], (unsigned)m[6], (unsigned)m[7],
-                            (unsigned)(rs.mix_vertices ? (uint64_t)rs.mix_paired * 100 /
-                                                             rs.mix_vertices : 0));
-                    if (m[0])
-                        LOG("gpu3d: 10 s: of the paired vertices %u in models whose texture "
-                            "coordinates moved; %u runs left unmixed, a nearer one took their "
-                            "pair; %u particle vertices not mixed (a jump)",
-                            (unsigned)rs.mix_uv_moved, (unsigned)rs.mix_runs_lost,
-                            (unsigned)rs.mix_snapped);
-                }
+                    LOG("gpu3d: 10 s: %u interpolated frames, %u vertices blended",
+                        (unsigned)rs.interpolated, (unsigned)rs.motion_vertices);
                 if (rs.textures_decoded)
                     LOG("gpu3d: 10 s: %u textures decoded (%u live), %u ms decoding in parallel, "
                         "at most %u in one frame", (unsigned)rs.textures_decoded,

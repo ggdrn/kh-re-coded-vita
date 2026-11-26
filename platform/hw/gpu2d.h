@@ -50,27 +50,44 @@ extern volatile uint32_t kh_gpu2d_dispcnt_override[2];
 /* An engine drawn without its fades (master brightness, brighten/darken): the single screen's
  * panels while the game is paused, which the game dims behind its pause menu. */
 extern volatile int kh_gpu2d_plain[2];
-/* HUD size (gpu2d.c hud_codes): 1 counts the BG3 pixels of the top screen's bottom middle
- * (a dialogue box) into kh_gpu2d_center_bg3; 2 also gives the HUD's pixels in its corners codes
- * of their own (2D 0xfe, blended 0xe1, sprite-blended 0xa1-0xb0) that the composition draws
- * again smaller. */
-extern volatile int kh_gpu2d_hud_mode;
-extern volatile uint32_t kh_gpu2d_center_bg3;
-/* the INFORMATION bar along the top: seen in the picture being drawn / the last one */
-extern volatile int kh_gpu2d_banner_now, kh_gpu2d_banner_last;
-/* per corner (top-left, bottom-left, bottom-right): the lines holding the HUD's layers in the
- * picture being drawn, and the lines (y0, y1) marked: the block joined to the screen's edge, as
- * found in the last picture */
-extern volatile uint8_t kh_gpu2d_zone_rows[3][192];
-extern volatile int kh_gpu2d_zone_lim[3][2];
-/* the box the marked HUD fills in each corner (top-left, bottom-left, bottom-right: x0 y0 x1
- * y1) in the pictures since it was last reset to { 256, 192, 0, 0 } */
-extern volatile int32_t kh_gpu2d_hud_box[3][4];
-/* config hud 2 (the HUD at the display's edges): the notices standing apart in the HUD's corners
- * (an item obtained or refused) coded too, their boxes in kh_gpu2d_note_box, drawn at their
- * edge at their own size */
-extern volatile int kh_gpu2d_note_edges;
-extern volatile int32_t kh_gpu2d_note_box[3][4];
+/* Codes the field HUD pixels so the compositor can resize them in their corners. */
+enum KhHudMode {
+    KH_HUD_OFF, KH_HUD_FIELD, KH_HUD_COLISEUM
+};
+extern volatile enum KhHudMode kh_gpu2d_hud_mode;
+extern volatile int kh_gpu2d_hud_edges;
+extern volatile int kh_gpu2d_tree_notice;
+extern volatile int kh_gpu2d_right_notice;
+extern volatile int kh_gpu2d_arrow_prompt;
+extern volatile int kh_gpu2d_sector;
+enum {
+    KH_HUD_COMMANDS = 2, KH_HUD_PLAYER_HP,
+    KH_FIELD_HUD_TREE_NOTICE, KH_FIELD_HUD_RIGHT_NOTICE,
+    KH_FIELD_HUD_SECTOR_GAUGE, KH_FIELD_HUD_BOX_COUNT
+};
+/* Native HUD regions for Obtained, target HP, command deck, Sora's HP, Tree,
+ * level notices and the sector objective gauge. */
+static inline const int *kh_field_hud_zone(int corner)
+{
+    static const int zones[KH_FIELD_HUD_BOX_COUNT][4] = {
+        { 0, 40, 120, 72 }, { 176, 0, 256, 24 }, { 0, 60, 140, 192 }, { 140, 90, 256, 192 },
+        { 0, 80, 120, 112 }, { 160, 40, 256, 72 }, { 8, 8, 136, 16 }
+    };
+    return zones[corner];
+}
+/* The Coliseum HP frame starts in tile column 17. Keep its left cap with
+ * the rest of the frame, clear of the command menu at the other corner. */
+static inline const int *kh_coliseum_hud_zone(int corner)
+{
+    static const int commands[4] = { 0, 96, 128, 192 };
+    static const int player_hp[4] = { 128, 160, 256, 192 };
+    return corner == KH_HUD_COMMANDS ? commands : player_hp;
+}
+
+/* The bottom HUD rows joined to their screen edge. */
+extern volatile uint8_t kh_gpu2d_zone_rows[2][192];
+extern volatile int kh_gpu2d_zone_start[2];
+extern volatile int32_t kh_gpu2d_hud_box[KH_FIELD_HUD_BOX_COUNT][4];
 
 /* Diagnosis, with kh_gpu2d_profiling set: since the last call, per engine, the CPU time (us)
  * of the BGs, the sprites and whole lines, and the sprite lines drawn as tiles, bitmaps and

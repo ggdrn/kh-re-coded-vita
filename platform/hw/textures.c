@@ -158,8 +158,12 @@ uint32_t kh_tex_hash(uint32_t teximage, uint32_t pltt)
 
     if (fmt == 0)
         return hv;
-    p = tex_ptr(addr, &avail);
-    hv = hash_bytes(hv, p, n < avail ? n : avail);
+    for (i = 0; i < n;) {
+        p = tex_ptr(addr + i, &avail);
+        const uint32_t bytes = n - i < avail ? n - i : avail;
+        hv = hash_bytes(hv, p, bytes);
+        i += bytes;
+    }
     if (fmt == 5) {
         /* the block infos, and the palette span they reach */
         uint32_t nblk = (uint32_t)(w / 4) * (h / 4), maxofs = 0;
@@ -266,53 +270,25 @@ unsigned kh_tex_slots_mapped(void)
 int kh_tex_source_empty(uint32_t teximage)
 {
     const int fmt = kh_tex_format(teximage);
-    uint32_t avail, n, i;
-    const uint8_t *p;
-    if (fmt == 0)
-        return 0;
-    p = tex_ptr((teximage & 0xffff) * 8, &avail);
-    n = tex_bytes(fmt, kh_tex_width(teximage), kh_tex_height(teximage));
-    if (n > avail)
-        n = avail;
-    for (i = 0; i < n; i++)
-        if (p[i])
-            return 0;
-    return 1;
+    const uint32_t addr = (teximage & 0xffff) * 8;
+    const uint32_t n = tex_bytes(fmt, kh_tex_width(teximage), kh_tex_height(teximage));
+
+    for (uint32_t offset = 0; offset < n;) {
+        uint32_t avail;
+        const uint8_t *p = tex_ptr(addr + offset, &avail);
+        const uint32_t bytes = n - offset < avail ? n - offset : avail;
+        for (uint32_t i = 0; i < bytes; i++)
+            if (p[i])
+                return 0;
+        offset += bytes;
+    }
+    return fmt != 0;
 }
 
-void kh_tex_decode(uint32_t teximage, uint32_t pltt, uint32_t *out)
+static void decode_linear(const uint8_t *p, uint32_t *out, uint32_t n,
+                          const uint32_t *pal, int fmt)
 {
-    const int fmt = kh_tex_format(teximage), w = kh_tex_width(teximage), h = kh_tex_height(teximage);
-    const uint32_t addr = (teximage & 0xffff) * 8, n = (uint32_t)w * h;
-    const int zero_clear = (teximage >> 29) & 1;
-    uint32_t avail, i, pal[256];
-    const uint8_t *p;
-
-    if (fmt == 0) {
-        for (i = 0; i < n; i++)
-            out[i] = 0xffffffffu;
-        return;
-    }
-    if (fmt == 5) {
-        decode_4x4(addr, pltt, w, h, out);
-        return;
-    }
-    uint8_t fixed[1024];
-    p = tex_ptr(addr, &avail);
-    if (tex_bytes(fmt, w, h) > avail) {
-        memset(out, 0, n * 4);
-        return;
-    }
-    /* Re:coded's 32x32 combat button textures use A5I3. */
-    if (fmt == 6 && w == 32 && h == 32 && kh_button_texture(p, n, fixed))
-        p = fixed;
-    if (fmt != 7) {
-        const uint32_t base = pal_base(fmt, pltt), ne = pal_entries(fmt);
-        for (i = 0; i < ne; i++)
-            pal[i] = rgba(pal_color(base + i * 2), 255);
-        if (zero_clear && (fmt == 2 || fmt == 3 || fmt == 4))
-            pal[0] = 0;
-    }
+    uint32_t i;
     switch (fmt) {
     case 1: /* A3I5 */
         for (i = 0; i < n; i++) {
@@ -348,6 +324,49 @@ void kh_tex_decode(uint32_t teximage, uint32_t pltt, uint32_t *out)
     }
 }
 
+void kh_tex_decode(uint32_t teximage, uint32_t pltt, uint32_t *out)
+{
+    const int fmt = kh_tex_format(teximage), w = kh_tex_width(teximage), h = kh_tex_height(teximage);
+    const uint32_t addr = (teximage & 0xffff) * 8, n = (uint32_t)w * h;
+    const int zero_clear = (teximage >> 29) & 1;
+    uint32_t i, pal[256];
+
+    if (fmt == 0) {
+        for (i = 0; i < n; i++)
+            out[i] = 0xffffffffu;
+        return;
+    }
+    if (fmt == 5) {
+        decode_4x4(addr, pltt, w, h, out);
+        return;
+    }
+    if (fmt != 7) {
+        const uint32_t base = pal_base(fmt, pltt), ne = pal_entries(fmt);
+        for (i = 0; i < ne; i++)
+            pal[i] = rgba(pal_color(base + i * 2), 255);
+        if (zero_clear && (fmt == 2 || fmt == 3 || fmt == 4))
+            pal[0] = 0;
+    }
+
+    /* Linear textures can span consecutive slots backed by different banks.
+     * Each bank boundary is also a texel boundary in every linear format. */
+    const uint32_t size = tex_bytes(fmt, w, h);
+    for (uint32_t offset = 0; offset < size;) {
+        uint32_t avail;
+        const uint8_t *p = tex_ptr(addr + offset, &avail);
+        const uint32_t bytes = size - offset < avail ? size - offset : avail;
+        const uint32_t count = fmt == 7 ? bytes / 2 : bytes * (n / size);
+        uint8_t fixed[1024];
+        /* Combat prompts use 32x32 A3I5 or A5I3 textures. */
+        if ((fmt == 1 || fmt == 6) && w == 32 && h == 32 && bytes == size &&
+            kh_button_texture(fmt, p, n, fixed))
+            p = fixed;
+        decode_linear(p, out, count, pal, fmt);
+        out += count;
+        offset += bytes;
+    }
+}
+
 uint32_t kh_tex_raw(uint32_t teximage, uint32_t pltt, uint8_t *out, uint32_t max, uint32_t *texels)
 {
     const int fmt = kh_tex_format(teximage), w = kh_tex_width(teximage), h = kh_tex_height(teximage);
@@ -356,12 +375,14 @@ uint32_t kh_tex_raw(uint32_t teximage, uint32_t pltt, uint8_t *out, uint32_t max
     const uint8_t *p;
     if (!fmt)
         return *texels = 0;
-    p = tex_ptr(addr, &avail);
-    if (n > avail)
-        n = avail;
     if (n > max)
         n = max;
-    memcpy(out, p, n);
+    for (uint32_t offset = 0; offset < n;) {
+        p = tex_ptr(addr + offset, &avail);
+        const uint32_t bytes = n - offset < avail ? n - offset : avail;
+        memcpy(out + offset, p, bytes);
+        offset += bytes;
+    }
     *texels = at = n;
     if (fmt != 5 && fmt != 7) {
         const uint32_t base = pal_base(fmt, pltt), ne = pal_entries(fmt);

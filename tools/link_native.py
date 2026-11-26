@@ -135,7 +135,11 @@ def main():
     # shared-address overlay dispatchers (tools/prepare_native_abi.py writes gen/ovdisp.S)
     subprocess.run([str(BIN/'arm-vita-eabi-gcc'),*COMMON_CFLAGS,'-c',str(out/'gen/ovdisp.S'),'-o',str(out/'gen/ovdisp.o')],check=True)
     hooks = ('UpdateTitlePanel', 'NNSi_G2dGetUnpackedFont', 'NNS_G2dGetUnpackedCharacterData',
-             'NNS_G2dGetUnpackedBGCharacterData')
+             'NNS_G2dGetUnpackedBGCharacterData', 'DrawGradientRect', 'RefreshActiveMenuObjects',
+             'CloseResultsScreen', 'UpdateResultsScreen', 'UpdateChallengeScene',
+             'UpdateStageLinkPanels',
+             'StageEvents_CheckAllEvents', 'SubScene9_Request', 'SetSlotDisplayStyle',
+             'SetSceneEntryPrimaryBgmId')
     cmd=[str(BIN/'arm-vita-eabi-ld'),'-r',*('--wrap='+name for name in hooks),
          '--no-enum-size-warning','-T',str(script),'-o',str(out/'recoded.partial.o'),
          str(out/'gen/ds_bss.o'),str(out/'gen/dtcm_init.o'),str(out/'gen/overlays.o'),str(out/'gen/ovdisp.o'),

@@ -1,6 +1,5 @@
-/* Re:coded's field HUD has baked button letters in the localized battle character sheets.
- * The command prompts also use four A5I3 textures in ui/btl/btlui.p2. Match the original
- * pixel data before replacing the letters with the same symbols used in the fonts. */
+/* Match the original field HUD sprites and combat prompt textures before replacing
+ * their baked letters with the PlayStation symbols used in the fonts. */
 #include "nitro/button_sprites.h"
 
 #include "config.h"
@@ -164,11 +163,48 @@ static const uint64_t s_texture_hashes[] = {
     0x23ee9607aae5a4a0ull, /* button_y */
 };
 
-int kh_button_texture(const uint8_t *texels, uint32_t size, uint8_t *out)
+/* The Coliseum's attack/guard models in ui/btl/w_*.p2 each have an idle
+ * and a pressed A3I5 texture. The texels are shared by all five languages. */
+static const struct {
+    uint64_t hash;
+    uint8_t button, background, letter;
+} s_coliseum_prompts[] = {
+    { 0xa16129dcd6febae0ull, KH_BTN_A, 0, 24 },
+    { 0xa52b931abb3752d2ull, KH_BTN_A, 6, 16 },
+    { 0x84e3bd5232a4e1deull, KH_BTN_Y, 0, 26 },
+    { 0x29682783a98ce214ull, KH_BTN_Y, 6, 16 },
+};
+
+static int patch_coliseum_prompt(uint64_t hash, const uint8_t *texels, uint8_t *out)
+{
+    for (unsigned i = 0; i < sizeof(s_coliseum_prompts) / sizeof(s_coliseum_prompts[0]); i++) {
+        if (hash != s_coliseum_prompts[i].hash)
+            continue;
+        const uint8_t *symbol = kh_button_symbol(s_coliseum_prompts[i].button);
+        memcpy(out, texels, 32 * 32);
+        for (unsigned row = 0; row < 10; row++) {
+            for (unsigned col = 0; col < 12; col++) {
+                const int ink = col >= 1 && col <= 10 &&
+                                (symbol[row / 2] & (0x10u >> ((col - 1) / 2)));
+                const unsigned pixel = (10 + row) * 32 + 10 + col;
+                out[pixel] = (texels[pixel] & 0xe0u) |
+                             (ink ? s_coliseum_prompts[i].letter : s_coliseum_prompts[i].background);
+            }
+        }
+        return 1;
+    }
+    return 0;
+}
+
+int kh_button_texture(int format, const uint8_t *texels, uint32_t size, uint8_t *out)
 {
     if (size != 32 * 32 || !kh_button_symbol(KH_BTN_A))
         return 0;
     const uint64_t hash = hash_pixels(texels, size);
+    if (format == 1)
+        return patch_coliseum_prompt(hash, texels, out);
+    if (format != 6)
+        return 0;
     for (int button = KH_BTN_A; button <= KH_BTN_Y; button++) {
         if (hash != s_texture_hashes[button])
             continue;

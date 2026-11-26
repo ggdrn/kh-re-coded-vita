@@ -343,7 +343,8 @@ void input_poll(InputState *out)
         /* front panel reports 1920x1088 */
         const int px = touch.report[0].x / 2, py = touch.report[0].y / 2;
         int x, y;
-        if (!s_front_down) {
+        const int first = !s_front_down;
+        if (first) {
             /* a touch that lands on the small screen swaps the screens; the whole touch,
              * until the finger lifts, then belongs to that gesture */
             s_front_down = 1;
@@ -370,7 +371,8 @@ void input_poll(InputState *out)
                 }
             }
         }
-        if (!s_front_swap && video_map_touch(px, py, &x, &y)) {
+        if (!s_front_swap && (video_single_screen() ? video_map_field_touch(px, py, first, &x, &y)
+                                                    : video_map_touch(px, py, &x, &y))) {
             out->touching = 1;
             out->touch_x = x;
             out->touch_y = y;

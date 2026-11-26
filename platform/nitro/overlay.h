@@ -26,5 +26,6 @@ void FS_EndOverlay(FSOverlayInfo *ovi);
 int kh_overlays_snapshot(void);
 /* Whether overlay id is loaded now (its DS range not taken over by another since). */
 int kh_overlay_loaded(int id);
+int kh_overlay_menu_active(void);
 
 #endif

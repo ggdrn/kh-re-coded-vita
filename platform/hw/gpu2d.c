@@ -108,16 +108,18 @@ static int bank_is(int bank, int mst)
 
 volatile uint32_t kh_gpu2d_dispcnt_override[2];
 volatile int kh_gpu2d_plain[2];
-volatile int kh_gpu2d_hud_mode;
-volatile uint32_t kh_gpu2d_center_bg3;
-volatile int kh_gpu2d_banner_now, kh_gpu2d_banner_last;
-volatile uint8_t kh_gpu2d_zone_rows[3][192];
-volatile int kh_gpu2d_zone_lim[3][2] = { { 0, 60 }, { 60, 192 }, { 90, 192 } };
-volatile int32_t kh_gpu2d_hud_box[3][4] = { { 256, 192, 0, 0 }, { 256, 192, 0, 0 },
-                                            { 256, 192, 0, 0 } };
-volatile int kh_gpu2d_note_edges;
-volatile int32_t kh_gpu2d_note_box[3][4] = { { 256, 192, 0, 0 }, { 256, 192, 0, 0 },
-                                             { 256, 192, 0, 0 } };
+volatile enum KhHudMode kh_gpu2d_hud_mode;
+volatile int kh_gpu2d_hud_edges;
+volatile int kh_gpu2d_tree_notice;
+volatile int kh_gpu2d_right_notice;
+volatile int kh_gpu2d_arrow_prompt;
+volatile int kh_gpu2d_sector;
+volatile uint8_t kh_gpu2d_zone_rows[2][192];
+volatile int kh_gpu2d_zone_start[2] = { 60, 90 };
+volatile int32_t kh_gpu2d_hud_box[KH_FIELD_HUD_BOX_COUNT][4] = {
+    { 256, 192, 0, 0 }, { 256, 192, 0, 0 }, { 256, 192, 0, 0 }, { 256, 192, 0, 0 },
+    { 256, 192, 0, 0 }, { 256, 192, 0, 0 }, { 256, 192, 0, 0 }
+};
 
 static inline void amin(volatile int32_t *p, int32_t v)
 {
@@ -133,63 +135,62 @@ static inline void amax(volatile int32_t *p, int32_t v)
         ;
 }
 
-/* the HUD's corners on the top screen (x0, y0, x1, y1): hearts and chain, the command deck
- * with its submenus, the HP gauge with the faces (video.c draws them back from there) */
-static const int s_hud_zones[3][4] = { { 0, 0, 120, 60 }, { 0, 60, 140, 192 },
-                                       { 140, 90, 256, 192 } };
+/* Preserve centered field captions and full-width notices in the main composition. */
+static void field_caption_pixels(const Engine *e, int line, uint8_t *mask);
 
-/* HUD size (kh_gpu2d_hud_mode 2): engine A's pixels of BG1 (the deck's text) and BG3 (its bars,
- * the HP gauge, the faces) in the HUD's corners take codes of their own, which the composition
- * leaves out and draws again smaller in the corners: 2D 0xff -> 0xfe, blended over the 3D 0xe0
- * -> 0xe1, a sprite over it 0xc1-0xd0 -> 0xa1-0xb0. Mode 1 or 2 also counts the BG3 pixels in
- * the bottom middle, where only a dialogue box is (kh_gpu2d_center_bg3). */
-static void hud_codes(int line, const uint16_t *id0, uint8_t *code)
+static void hud_codes(const Engine *e, int line, const uint16_t *id0, uint8_t *code)
 {
+    uint8_t fixed_bg3[W] = { 0 };
     int z, x;
-    if (line >= 130 && line < 186)
-        for (x = 112; x < 144; x++)
-            if (id0[x] == L_BG3)
-                __atomic_add_fetch(&kh_gpu2d_center_bg3, 1, __ATOMIC_RELAXED);
-    /* the game's own INFORMATION bar (BG1/BG3 as the HUD, along the top, the whole width): a
-     * line of it reaches past the chain's corner, and while it was seen in the last picture
-     * the top-left corner keeps its size altogether (its narrow tab too) */
-    int banner_line = 0;
-    if (line < 40)
-        for (x = 124; x < 200; x++)
+    const int coliseum = kh_gpu2d_hud_mode == KH_HUD_COLISEUM;
+    field_caption_pixels(e, line, fixed_bg3);
+    /* AnimateSwapSlotLabels clears this native BG3 rectangle as the two
+     * Combo Limit arrows slide through it. Keep it out of both HUD boxes. */
+    if (!coliseum && kh_gpu2d_arrow_prompt && line >= 15 * 8 && line < 22 * 8)
+        memset(fixed_bg3 + 14 * 8, 1, 4 * 8);
+    int full_width_notice = 0;
+    if (kh_gpu2d_hud_edges && line < 72)
+        for (x = 128; x < 168; x++)
             if (id0[x] == L_BG1 || id0[x] == L_BG3) {
-                banner_line = 1;
-                kh_gpu2d_banner_now = 1;
+                full_width_notice = 1;
                 break;
             }
-    /* which lines of each corner hold the HUD's layers: the HUD is the block joined to the
-     * screen's edge there (the deck and its submenus from the bottom, the chain from the top);
-     * a notice standing apart ("BACKPACK FULL", an item's name) is not part of it */
-    for (z = 0; z < 3; z++) {
-        if (line < s_hud_zones[z][1] || line >= s_hud_zones[z][3])
+    const int *notice = kh_field_hud_zone(KH_FIELD_HUD_TREE_NOTICE);
+    const int notice_row = kh_gpu2d_tree_notice && line >= notice[1] && line < notice[3];
+    for (z = 0; z < KH_FIELD_HUD_BOX_COUNT; z++) {
+        if (coliseum && z != KH_HUD_COMMANDS && z != KH_HUD_PLAYER_HP)
             continue;
-        for (x = s_hud_zones[z][0]; x < s_hud_zones[z][2]; x++)
-            if (id0[x] == L_BG1 || id0[x] == L_BG3) {
-                kh_gpu2d_zone_rows[z][line] = 1;
-                break;
-            }
-    }
-    if (kh_gpu2d_hud_mode < 2)
-        return;
-    for (z = 0; z < 3; z++) {
+        const int *zone = coliseum ? kh_coliseum_hud_zone(z) : kh_field_hud_zone(z);
         int x0 = W, x1 = -1;
-        /* a notice standing apart from the corner's HUD (an item obtained, "BACKPACK FULL"):
-         * with the HUD at the display's edges (kh_gpu2d_note_edges), coded too and drawn again
-         * at its own size at that edge (kh_gpu2d_note_box); otherwise left where it is */
-        const int note = line < kh_gpu2d_zone_lim[z][0] || line >= kh_gpu2d_zone_lim[z][1];
-        if (line < s_hud_zones[z][1] || line >= s_hud_zones[z][3])
+        if (line < zone[1] || line >= zone[3])
             continue;
-        if (note && !kh_gpu2d_note_edges)
+        if (!coliseum && ((z == KH_FIELD_HUD_TREE_NOTICE && !notice_row) || (z == 2 && notice_row)))
             continue;
-        if (z == 0 && (banner_line || kh_gpu2d_banner_last))
+        if (z == KH_FIELD_HUD_RIGHT_NOTICE && !kh_gpu2d_right_notice)
             continue;
-        for (x = s_hud_zones[z][0]; x < s_hud_zones[z][2]; x++) {
+        if (z == KH_FIELD_HUD_SECTOR_GAUGE && (!kh_gpu2d_sector || !kh_gpu2d_hud_edges))
+            continue;
+        if (z < 2 && (!kh_gpu2d_hud_edges || full_width_notice))
+            continue;
+        /* The obtained notice can share rows with the expanded command deck. */
+        const int start_x = !coliseum && z == 2 && kh_gpu2d_hud_edges && !full_width_notice &&
+                            line < kh_field_hud_zone(0)[3] ? kh_field_hud_zone(0)[2] : zone[0];
+        if (!coliseum && (z == 2 || z == 3)) {
+            for (x = start_x; x < zone[2]; x++)
+                if (id0[x] == L_BG1 || (id0[x] == L_BG3 && !fixed_bg3[x])) {
+                    kh_gpu2d_zone_rows[z - 2][line] = 1;
+                    break;
+                }
+            if (line < kh_gpu2d_zone_start[z - 2])
+                continue;
+        }
+        for (x = start_x; x < zone[2]; x++) {
             const uint8_t c = code[x];
-            if (id0[x] != L_BG1 && id0[x] != L_BG3)
+            if (id0[x] != L_BG1 && id0[x] != L_BG3 && id0[x] != L_OBJ)
+                continue;
+            if (z == KH_FIELD_HUD_SECTOR_GAUGE && id0[x] != L_BG3)
+                continue;
+            if (id0[x] == L_BG3 && fixed_bg3[x])
                 continue;
             if (c == KH_GPU2D_2D)
                 code[x] = 0xfe;
@@ -205,7 +206,7 @@ static void hud_codes(int line, const uint16_t *id0, uint8_t *code)
         }
         /* the box the HUD really fills in this corner: only that is drawn again */
         if (x1 >= 0) {
-            volatile int32_t *box = note ? kh_gpu2d_note_box[z] : kh_gpu2d_hud_box[z];
+            volatile int32_t *box = kh_gpu2d_hud_box[z];
             amin(&box[0], x0);
             amax(&box[2], x1 + 1);
             amin(&box[1], line);
@@ -263,6 +264,32 @@ static uint32_t char_base(const Engine *e, uint16_t cnt)
 static uint32_t screen_base(const Engine *e, uint16_t cnt)
 {
     return ((cnt >> 8) & 31) * 0x800u + (e->is_a ? ((e->dispcnt >> 27) & 7) * 0x10000u : 0);
+}
+
+/* InitSceneTextWindow51C reserves this BG3 tile range for the field caption.
+ * Read the tile map so the caption stays intact even when it crosses the HUD boxes. */
+static void field_caption_pixels(const Engine *e, int line, uint8_t *mask)
+{
+    enum { CAPTION_TILE_FIRST = 938, CAPTION_TILE_COUNT = 10 * 3, CAPTION_PALETTE = 15 };
+    const uint16_t cnt = io16(e, 0x0e);
+    const int w = (cnt & 0x4000) ? 512 : 256;
+    const int h = (cnt & 0x8000) ? 512 : 256;
+    const int y = (line + io16(e, 0x1e)) & (h - 1);
+    const int hofs = io16(e, 0x1c) & (w - 1);
+    if ((e->dispcnt & 7) != 0 || y < 19 * 8 || y >= 22 * 8)
+        return;
+    const uint32_t row = screen_base(e, cnt) + (y >> 3) * 64u;
+    for (int x = 0; x < W;) {
+        const int sx = (x + hofs) & (w - 1);
+        const int end = x + 8 - (sx & 7);
+        const uint16_t se = rd16(e->bg_vram, row + (sx >> 8) * 0x800u + ((sx >> 3) & 31) * 2u,
+                                 e->bg_mask);
+        const unsigned tile = se & 0x3ff;
+        if ((se >> 12) == CAPTION_PALETTE &&
+            tile - CAPTION_TILE_FIRST < CAPTION_TILE_COUNT)
+            memset(mask + x, 1, (end < W ? end : W) - x);
+        x = end;
+    }
 }
 
 /* the extended palette an 8bpp BG uses, or NULL for the standard one */
@@ -1099,7 +1126,7 @@ static int render_lines(int engine, uint32_t *fb, int y0, int y1, int graphics)
         if (e.has3d) {
             /* master brightness then comes after the composition, on the GPU */
             if (!graphics && kh_gpu2d_hud_mode && e.is_a)
-                hud_codes(line, sc.id0, code);
+                hud_codes(&e, line, sc.id0, code);
             for (x = 0; x < W; x++)
                 fb[x] = (to_rgba(row[x]) & 0xffffffu) | (uint32_t)code[x] << 24;
         } else {

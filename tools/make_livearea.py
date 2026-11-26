@@ -4,10 +4,10 @@
     tools/make_livearea.py OUT [--from DIR]
 
 Without --from, draws plain placeholders into OUT where missing (no game artwork is
-distributed). With --from DIR, converts the user's own art in DIR (icon0.*, bg.*, startup.*:
-PNG, JPEG, WebP...) to OUT: cropped to the target's proportions around the centre, scaled,
-reduced to 256 colours. VitaShell refuses a VPK whose LiveArea images are not exactly that
-(0x8010113D). Uses Pillow when installed, else macOS's sips and a median-cut quantizer here.
+distributed). With --from DIR, converts the user's own art in DIR (icon0.*, bg.*, startup.*,
+and optional pic0.*) to OUT. Images are fitted proportionally and saved with an 8-bit palette.
+VitaShell refuses a VPK whose LiveArea images are not exactly that
+(0x8010113D). Pillow preserves startup transparency. The macOS sips fallback uses a matte.
 """
 import argparse
 import re
@@ -18,6 +18,7 @@ from pathlib import Path
 
 SIZES = {
     "icon0.png": (128, 128),
+    "pic0.png": (960, 544),
     "livearea/contents/bg.png": (840, 500),
     "livearea/contents/startup.png": (280, 158),
 }
@@ -102,34 +103,35 @@ def median_cut(pixels, n=256):
     return [tuple(sum(p[c] for p in b) // len(b) for c in range(3)) for b in boxes if b]
 
 
-# the startup image is a logo: kept whole and padded with white; the others are cropped
-FIT = {"startup.png"}
-
-
-def convert(src, w, h, fit=False):
+def convert(src, w, h, name):
     try:
-        from PIL import Image
-        rgba = Image.open(src).convert("RGBA")
-        img = Image.new("RGB", rgba.size, (255, 255, 255))
-        img.paste(rgba, mask=rgba.split()[3])
-        sw, sh = img.size
-        if fit:
-            scale = min(w / sw, h / sh)
-            small = img.resize((max(1, int(sw * scale)), max(1, int(sh * scale))), Image.LANCZOS)
-            img = Image.new("RGB", (w, h), (255, 255, 255))
-            img.paste(small, ((w - small.size[0]) // 2, (h - small.size[1]) // 2))
-            sw, sh = w, h
-        if sw * h > sh * w:  # wider than the target: crop the sides
-            nw = sh * w // h
-            img = img.crop(((sw - nw) // 2, 0, (sw - nw) // 2 + nw, sh))
-        else:
-            nh = sw * h // w
-            img = img.crop((0, (sh - nh) // 2, sw, (sh - nh) // 2 + nh))
-        img = img.resize((w, h), Image.LANCZOS).quantize(colors=256, method=Image.MEDIANCUT)
+        from PIL import Image, ImageOps
+        with Image.open(src) as original:
+            art = original.convert("RGBA")
+        alpha = name == "startup.png"
+        icon = name == "icon0.png"
+        full_bleed_icon = icon and art.getchannel("A").getextrema() == (255, 255)
+        if alpha or icon:
+            bbox = art.getchannel("A").getbbox()
+            if bbox:
+                art = art.crop(bbox)
+        margin = 14 if icon and not full_bleed_icon else 4 if alpha else 0
+        art = ImageOps.contain(art, (w - 2 * margin, h - 2 * margin), Image.Resampling.LANCZOS)
+        background = "white" if name == "bg.png" else (0, 0, 0, 0) if alpha else "black"
+        image = Image.new("RGBA", (w, h), background)
+        x = w - art.width if name == "bg.png" else (w - art.width) // 2
+        image.alpha_composite(art, (x, (h - art.height) // 2))
+        if not alpha:
+            image = image.convert("RGB")
+        method = Image.Quantize.FASTOCTREE if alpha else Image.Quantize.MEDIANCUT
         import io
-        out = io.BytesIO()
-        img.save(out, "PNG", optimize=True)
-        return out.getvalue()
+        limit = {"icon0.png": 64, "startup.png": 64, "bg.png": 128, "pic0.png": 256}[name] * 1024
+        for colors in (256, 224, 192, 160, 128, 96, 64):
+            out = io.BytesIO()
+            image.quantize(colors=colors, method=method).save(out, "PNG", optimize=True, bits=8)
+            if out.tell() <= limit:
+                return out.getvalue()
+        raise ValueError(f"{src}: could not fit the {name} image within {limit // 1024} KiB")
     except ImportError:
         pass
     import subprocess
@@ -139,12 +141,13 @@ def convert(src, w, h, fit=False):
             ["sips", "-g", "pixelWidth", "-g", "pixelHeight", str(src)], capture_output=True,
             text=True, check=True).stdout))
         mid = Path(tmp) / "mid.png"
-        if fit:
+        if name in ("startup.png", "bg.png", "pic0.png"):
             scale = min(w / sw, h / sh)
             subprocess.run(["sips", "-s", "format", "png", "-z", str(max(1, int(sh * scale))),
                             str(max(1, int(sw * scale))), str(src), "--out", str(mid)],
                            capture_output=True, check=True)
-            subprocess.run(["sips", "--padToHeightWidth", str(h), str(w), "--padColor", "FFFFFF",
+            subprocess.run(["sips", "--padToHeightWidth", str(h), str(w), "--padColor",
+                            "000000" if name == "pic0.png" else "FFFFFF",
                             str(mid)], capture_output=True, check=True)
         else:
             if sw * h > sh * w:
@@ -169,7 +172,7 @@ def convert(src, w, h, fit=False):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("out", help="sce_sys directory to write into")
-    ap.add_argument("--from", dest="src", help="directory with icon0.png, bg.png, startup.png")
+    ap.add_argument("--from", dest="src", help="directory with icon0, bg, startup and optional pic0 images")
     args = ap.parse_args()
     out = Path(args.out)
     for rel, (w, h) in SIZES.items():
@@ -177,12 +180,12 @@ def main():
         dst.parent.mkdir(parents=True, exist_ok=True)
         if args.src:
             stem = Path(rel).stem
-            found = sorted(Path(args.src).glob(stem + ".*"))
+            found = sorted(path for path in Path(args.src).glob(stem + ".*") if path.is_file())
             if found:
-                dst.write_bytes(convert(found[0], w, h, Path(rel).name in FIT))
-            elif not dst.exists():
+                dst.write_bytes(convert(found[0], w, h, Path(rel).name))
+            elif rel != "pic0.png" and not dst.exists():
                 dst.write_bytes(placeholder(w, h))
-        elif not dst.exists():
+        elif rel != "pic0.png" and not dst.exists():
             dst.write_bytes(placeholder(w, h))
     return 0
 

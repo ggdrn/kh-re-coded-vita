@@ -89,11 +89,22 @@ def main():
     rule("fself", q([BIN / "vita-make-fself"]) + " -c $in $out")
     rule("sfo", q([BIN / "vita-mksfoex", "-s", "TITLE_ID=" + TITLE_ID, "-s", "APP_VER=" + app_ver,
                     "-s", "STITLE=" + short_title, "-d", "ATTRIBUTE2=12", title]) + " $out")
-    rule("livearea", "python3 tools/make_livearea.py sce_sys")
-    art = ["sce_sys/icon0.png", "sce_sys/livearea/contents/bg.png", "sce_sys/livearea/contents/startup.png"]
+    from tools.make_livearea import SIZES
+
+    local_art = sorted({path.relative_to(ROOT).as_posix()
+                        for rel in SIZES
+                        for path in (ROOT / "art_src").glob(Path(rel).stem + ".*")
+                        if path.is_file()})
+    art_dir = "build/livearea/sce_sys" if local_art else "sce_sys"
+    art = [rel for rel in SIZES if rel != "pic0.png"]
+    if any(Path(path).stem == "pic0" for path in local_art):
+        art.append("pic0.png")
+    rule("livearea", f"python3 tools/make_livearea.py {art_dir}" + (" --from art_src" if local_art else ""))
+    art_files = [f"{art_dir}/{rel}" for rel in art]
     template = "sce_sys/livearea/contents/template.xml"
     rule("vpk", q([BIN / "vita-pack-vpk"]) + " -s build/param.sfo -b $in " +
-         " ".join("-a " + x + "=" + x for x in art + [template]) + " $out")
+         q(["-a", f"{template}={template}"] +
+           [arg for rel in art for arg in ("-a", f"{art_dir}/{rel}=sce_sys/{rel}")]) + " $out")
     if args.with_game:
         native = "build/native"
         objects = [native + "/recoded.sdk.o"]
@@ -115,11 +126,12 @@ def main():
         f"build {stem}.velf: velf {stem}.elf",
         f"build {eboot}: fself {stem}.velf",
         "build build/param.sfo: sfo | VERSION",
-        "build " + " ".join(art) + ": livearea | tools/make_livearea.py",
+        "build " + " ".join(art_files) + ": livearea | " +
+        " ".join(map(esc, ["tools/make_livearea.py", *local_art])),
     ])
     suffix = "-native" if args.with_game else ""
     vpk = f"build/VPK/recoded_v{version}.vpk" if args.with_game else f"build/VPK/khrecoded-vita-{version}{suffix}.vpk"
-    lines.extend([f"build {vpk}: vpk {eboot} | build/param.sfo " + " ".join(art + [template]),
+    lines.extend([f"build {vpk}: vpk {eboot} | build/param.sfo " + " ".join(art_files + [template]),
                   f"default {vpk}"])
     (ROOT / ("build/native-vpk.ninja" if args.with_game else "build.ninja")).write_text("\n".join(lines) + "\n")
     print(f"VPK target: {vpk}")

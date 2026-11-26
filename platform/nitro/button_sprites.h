@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-/* Replace a recognized Re:coded A5I3 prompt in the copy sent to the renderer. */
-int kh_button_texture(const uint8_t *texels, uint32_t size, uint8_t *out);
+/* Replace a recognized Re:coded prompt in the copy sent to the renderer. */
+int kh_button_texture(int format, const uint8_t *texels, uint32_t size, uint8_t *out);
 
 #endif

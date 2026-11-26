@@ -35,7 +35,8 @@ static char s_note[64]; /* feedback after an action ("Defaults restored.") */
 
 enum {
     IT_PRESET, IT_SCALE, IT_FPS, IT_DYNRES, IT_SWAP, IT_SWAP_ITEMS, IT_SWAP_MAGIC, IT_TEXFILTER, IT_FILTER2D, IT_EFFECT, IT_SHOWFPS,
-    IT_ASPECT, IT_HUD, IT_LAYOUT, IT_INSET, IT_CORNER, IT_OPACITY, IT_SINGLE, IT_PANELOP, IT_HUDSIZE,
+    IT_ASPECT, IT_FULLSCREEN_3D, IT_HUD, IT_LAYOUT, IT_INSET, IT_CORNER, IT_OPACITY, IT_SINGLE, IT_PANELOP, IT_HUDSIZE,
+    IT_MAPSIZE, IT_TREESIZE,
     IT_CAMERA, IT_CAMSPEED, IT_CAMFOLLOW, IT_INVX, IT_INVY, IT_DEADZONE, IT_DPAD, IT_LOCKON, IT_REAR,
     IT_BUTTON, /* + the DS button index */
     IT_LANGUAGE, IT_VOLUME, IT_FFWD, IT_ICONS, IT_CONFIRM, IT_MISSION, IT_DEFAULTS, IT_CLOSE,
@@ -50,7 +51,7 @@ typedef struct {
 static const Item s_video[] = {
     { IT_PRESET, 0, "Quality preset", "Sets resolution, frame rate and filter at once." },
     { IT_SCALE, 0, "3D resolution", "Internal 3D resolution. 4x smooths edges (more GPU)." },
-    { IT_FPS, 0, "3D frame rate", "30: original. 60 (experimental): may shake and glitch." },
+    { IT_FPS, 0, "3D frame rate", "60 smooths 3D motion. Game updates stay at 30 FPS." },
     { IT_DYNRES, 0, "Dynamic resolution", "60 fps: lower 3D resolution while the GPU lags." },
     { IT_TEXFILTER, 0, "Texture filter", "Smooth: bilinear filtering. Sharp: as on the DS." },
     { IT_FILTER2D, 0, "2D filter", "Sprites and text. Sharp: square pixels, smooth edges." },
@@ -59,6 +60,11 @@ static const Item s_video[] = {
 };
 static const Item s_screen[] = {
     { IT_ASPECT, 0, "Aspect ratio", "Widescreen: the 3D drawn for 16:9 in the field." },
+    { IT_FULLSCREEN_3D, 0, "Widescreen 16:9", "Wide field camera. Stretch the original picture elsewhere." },
+    { IT_SINGLE, 0, "One Screen", "Wide field with a compact map and touch tree." },
+    { IT_HUDSIZE, 0, "HUD Scale", "Scale Sora's HP and the Command Deck." },
+    { IT_MAPSIZE, 0, "Map Scale", "One Screen map size, including digital areas." },
+    { IT_TREESIZE, 0, "Tree Scale", "One Screen Tree panel size (80-100%)." },
     { IT_LAYOUT, 0, "Screen layout", "Touch the small screen to swap the screens." },
     { IT_INSET, 0, "Small screen size", "Width of the small screen, in Vita pixels." },
     { IT_CORNER, 0, "Small screen corner", NULL },
@@ -159,7 +165,7 @@ static void value(const Item *it, char *out, size_t n)
     }
     case IT_SCALE: snprintf(out, n, "%dx (%dx%d)", kh_config.render_scale,
                             256 * kh_config.render_scale, 192 * kh_config.render_scale); break;
-    case IT_FPS: snprintf(out, n, "%s", kh_config.frame_interpolation ? "60 (experimental)" : "30"); break;
+    case IT_FPS: snprintf(out, n, "%s", kh_config.frame_interpolation ? "60 (interpolated)" : "30"); break;
     case IT_TEXFILTER: snprintf(out, n, "%s", kh_config.texture_filter ? "Smooth" : "Sharp"); break;
     case IT_FILTER2D: {
         static const char *const f2d[] = { "Pixel", "Sharp", "Smooth" };
@@ -170,6 +176,11 @@ static void value(const Item *it, char *out, size_t n)
     case IT_SHOWFPS: snprintf(out, n, "%s", kh_config.show_fps ? "On" : "Off"); break;
     case IT_DYNRES: snprintf(out, n, "%s", kh_config.dynamic_res ? "On" : "Off"); break;
     case IT_ASPECT: snprintf(out, n, "%s", aspects[kh_config.aspect % 3]); break;
+    case IT_FULLSCREEN_3D: snprintf(out, n, "%s", kh_config.fullscreen_3d ? "On" : "Off"); break;
+    case IT_SINGLE: snprintf(out, n, "%s", kh_config.single_screen ? "On" : "Off"); break;
+    case IT_HUDSIZE: snprintf(out, n, "%d%%", kh_config.hud_size); break;
+    case IT_MAPSIZE: snprintf(out, n, "%d%%", kh_config.one_screen_map_size); break;
+    case IT_TREESIZE: snprintf(out, n, "%d%%", kh_config.one_screen_tree_size); break;
     case IT_LAYOUT: snprintf(out, n, "%s", layouts[kh_config.layout % LAYOUT_COUNT]); break;
     case IT_INSET: snprintf(out, n, "%d", kh_config.inset_width); break;
     case IT_CORNER: snprintf(out, n, "%s", corners[kh_config.inset_corner & 3]); break;
@@ -233,6 +244,11 @@ static void change(const Item *it, int d)
         kh_config.aspect = wrap(kh_config.aspect, 0, 2, d);
         video_relayout();
         break;
+    case IT_FULLSCREEN_3D: kh_config.fullscreen_3d ^= 1; break;
+    case IT_SINGLE: kh_config.single_screen ^= 1; break;
+    case IT_HUDSIZE: kh_config.hud_size = wrap(kh_config.hud_size, 60, 100, d * 10); break;
+    case IT_MAPSIZE: kh_config.one_screen_map_size = wrap(kh_config.one_screen_map_size, 60, 100, d * 10); break;
+    case IT_TREESIZE: kh_config.one_screen_tree_size = wrap(kh_config.one_screen_tree_size, 80, 100, d * 10); break;
     case IT_LAYOUT:
         kh_config.layout = wrap(kh_config.layout, 0, LAYOUT_COUNT - 1, d);
         video_set_layout((ScreenLayout)kh_config.layout);
@@ -437,8 +453,7 @@ const uint32_t *portmenu_render(void)
         }
     }
 
-    const int single_help = items[sel].kind == IT_SINGLE && !s_note[0];
-    fill(0, H - (single_help ? 50 : 34), W, H, C_BAR);
+    fill(0, H - 34, W, H, C_BAR);
     if (s_note[0])
         text(8, H - 30, s_note, 0xff80ff80u);
     else if (items[sel].kind == IT_BUTTON)
@@ -446,13 +461,6 @@ const uint32_t *portmenu_render(void)
     else if (items[sel].kind == IT_LOCKON)
         text(8, H - 30, kh_config.vita_lock_on ? "Tap R to lock/unlock. Right stick changes target."
                                               : "Use the original DS controls for lock-on.", C_HELP);
-    else if (single_help && kh_config.single_screen == KH_SINGLE_SIMPLE) {
-        text(8, H - 46, "Static panels, fewer 2D texture effects and filters.", C_HELP);
-        text(8, H - 30, "Lighter composition for better performance.", C_HELP);
-    } else if (single_help && kh_config.single_screen == KH_SINGLE_DETAIL) {
-        text(8, H - 46, "Detailed 2D filtering and effects for more immersion.", C_HELP);
-        text(8, H - 30, "Richer HUD composition; higher rendering cost.", C_HELP);
-    }
     else if (items[sel].help)
         text(8, H - 30, items[sel].help, C_HELP);
     text(8, H - 14, "L/R tab  Up/Down pick  Left/Right change  L+R+Select exit", C_HINT);

@@ -18,6 +18,25 @@ import re
 
 # (regex, replacement, expected count) per file, relative to build/decomp
 FIXES = {
+    # EU ov087 passes the selected world in r0 to PlayFieldTrackSet at 0x020c7be0.
+    'eu/src/overlays/ov087/calls/SelectionPanel_CommitDestination.c': [
+        (r'extern u32 PlayFieldTrackSet\(\);', 'extern void PlayFieldTrackSet(int index);', 1),
+        (r'      PlayFieldTrackSet\(\);', '      PlayFieldTrackSet(selection);', 1),
+    ],
+    # EU ReleaseCurrentRowHold leaves the target formation in r1 at 0x020bc162.
+    # Losing the last follower queues formation 4, which initializes the solo hop.
+    'src/ov032/object_group/ReleaseCurrentRowHold_020bc108.c': [
+        (r'extern void func_ov032_020bbfc4\(void \*group\);',
+         'extern void func_ov032_020bbfc4(void *group, u32 formation);', 1),
+        (r'func_ov032_020bbfc4\(group\);', 'func_ov032_020bbfc4(group, target);', 1),
+    ],
+    # EU ov085 leaves the highlighted row (menu + 0x1e) in r1 after comparing it
+    # with the item count, then calls GetItemMenuEntryInfo at 0x020c0362.
+    'eu/src/overlays/ov085/calls/RedrawShopMenu.c': [
+        (r'extern ItemInfo \*GetItemMenuEntryInfo\(\);',
+         'extern ItemInfo *GetItemMenuEntryInfo(ItemMenu *menu, int index);', 1),
+        (r'GetItemMenuEntryInfo\(menu\)->id', 'GetItemMenuEntryInfo(menu, menu->cursor)->id', 1),
+    ],
     # tail call: r1/r2 pass through to NNS_SndPlayerStopSeqBySeqArcIdx (all 19 EU call
     # sites set r0-r2; the src callers already pass three arguments)
     'src/arm9/audio/StopSeqArcOrDefault_0204d960.c': [
@@ -211,6 +230,15 @@ FIXES = {
         (r'func_0202eee8\(\);', 'func_0202eee8((void *)*handle);', 1),
     ],
     # GetEntryPoolObjectAtIndex(manager, index): r1 is the linkId the test loaded
+    'eu/src/overlays/ov017/calls/FindLastInactiveObjectInParentChain.c': [
+        (r'extern unsigned int GetEntryPoolObjectAtIndex\(\);',
+         'extern unsigned int GetEntryPoolObjectAtIndex(unsigned int pool, int index);', 1),
+        (r'if \(\*\(short \*\)\(entry \+ 0x56\) < 0\) break;\s*'
+         r'entry = GetEntryPoolObjectAtIndex\(\*\(unsigned int \*\)\(entry \+ 4\)\);',
+         'int parentIndex = *(short *)(entry + 0x56);\n'
+         '    if (parentIndex < 0) break;\n'
+         '    entry = GetEntryPoolObjectAtIndex(*(unsigned int *)(entry + 4), parentIndex);', 1),
+    ],
     'src/ov017/unclassified_helpers/FieldObject_HandleContact_020a33b8.c': [
         (r'extern FieldObject \*func_ov001_0208635c\(FieldManager \*manager\);',
          'extern FieldObject *func_ov001_0208635c(FieldManager *manager, int index);', 1),

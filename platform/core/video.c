@@ -1,6 +1,8 @@
 #include "video.h"
 
 #include "config.h"
+#include "font8x8.h"
+#include "hw/gpu2d.h"
 #include "log.h"
 #include "menubg.h"
 #include "paths.h"
@@ -75,14 +77,7 @@ typedef struct {
     GLint vs, c2d, c3d, bright, hofs, blend, backdrop, prev, cap, flip, fx, filt, panel, panel_rect, hole[VIDEO_HOLES];
 } ComposeProg;
 static ComposeProg s_progs[PROGS];
-/* config hud_size: the HUD's corners on the DS top screen (x0, y0, x1, y1), as gpu2d's
- * hud_codes marks them, each drawn smaller in its own corner (top-left, top-right,
- * bottom-left, bottom-right): hearts and chain, none (the target's name and HP keep their
- * size), the command deck, the HP gauge with the faces */
-static const float s_hud_blocks[4][4] = {
-    { 0, 0, 120, 60 }, { 0, 0, 0, 0 }, { 0, 60, 140, 192 }, { 140, 90, 256, 192 } };
-
-static int s_hud_shrink; /* the field's HUD corners are drawn smaller (gpu2d marks them) */
+static int s_hud_shrink, s_hud_coliseum; /* gpu2d marks the pixels for the corner passes */
 /* the panel being drawn (draw_panels): style, radius, width, height; its texture rectangle */
 static float s_panel[4], s_panel_rect[4];
 static float s_hud_scale = 1.0f; /* < 1: the 2D kept 4:3 over a widescreen 3D (config hud) */
@@ -793,7 +788,7 @@ static void screen_quad(int screen, float *v)
     memcpy(v, q, sizeof(q));
 }
 
-static int s_scene, s_select; /* (below, with the single screen) */
+static int s_scene, s_select, s_stretch_layout;
 /* config single_screen in a scene (s_scene): the bottom screen while it shows something (a
  * scene of its own: Sora, a video), in the middle of the display over the widescreen top one,
  * 70 % of the display's height and half see-through; faded in and out over some 8 frames
@@ -805,58 +800,52 @@ static float s_scene_level;
 
 static float screen_alpha(int screen)
 {
-    if (screen == 1 && s_scene && !s_select)
+    if (screen == 1 && !s_stretch_layout && s_scene && !s_select)
         return SCENE_BOTTOM_OPACITY * s_scene_level;
     return screen == s_inset ? (float)kh_config.inset_opacity / 100.0f : 1.0f;
 }
 
-/* per s_hud_blocks entry: the box the HUD fills there (x1 <= x0: nothing) */
-static int s_hud_box[4][4];
+/* Per corner: the box the HUD fills there (x1 <= x0 means empty). */
+static int s_hud_box[KH_FIELD_HUD_BOX_COUNT][4];
 
-static int s_note_box[4][4];
-
-void video_set_note_boxes(const int boxes[3][4])
+void video_set_hud_boxes(const int boxes[][4])
 {
-    static const int block_of[3] = { 0, 2, 3 };
-    int z;
-    for (z = 0; z < 3; z++)
-        memcpy(s_note_box[block_of[z]], boxes[z], sizeof(s_note_box[0]));
+    memcpy(s_hud_box, boxes, sizeof(s_hud_box));
 }
 
-void video_set_hud_boxes(const int boxes[3][4])
-{
-    static const int block_of[3] = { 0, 2, 3 }; /* gpu2d's corners -> s_hud_blocks */
-    int z;
-    for (z = 0; z < 3; z++)
-        memcpy(s_hud_box[block_of[z]], boxes[z], sizeof(s_hud_box[0]));
-}
-
-void video_set_hud_shrink(int on)
+void video_set_hud_shrink(int on, int coliseum)
 {
     s_hud_shrink = on != 0;
+    s_hud_coliseum = coliseum != 0;
 }
 
-static int s_single; /* (below) */
+static int s_single;
+static int s_wide_field;
+static unsigned s_field_panel = VIDEO_FIELD_MODE_MASK;
+static int s_field_panel_ready;
+static unsigned s_field_touch;
+static unsigned s_tab_request = VIDEO_FIELD_MODE_MASK;
+static unsigned s_field_tab_mode = VIDEO_FIELD_MODE_MASK;
+static GLuint s_field_tab_tex[2];
+static int field_panel_bottom(void);
 
-/* A notice's box (DS pixels) whose middle falls in a hole of the single screen's field HUD: a
- * piece there draws it already */
-static int note_in_hole(const int *bx)
+unsigned video_take_field_tab_request(void)
 {
-    const float x = (bx[0] + bx[2]) * 0.5f / DS_SCREEN_W, y = (bx[1] + bx[3]) * 0.5f / DS_SCREEN_H;
-    int h;
-    for (h = 0; h < VIDEO_HOLES; h++)
-        if (x >= s_holes[h][0] && x < s_holes[h][2] && y >= s_holes[h][1] && y < s_holes[h][3])
-            return 1;
-    return 0;
+    return __atomic_exchange_n(&s_tab_request, VIDEO_FIELD_MODE_MASK, __ATOMIC_ACQ_REL);
+}
+
+static void publish_field_touch(void)
+{
+    const unsigned panel = s_field_panel_ready ? s_field_panel : VIDEO_FIELD_MODE_MASK;
+    __atomic_store_n(&s_field_touch, panel, __ATOMIC_RELEASE);
 }
 
 static void draw_composed(int screen)
 {
     float v[16];
-    const float hud = screen == s_inset ? 1.0f : s_hud_scale;
-    /* config hud 2: the 2D kept 4:3 in the middle, the HUD's corners at the display's edges */
-    const int edges = video_hud_edges() && screen != s_inset;
-    const int shrink = s_hud_shrink && screen != s_inset && (kh_config.hud_size < 100 || edges);
+    const float hud = s_hud_scale;
+    const int edges = video_hud_edges();
+    const int shrink = s_hud_shrink && (kh_config.hud_size < 100 || edges);
     screen_quad(screen, v);
     compose_pass(v, s_tex_cur(screen), 0, s_3d_tex, s_3d_bright, 0, hud, screen_alpha(screen),
                  FILTER_2D);
@@ -864,30 +853,29 @@ static void draw_composed(int screen)
         /* each block again, smaller, held to its corner of the screen */
         const ScreenRect *r = &s_rect[screen];
         int b;
-        /* the HUD's blocks at config hud_size, then (at the edges) the notices apart from
-         * them at their own size */
-        for (b = 0; b < 8; b++) {
-            const float *q = s_hud_blocks[b & 3];
-            const int *bx = b < 4 ? s_hud_box[b] : s_note_box[b & 3];
-            const float k = b < 4 ? (float)kh_config.hud_size / 100.0f : 1.0f;
-            if (b >= 4 && !edges)
-                break;
-            if ((b & 3) == 0 && s_hearts_moved)
-                continue; /* the hearts' corner: a field HUD piece now */
-            if (b >= 4 && s_single && s_npieces && note_in_hole(bx))
-                continue; /* a notice a field HUD piece already shows (the hearts' corner takes
-                           * the item obtained: 0.8.3 showed it there and again at the edge) */
-            if (q[2] <= q[0] || bx[2] <= bx[0] || bx[3] <= bx[1])
+        for (b = 0; b < KH_FIELD_HUD_BOX_COUNT; b++) {
+            if (s_hud_coliseum && b != KH_HUD_COMMANDS && b != KH_HUD_PLAYER_HP)
+                continue;
+            const int *q = s_hud_coliseum ? kh_coliseum_hud_zone(b) : kh_field_hud_zone(b);
+            const int *bx = s_hud_box[b];
+            const float k = b == 1 ? 1.0f : (float)kh_config.hud_size / 100.0f;
+            if ((b == 0 && s_hearts_moved) || bx[2] <= bx[0] || bx[3] <= bx[1])
                 continue;
             /* the corner shrunk to its own edges, then only the box the HUD fills in it */
             /* at the edges, each corner moved out by the width the 3D has beside the 4:3 2D */
             const float shift = edges ? (1.0f - hud) * 0.5f * r->w * ((b & 1) ? 1.0f : -1.0f) : 0.0f;
-            const float zx0 = r->x + ((q[0] / DS_SCREEN_W - 0.5f) * hud + 0.5f) * r->w + shift;
-            const float zx1 = r->x + ((q[2] / DS_SCREEN_W - 0.5f) * hud + 0.5f) * r->w + shift;
-            const float zy0 = r->y + q[1] / DS_SCREEN_H * r->h, zy1 = r->y + q[3] / DS_SCREEN_H * r->h;
+            const float zx0 = r->x + (((float)q[0] / DS_SCREEN_W - 0.5f) * hud + 0.5f) * r->w + shift;
+            const float zx1 = r->x + (((float)q[2] / DS_SCREEN_W - 0.5f) * hud + 0.5f) * r->w + shift;
+            const float zy0 = r->y + (float)q[1] / DS_SCREEN_H * r->h;
+            const float zy1 = r->y + (float)q[3] / DS_SCREEN_H * r->h;
             const float sx = (zx1 - zx0) / (q[2] - q[0]) * k, sy = (zy1 - zy0) / (q[3] - q[1]) * k;
             const float ox = (b & 1) ? zx1 - (q[2] - q[0]) * sx : zx0; /* right ones keep their right edge */
-            const float oy = (b & 2) ? zy1 - (q[3] - q[1]) * sy : zy0; /* bottom ones their bottom */
+            float oy = (b == 2 || b == 3) ? zy1 - (q[3] - q[1]) * sy : zy0;
+            if (b == KH_FIELD_HUD_RIGHT_NOTICE && s_single) {
+                const int panel_bottom = field_panel_bottom();
+                if (panel_bottom && oy < panel_bottom + 8)
+                    oy = panel_bottom + 8;
+            }
             const float u0 = (float)bx[0] / DS_SCREEN_W, u1 = (float)bx[2] / DS_SCREEN_W;
             const float v0 = (float)bx[1] / DS_SCREEN_H, v1 = (float)bx[3] / DS_SCREEN_H;
             const float X0 = ox + (bx[0] - q[0]) * sx, X1 = ox + (bx[2] - q[0]) * sx;
@@ -923,7 +911,7 @@ void video_set_pause_dim(int paused, uint16_t bldcnt, uint16_t bldy)
 
 int video_hud_edges(void)
 {
-    return kh_config.hud == 2 && s_hud_scale < 0.999f;
+    return s_hud_scale < 0.999f;
 }
 
 static GLuint new_texture(int w, int h, GLint filter)
@@ -937,6 +925,30 @@ static GLuint new_texture(int w, int h, GLint filter)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     return t;
+}
+
+static void init_field_tab(void)
+{
+    enum { W = 40, H = 16 };
+    static const char *const labels[] = { "TREE", "MAP" };
+    uint32_t pixels[W * H];
+    for (unsigned tab = 0; tab < sizeof(labels) / sizeof(labels[0]); tab++) {
+        const char *label = labels[tab];
+        const int label_x = (W - (int)strlen(label) * 8) / 2;
+        for (int y = 0; y < H; y++)
+            for (int x = 0; x < W; x++)
+                pixels[y * W + x] = (y == 0 || x == 0 || y == H - 1 || x == W - 1) ?
+                                    0xffabc4ddu : 0xff2d1c16u;
+        for (int i = 0; label[i]; i++) {
+            const uint8_t *glyph = font8x8_basic[label[i] - ' '];
+            for (int y = 0; y < 8; y++)
+                for (int x = 0; x < 8; x++)
+                    if (glyph[y] & (1 << x))
+                        pixels[(y + 4) * W + label_x + i * 8 + x] = 0xfff4f8ffu;
+        }
+        s_field_tab_tex[tab] = new_texture(W, H, GL_NEAREST);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, W, H, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+    }
 }
 
 /* a dual-3D scene running (video_set_capture_dual) */
@@ -1117,7 +1129,6 @@ static void run_capture(void)
 /* The small screen: 4:3, inset_width wide, in the corner config inset_corner names. */
 /* Experimental single screen (config single_screen, game.c decides when): the top screen alone
  * over the display, and the config's panels -- rectangles of the bottom screen -- over it. */
-static int s_single;
 /* config single_screen before the game (the title's overlay: the logos, the title and its
  * menus): the bottom screen (the title's menu) on the left over the player's picture
  * (menubg.c), the whole time */
@@ -1207,7 +1218,8 @@ static ScreenRect panel_rect(const int *p)
 
 static ScreenRect inset_rect(void)
 {
-    const int w = kh_config.inset_width, h = w * 3 / 4, margin = 4;
+    const int w = kh_config.inset_width, h = s_stretch_layout ? w * 9 / 16 : w * 3 / 4;
+    const int margin = 4;
     const int right = !(kh_config.inset_corner & 1), bottom = kh_config.inset_corner >= 2;
     return (ScreenRect){ right ? DISPLAY_W - w - margin : margin,
                          bottom ? DISPLAY_H - h - margin : margin, w, h };
@@ -1219,7 +1231,7 @@ static void compute_layout(void)
     case LAYOUT_TOP_MAIN:
         /* the top screen over the whole display (16:9), or in its own 4:3 (config aspect),
          * the touch screen small */
-        s_rect[0] = kh_config.aspect == KH_ASPECT_4_3
+        s_rect[0] = !s_wide_field && !s_stretch_layout && kh_config.aspect == KH_ASPECT_4_3
                         ? (ScreenRect){ (DISPLAY_W - 725) / 2, 0, 725, 544 }
                         : (ScreenRect){ 0, 0, DISPLAY_W, DISPLAY_H };
         s_rect[1] = inset_rect();
@@ -1227,7 +1239,8 @@ static void compute_layout(void)
         break;
     case LAYOUT_BOTTOM_MAIN:
         /* the touch screen large in its own 4:3, the top screen small */
-        s_rect[1] = (ScreenRect){ (DISPLAY_W - 725) / 2, 0, 725, 544 };
+        s_rect[1] = s_stretch_layout ? (ScreenRect){ 0, 0, DISPLAY_W, DISPLAY_H }
+                                     : (ScreenRect){ (DISPLAY_W - 725) / 2, 0, 725, 544 };
         s_rect[0] = inset_rect();
         s_inset = 0;
         break;
@@ -1237,21 +1250,46 @@ static void compute_layout(void)
          * beside it (235 wide), as wide as it fits, in its middle */
         const int big = s_layout == LAYOUT_LEFT_TOP ? 0 : 1, sw = DISPLAY_W - 725 - 8;
         const int sh = sw * 3 / 4;
-        s_rect[big] = (ScreenRect){ 0, 0, 725, 544 };
-        s_rect[!big] = (ScreenRect){ 725 + 4, (DISPLAY_H - sh) / 2, sw, sh };
+        const int big_h = s_stretch_layout ? 725 * 9 / 16 : DISPLAY_H;
+        const int small_h = s_stretch_layout ? sw * 9 / 16 : sh;
+        s_rect[big] = (ScreenRect){ 0, (DISPLAY_H - big_h) / 2, 725, big_h };
+        s_rect[!big] = (ScreenRect){ 725 + 4, (DISPLAY_H - small_h) / 2, sw, small_h };
         s_inset = !big;
         break;
     }
-    default:
-        s_rect[0] = (ScreenRect){ 0, 92, 480, 360 };
-        s_rect[1] = (ScreenRect){ 480, 92, 480, 360 };
+    default: {
+        const int height = s_stretch_layout ? 270 : 360;
+        s_rect[0] = (ScreenRect){ 0, (DISPLAY_H - height) / 2, DISPLAY_W / 2, height };
+        s_rect[1] = (ScreenRect){ DISPLAY_W / 2, (DISPLAY_H - height) / 2, DISPLAY_W / 2, height };
         s_inset = -1;
         break;
     }
-    if (s_single || s_scene || s_select) {
+    }
+    if (s_single) {
+        const int height = DISPLAY_W * 9 / 16;
+        s_rect[0] = (ScreenRect){ 0, (DISPLAY_H - height) / 2, DISPLAY_W, height };
+        s_rect[1] = (ScreenRect){ 0, 0, 0, 0 };
+        s_inset = -1;
+    } else if (s_wide_field) {
+        /* Widen only the game's 3D pane in the user's two-screen arrangement. */
+        ScreenRect *r = &s_rect[0];
+        const int width = r->w / 16 * 16;
+        const int height = width * 9 / 16;
+        if (s_inset == 0) {
+            if (!(kh_config.inset_corner & 1))
+                r->x += r->w - width;
+            if (kh_config.inset_corner >= 2)
+                r->y += r->h - height;
+        } else {
+            r->x += (r->w - width) / 2;
+            r->y += (r->h - height) / 2;
+        }
+        r->w = width;
+        r->h = height;
+    } else if (!s_stretch_layout && (s_scene || s_select)) {
         /* the top screen as in the top-main layout; the bottom one only through its panels
          * (s_single), not at all (s_scene), or as the list beside the world (s_select) */
-        s_rect[0] = kh_config.aspect == KH_ASPECT_4_3
+        s_rect[0] = !s_single && kh_config.aspect == KH_ASPECT_4_3
                         ? (ScreenRect){ (DISPLAY_W - 725) / 2, 0, 725, 544 }
                         : (ScreenRect){ 0, 0, DISPLAY_W, DISPLAY_H };
         s_rect[1] = s_single ? (ScreenRect){ 0, 0, DISPLAY_W, DISPLAY_H }
@@ -1372,22 +1410,42 @@ static void draw_menubg(void)
 
 void video_set_single_screen(int on)
 {
-    on = 0; /* Re:coded always keeps both DS screens. */
     static int last_requested = -1;
     on = on != 0;
     if (on == s_single && last_requested == kh_config.single_screen)
         return;
     last_requested = kh_config.single_screen;
-    s_single = on;
+    __atomic_store_n(&s_single, on, __ATOMIC_RELEASE);
     compute_layout();
     LOG("video: one-screen active=%d requested=%s top=%dx%d layout=%d scale=%d filter2d=%d hud=%d/%d",
         s_single, config_single_screen_name(kh_config.single_screen), s_rect[0].w, s_rect[0].h, s_layout,
         kh_config.render_scale, kh_config.filter_2d, kh_config.hud, kh_config.hud_size);
 }
 
+void video_set_field_display(int widescreen, int single, int stretch, unsigned panel)
+{
+    if (widescreen != s_wide_field || stretch != s_stretch_layout) {
+        if (single && stretch)
+            LOG("video: single-screen scene, stretched native picture");
+        s_wide_field = widescreen;
+        s_stretch_layout = stretch;
+        compute_layout();
+    }
+    if (panel != s_field_panel || !single || stretch)
+        s_field_panel_ready = 0;
+    s_field_panel = panel;
+    const unsigned mode = panel & VIDEO_FIELD_MODE_MASK;
+    if (!single || stretch || (panel & VIDEO_FIELD_PANEL_HIDDEN))
+        s_field_tab_mode = VIDEO_FIELD_MODE_MASK;
+    else if (mode <= VIDEO_FIELD_TREE)
+        s_field_tab_mode = mode;
+    publish_field_touch();
+    video_set_single_screen(single);
+}
+
 int video_single_screen(void)
 {
-    return s_single;
+    return __atomic_load_n(&s_single, __ATOMIC_ACQUIRE);
 }
 
 int video_single_scene(void)
@@ -1457,30 +1515,104 @@ int video_on_inset(int px, int py)
     return px >= r->x && px < r->x + r->w && py >= r->y && py < r->y + r->h;
 }
 
+/* Maps and the interactive Tree share the upper-right anchor in One Screen. */
+static const ScreenRect s_map_src = { 8, 16, 240, DS_SCREEN_H - 16 };
+static const ScreenRect s_tree_src = { 0, 16, DS_SCREEN_W, DS_SCREEN_H - 16 };
+/* The native tabs extend to the right edge, above the bottom description. */
+static const ScreenRect s_toggle_src = { 188, 134, 68, 32 };
+static const ScreenRect s_board_tab_src = { 190, 140, 66, 30 };
+static const ScreenRect s_toggle_dst = { 8, 76, 80, 31 };
+
+static ScreenRect field_panel_rect(ScreenRect src, int scale)
+{
+    const int w = src.w * scale / 100, h = src.h * scale / 100;
+    return (ScreenRect){ DISPLAY_W - w - 8, 82, w, h };
+}
+
+static ScreenRect field_tree_rect(void)
+{
+    return field_panel_rect(s_tree_src, kh_config.one_screen_tree_size);
+}
+
+static ScreenRect active_field_panel_source(void)
+{
+    if (!s_field_panel_ready)
+        return (ScreenRect){ 0, 0, 0, 0 };
+    const unsigned mode = s_field_panel & VIDEO_FIELD_MODE_MASK;
+    if (mode == VIDEO_FIELD_TREE)
+        return s_tree_src;
+    if (s_field_panel & VIDEO_FIELD_MAP_VISIBLE)
+        return s_map_src;
+    return (ScreenRect){ 0, 0, 0, 0 };
+}
+
+static ScreenRect active_field_panel_rect(ScreenRect src)
+{
+    return (s_field_panel & VIDEO_FIELD_MODE_MASK) == VIDEO_FIELD_TREE ?
+           field_tree_rect() : field_panel_rect(src, kh_config.one_screen_map_size);
+}
+
+static int field_panel_bottom(void)
+{
+    const ScreenRect src = active_field_panel_source();
+    if (!src.h)
+        return 0;
+    const ScreenRect dst = active_field_panel_rect(src);
+    return dst.y + dst.h;
+}
+
+static int in_rect(ScreenRect r, int x, int y)
+{
+    return x >= r.x && y >= r.y && x < r.x + r.w && y < r.y + r.h;
+}
+
+static ScreenRect field_panel_subrect(ScreenRect src, ScreenRect dst, ScreenRect part)
+{
+    const int x = dst.x + (part.x - src.x) * dst.w / src.w;
+    const int y = dst.y + (part.y - src.y) * dst.h / src.h;
+    const int right = dst.x + (part.x + part.w - src.x) * dst.w / src.w;
+    const int bottom = dst.y + (part.y + part.h - src.y) * dst.h / src.h;
+    return (ScreenRect){ x, y, right - x, bottom - y };
+}
+
+int video_map_field_touch(int px, int py, int first, int *x, int *y)
+{
+    static int gesture;
+    static unsigned gesture_panel;
+    static ScreenRect tree;
+    const unsigned panel = __atomic_load_n(&s_field_touch, __ATOMIC_ACQUIRE);
+    const unsigned mode = panel & VIDEO_FIELD_MODE_MASK;
+    if (first) {
+        gesture = 0;
+        gesture_panel = panel;
+        if (mode <= VIDEO_FIELD_TREE && in_rect(s_toggle_dst, px, py)) {
+            __atomic_store_n(&s_tab_request, mode, __ATOMIC_RELEASE);
+        } else if (mode == VIDEO_FIELD_TREE) {
+            tree = field_tree_rect();
+            const ScreenRect tab = field_panel_subrect(s_tree_src, tree, s_toggle_src);
+            gesture = in_rect(tree, px, py) && !in_rect(tab, px, py);
+        }
+    }
+    if (panel != gesture_panel) {
+        gesture = 0;
+        return 0;
+    }
+    if (gesture == 1) {
+        const int u = px - tree.x, v = py - tree.y;
+        const int dx = u < 0 ? 0 : u >= tree.w ? tree.w - 1 : u;
+        const int dy = v < 0 ? 0 : v >= tree.h ? tree.h - 1 : v;
+        *x = s_tree_src.x + dx * s_tree_src.w / tree.w;
+        *y = s_tree_src.y + dy * s_tree_src.h / tree.h;
+        return 1;
+    }
+    return 0;
+}
+
 int video_map_touch(int px, int py, int *x, int *y)
 {
     const ScreenRect *r = &s_rect[1];
-    if (s_single) {
-        /* a panel is the bottom screen under it: a touch there is a touch on the DS's */
-        int i;
-        if (!s_tutorial && piece_map(px, py, x, y))
-            return 1; /* the field HUD's pieces of the bottom screen */
-        for (i = 0; i < KH_PANELS; i++) {
-            const int *p = s_tutorial ? s_tutorial_panel : kh_config.panel[i];
-            const ScreenRect q = s_tutorial ? panel_rect(p) : panel_rect_now(i);
-            if (s_tutorial && i)
-                break;
-            if (!s_tutorial && (s_panels_off >> i & 1))
-                continue;
-            if (!p[KH_PANEL_SW] || !q.w || !q.h || px < q.x || px >= q.x + q.w || py < q.y ||
-                py >= q.y + q.h)
-                continue;
-            *x = p[KH_PANEL_SX] + (px - q.x) * p[KH_PANEL_SW] / q.w;
-            *y = p[KH_PANEL_SY] + (py - q.y) * p[KH_PANEL_SH] / q.h;
-            return 1;
-        }
-        return 0;
-    }
+    if (s_single)
+        return 0; /* field gestures use video_map_field_touch */
     if (s_inset >= 0 && video_on_inset(px, py))
         return 0; /* the small screen is a button (it swaps the screens), not the DS's */
     if (px < r->x || px >= r->x + r->w || py < r->y || py >= r->y + r->h)
@@ -1537,6 +1669,7 @@ void video_init(void)
     s_layout = (ScreenLayout)(kh_config.layout % LAYOUT_COUNT);
     compute_layout();
     compose_init();
+    init_field_tab();
     capture_init();
     LOG("video: vitaGL up, layout %d", s_layout);
 }
@@ -1616,6 +1749,52 @@ static void draw_panels(void)
     }
 }
 
+static void draw_field_quad(GLuint tex, ScreenRect dst, float u0, float v0, float u1, float v1,
+                            int filter)
+{
+    const float x0 = dst.x / (DISPLAY_W / 2.0f) - 1.0f;
+    const float x1 = (dst.x + dst.w) / (DISPLAY_W / 2.0f) - 1.0f;
+    const float y0 = 1.0f - dst.y / (DISPLAY_H / 2.0f);
+    const float y1 = 1.0f - (dst.y + dst.h) / (DISPLAY_H / 2.0f);
+    const float quad[16] = { x0, y0, u0, v0, x1, y0, u1, v0,
+                             x0, y1, u0, v1, x1, y1, u1, v1 };
+    compose_pass(quad, tex, 0, 0, 0, 0, 1.0f, 1.0f, filter);
+}
+
+static void draw_field_panel(GLuint tex, ScreenRect src, ScreenRect dst)
+{
+    draw_field_quad(tex, dst, (float)src.x / DS_SCREEN_W, (float)src.y / DS_SCREEN_H,
+                    (float)(src.x + src.w) / DS_SCREEN_W, (float)(src.y + src.h) / DS_SCREEN_H,
+                    FILTER_2D);
+}
+
+static void draw_field_panel_without_tab(GLuint tex, ScreenRect src, ScreenRect dst, ScreenRect tab)
+{
+    const int tab_bottom = tab.y + tab.h;
+    const ScreenRect parts[] = {
+        { src.x, src.y, src.w, tab.y - src.y },
+        { src.x, tab.y, tab.x - src.x, tab.h },
+        { src.x, tab_bottom, src.w, src.y + src.h - tab_bottom }
+    };
+    for (unsigned i = 0; i < sizeof(parts) / sizeof(parts[0]); i++)
+        draw_field_panel(tex, parts[i], field_panel_subrect(src, dst, parts[i]));
+}
+
+static void draw_field_panels(void)
+{
+    const ScreenRect src = active_field_panel_source();
+    if (src.h) {
+        const GLuint bottom = s_tex_cur(1);
+        const unsigned mode = s_field_panel & VIDEO_FIELD_MODE_MASK;
+        const ScreenRect dst = active_field_panel_rect(src);
+        draw_field_panel_without_tab(bottom, src, dst,
+                                     mode == VIDEO_FIELD_BOARD ? s_board_tab_src : s_toggle_src);
+    }
+    if (s_field_tab_mode <= VIDEO_FIELD_TREE)
+        draw_field_quad(s_field_tab_tex[s_field_tab_mode == VIDEO_FIELD_TREE],
+                        s_toggle_dst, 0, 0, 1, 1, FILTER_TEXEL);
+}
+
 /* One screen in its rectangle */
 static void draw_screen(int i)
 {
@@ -1624,10 +1803,10 @@ static void draw_screen(int i)
         return; /* the small screen is the bottom one, all black: not shown */
     if (i == 1 && s_single) {
         if (s_compose)
-            draw_panels();
+            draw_field_panels();
         return;
     }
-    if (i == 1 && s_scene && !s_select && s_scene_level <= 0.0f)
+    if (i == 1 && !s_stretch_layout && s_scene && !s_select && s_scene_level <= 0.0f)
         return; /* a scene's black bottom screen: not shown */
     if (video_gpu_test & 2) {
         draw_quad(&s_rect[i]); /* the GPU test's plain screens */
@@ -1858,10 +2037,14 @@ void video_present(const uint32_t *top, const uint32_t *bottom)
         s_pending = -1;
         compute_layout();
     }
-    if (s_menus && !s_single)
+    if (s_menus && !s_single && !s_stretch_layout)
         menus_layout();
     if (s_cap.pending)
         run_capture();
+    if (s_single && bottom && (s_field_panel & VIDEO_FIELD_MODE_MASK) <= VIDEO_FIELD_TREE) {
+        s_field_panel_ready = 1;
+        publish_field_touch();
+    }
     seg_mark(0);
 
     glViewport(0, 0, DISPLAY_W, DISPLAY_H);

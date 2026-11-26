@@ -10,7 +10,9 @@
  * Not yet: shadow polygons (skipped), wireframe (alpha 0, skipped), fog, edge marking,
  * anti-aliasing, the rear-plane bitmap, w-buffering (drawn with the z-buffer). */
 #include "hw/gpu3d.h"
+#include "hw/camera_interp.h"
 
+#include "hw/gpu2d.h"
 #include "hw/io.h"
 #include "hw/textures.h"
 #include "hw/vram.h"
@@ -1078,31 +1080,58 @@ void kh_gpu3d_prepare(const KhGxFrame *f)
     s_njobs = 0;
 }
 
-/* the single screen's field HUD: the HUD's flat 3D placed (kh_gpu3d_set_hud_place) */
-static KhGpu3dHudPlace s_hud;
-static int s_hud_on;
+/* The deck and HP may mix flat polygons with the 2D layers. Use the same
+ * bottom-corner anchors as video.c so the pieces move together. */
+static float s_hud_x = 1.0f, s_hud_y = 1.0f;
+static int s_hud_coliseum;
+static float s_projection_width = 1.0f;
 
-void kh_gpu3d_set_hud_place(const KhGpu3dHudPlace *p)
+void kh_gpu3d_set_projection_width(float width)
 {
-    s_hud_on = p && (p->place || p->hide);
-    if (s_hud_on)
-        s_hud = *p;
+    if (width != s_projection_width) {
+        s_projection_width = width;
+        s_last_serial = 0;
+    }
+}
+
+void kh_gpu3d_set_field_hud(int percent, float width, int coliseum)
+{
+    const float y = (float)percent / 100.0f;
+    const float x = width * y;
+    if (x != s_hud_x || y != s_hud_y || coliseum != s_hud_coliseum) {
+        s_hud_coliseum = coliseum;
+        s_hud_x = x;
+        s_hud_y = y;
+        s_last_serial = 0;
+    }
 }
 
 /* The vertices with the HUD's flat polygons moved or hidden: a copy, the frame's own untouched
  * (a frame can be drawn again, and mixed with the next one) */
-static const KhGxVertex *hud_placed(const KhGxFrame *f, const KhGxVertex *vtx)
+static const KhGxVertex *placed_vertices(const KhGxFrame *f, const KhGxVertex *vtx)
 {
     static KhGxVertex moved[KH_GX_MAX_VERTICES];
     static uint8_t done[KH_GX_MAX_VERTICES];
     int i, k, copied = 0;
-    if (!s_hud_on || !f)
-        return vtx;
+    const float ratio = f->wide_x > 0.0f ? s_projection_width / f->wide_x : 1.0f;
+    /* A geometry frame can straddle a layout change. Normalize its baked width
+     * before drawing it with the new layout (including native-width dialogues). */
+    if (ratio != 1.0f) {
+        memcpy(moved, vtx, (size_t)f->nvtx * sizeof(KhGxVertex));
+        for (i = 0; i < f->nvtx; i++) {
+            if (moved[i].tag & KH_GX_VERTEX_WIDE)
+                moved[i].x *= ratio;
+        }
+        memset(done, 0, (size_t)f->nvtx);
+        copied = 1;
+    }
+    if (s_hud_x == 1.0f && s_hud_y == 1.0f)
+        return copied ? moved : vtx;
     for (i = 0; i < f->npoly; i++) {
         const KhGxPolygon *p = &f->poly[i];
         float x0 = 1e9f, y0 = 1e9f, x1 = -1e9f, y1 = -1e9f;
-        int inside = 1, hide;
-        if (!p->flat)
+        float anchor;
+        if (!p->field_hud)
             continue;
         for (k = 0; k < p->count; k++) {
             const KhGxVertex *v = &vtx[p->v[k]];
@@ -1111,10 +1140,15 @@ static const KhGxVertex *hud_placed(const KhGxFrame *f, const KhGxVertex *vtx)
             x0 = px < x0 ? px : x0, x1 = px > x1 ? px : x1;
             y0 = py < y0 ? py : y0, y1 = py > y1 ? py : y1;
         }
-        hide = s_hud.hide && (x1 - x0) * (y1 - y0) < 256.0f * 192.0f / 4.0f;
-        inside = s_hud.place && x0 >= s_hud.src[0] && y0 >= s_hud.src[1] && x1 <= s_hud.src[2] &&
-                 y1 <= s_hud.src[3];
-        if (!hide && !inside)
+        const int *left = s_hud_coliseum ? kh_coliseum_hud_zone(KH_HUD_COMMANDS) :
+                                          kh_field_hud_zone(KH_HUD_COMMANDS);
+        const int *right = s_hud_coliseum ? kh_coliseum_hud_zone(KH_HUD_PLAYER_HP) :
+                                           kh_field_hud_zone(KH_HUD_PLAYER_HP);
+        if (x0 >= left[0] && x1 <= left[2] && y0 >= left[1] && y1 <= left[3])
+            anchor = -1.0f;
+        else if (x0 >= right[0] && x1 <= right[2] && y0 >= right[1] && y1 <= right[3])
+            anchor = 1.0f;
+        else
             continue;
         if (!copied) {
             memcpy(moved, vtx, (size_t)f->nvtx * sizeof(KhGxVertex));
@@ -1128,13 +1162,8 @@ static const KhGxVertex *hud_placed(const KhGxFrame *f, const KhGxVertex *vtx)
             if (done[n])
                 continue;
             done[n] = 1;
-            if (hide) {
-                v->x = -4.0f * fabsf(w); /* left of the view: clipped */
-            } else {
-                const float px = (v->x / w + 1.0f) * 128.0f, py = (1.0f - v->y / w) * 96.0f;
-                v->x = (s_hud.mx * px + s_hud.cx) * w;
-                v->y = (s_hud.my * py + s_hud.cy) * w;
-            }
+            v->x = s_hud_x * v->x + anchor * (1.0f - s_hud_x) * w;
+            v->y = s_hud_y * v->y - (1.0f - s_hud_y) * w;
         }
     }
     return copied ? moved : vtx;
@@ -1197,7 +1226,7 @@ static unsigned draw_frame(const KhGxFrame *f, const KhGxVertex *vtx)
     glEnable(GL_DEPTH_TEST);
     glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
-    vtx = hud_placed(f, vtx);
+    vtx = placed_vertices(f, vtx);
     glBindBuffer(GL_ARRAY_BUFFER, s_vbo);
     glBufferData(GL_ARRAY_BUFFER, f->nvtx * (int)sizeof(KhGxVertex), vtx, GL_DYNAMIC_DRAW);
     glEnableVertexAttribArray(A_POS);
@@ -1418,324 +1447,72 @@ done:
     return s_color;
 }
 
-/* ---- 60 fps: frames in between ------------------------------------------------------------
- * The game draws its 3D at 30 fps, each frame shown for two Vita frames. With interpolation on
- * (config.ini), a new frame B is first shown as the halfway mix of the previous frame A and B,
- * and B itself one Vita frame later: the movement goes at 60 fps for one frame of latency. Only
- * the vertices both frames share from the start (mix_vertices), and when A was up for two
- * Vita frames; otherwise B is shown at once. */
-static KhGxVertex *s_prev_vtx, *s_mix_vtx;
-static int s_prev_nvtx = -1;
-static uint32_t s_prev_disp3dcnt;
-static int s_shown_count;  /* renders of the current serial so far */
-static int s_final_pending; /* the mix (or A again) was shown: B itself next */
-
-/* Why a new frame was or was not mixed with the one before (the statistics' mix_reason). */
-enum { MIX_DONE, MIX_DIRECT, MIX_EARLY, MIX_PENDING, MIX_NONE, MIX_STATE, MIX_UNMATCHED, MIX_CUT };
-/* (MIX_EARLY and MIX_PENDING: the halfway mix's reasons to 0.4.6, kept for the log's layout) */
-
-/* A run: consecutive vertices of one material and primitive kind (a vertex's tag without the
- * low two bits, its place in the primitive). Models are sent as such runs, in the same order
- * frame after frame. */
-typedef struct {
-    uint32_t key;
-    int start, len;
-} VtxRun;
-
-static int vertex_runs(const KhGxVertex *v, int n, VtxRun *out)
-{
-    int i, nr = 0;
-    for (i = 0; i < n; i++) {
-        const uint32_t key = v[i].tag & ~3u;
-        if (nr && out[nr - 1].key == key && out[nr - 1].start + out[nr - 1].len == i) {
-            out[nr - 1].len++;
-        } else {
-            out[nr].key = key;
-            out[nr].start = i;
-            out[nr].len = 1;
-            nr++;
-        }
-    }
-    return nr;
-}
-
-/* Whether a vertex can move from a to b in between (see mix_vertices); counts the long jumps. */
-static int can_mix(const KhGxVertex *a, const KhGxVertex *b, int *jumps, int particle)
-{
-    /* a vertex that cannot be mixed: one side of the camera to the other (an in-between w near
-     * 0 projects it off to infinity) or a long jump (a particle reborn elsewhere with the same
-     * tag) is where the new frame has it. Mixed, a Heartless's death burst once drew a polygon
-     * over half the screen (0.1.6) */
-    /* Only particles are judged so: small translucent runs. A vertex of a large model near or
-     * behind the camera (a floor, the sky) has a screen position that runs off to infinity, and
-     * was taken for a jump while its neighbours were mixed: the floor and the sky shook as the
-     * camera turned (0.4.7). 0.4.8 still judged every small run, and the scenery's small
-     * pieces (a material on a few polygons) near the camera were left at 30 fps among the rest
-     * at 60, and shook (0.4.9). Mixed in clip space, such a vertex is the mix of the two
-     * frames' matrices, which the GPU clips like any other. */
-    float dx, dy, d2;
-    if (!(a->w > 0 && b->w > 0)) {
-        if (particle)
-            s_stats.mix_snapped++;
-        return !particle;
-    }
-    dx = a->x / a->w - b->x / b->w, dy = a->y / a->w - b->y / b->w;
-    d2 = dx * dx + dy * dy;
-    if (d2 > 1.0f && a->w < 4.0f * b->w && b->w < 4.0f * a->w) /* half the screen at once */
-        (*jumps)++;
-    if (!particle)
-        return 1;
-    if (d2 > 0.25f || a->w > 4.0f * b->w || b->w > 4.0f * a->w) {
-        s_stats.mix_snapped++;
-        return 0;
-    }
-    return 1;
-}
-
-/* the same model in both frames: its texture coordinates do not move (first, middle, last) */
-static int same_uv(const KhGxVertex *a, const KhGxVertex *b, int len)
-{
-    const int k[3] = { 0, len / 2, len - 1 };
-    int i;
-    for (i = 0; i < 3; i++)
-        if (a[k[i]].s != b[k[i]].s || a[k[i]].t != b[k[i]].t)
-            return 0;
-    return 1;
-}
-
-/* How far a run moved from A to B: its first, middle and last vertices in clip space, not
- * divided by w (a vertex near the camera would run off to infinity). */
-static float run_distance(const KhGxVertex *a, const KhGxVertex *b, int len)
-{
-    const int k[3] = { 0, len / 2, len - 1 };
-    float d = 0.0f;
-    int i;
-    for (i = 0; i < 3; i++)
-        d += fabsf(a[k[i]].x - b[k[i]].x) + fabsf(a[k[i]].y - b[k[i]].y) +
-             fabsf(a[k[i]].w - b[k[i]].w);
-    return d;
-}
-
-/* A run's own size in the same measure: its first, middle and last vertices apart. */
-static float run_size(const KhGxVertex *v, int len)
-{
-    const KhGxVertex *m = &v[len / 2], *e = &v[len - 1];
-    return fabsf(m->x - v->x) + fabsf(m->y - v->y) + fabsf(m->w - v->w) +
-           fabsf(e->x - v->x) + fabsf(e->y - v->y) + fabsf(e->w - v->w);
-}
-
-/* B's vertices paired with A's (s_pair: A's index, or -1 to take B's own), model by model:
- * B's runs are paired with A's of the same material and length, near B's place in A's order;
- * a run that A did not have (an effect, an enemy appearing) or whose length changed is B's as
- * it is. Before (to 0.4.5) only the vertices both frames shared from the very start were
- * mixed; to 0.4.8 each run took the first of A's with the same texture coordinates after the
- * last one paired. A map is many pieces of one material, size and texture coordinates: with a
- * piece left out of one frame (out of view), the pieces after it were paired each with its
- * neighbour and stretched in between, and a model whose texture coordinates move (water, the
- * sky) was never paired and stayed at 30 fps while the camera went at 60: both shook as the
- * camera turned. Now the nearest of A's candidates wins, the same texture coordinates first,
- * and an A run claimed by two of B's goes to the nearer (the other is B's own); a run whose
- * texture coordinates moved is paired only within its own size and takes B's coordinates.
- * Not mixed: a change of the 3D's settings, nothing paired, or half of the paired vertices
- * jumping half the screen (a camera cut). */
-static inline int is_translucent(const KhGxVertex *v)
-{
-    return v->a > 0 && v->a < 31;
-}
-
-#define RUN_WINDOW 64
-#define PAIR_UV_MOVED 0x40000000 /* in s_pair: the place mixed, B's texture coordinates */
-static int32_t s_pair[KH_GX_MAX_VERTICES];
-static int mix_vertices(const KhGxFrame *f)
-{
-    static VtxRun ra[KH_GX_MAX_VERTICES], rb[KH_GX_MAX_VERTICES];
-    static int32_t best[KH_GX_MAX_VERTICES], owner[KH_GX_MAX_VERTICES];
-    static float dist[KH_GX_MAX_VERTICES];
-    static uint8_t uv_same[KH_GX_MAX_VERTICES];
-    int na, nb, i = 0, j, k, paired = 0, jumps = 0;
-    if (f->disp3dcnt != s_prev_disp3dcnt)
-        return MIX_STATE;
-    na = vertex_runs(s_prev_vtx, s_prev_nvtx, ra);
-    nb = vertex_runs(f->vtx, f->nvtx, rb);
-    for (k = 0; k < na; k++)
-        owner[k] = -1;
-    for (j = 0; j < nb; j++) {
-        const VtxRun *b = &rb[j];
-        const KhGxVertex *bv = &f->vtx[b->start];
-        const int lo = i > RUN_WINDOW ? i - RUN_WINDOW : 0;
-        const int hi = i + RUN_WINDOW < na ? i + RUN_WINDOW : na;
-        int found = -1, found_uv = 0;
-        float found_d = 0.0f;
-        for (k = lo; k < hi; k++) {
-            const KhGxVertex *av = &s_prev_vtx[ra[k].start];
-            int uv;
-            float d;
-            if (ra[k].key != b->key || ra[k].len != b->len)
-                continue;
-            uv = same_uv(av, bv, b->len);
-            d = run_distance(av, bv, b->len);
-            if (!uv && d > run_size(bv, b->len))
-                continue; /* another model of this material, elsewhere */
-            if (found < 0 || uv > found_uv || (uv == found_uv && d < found_d))
-                found = k, found_uv = uv, found_d = d;
-        }
-        best[j] = found;
-        dist[j] = found_d;
-        uv_same[j] = (uint8_t)found_uv;
-        if (found < 0)
-            continue;
-        i = found + 1;
-        {
-            const int o = owner[found];
-            if (o < 0 || found_uv > uv_same[o] || (found_uv == uv_same[o] && found_d < dist[o]))
-                owner[found] = j;
-        }
-    }
-    for (j = 0; j < nb; j++) {
-        const VtxRun *b = &rb[j];
-        const int a = best[j];
-        if (a < 0 || owner[a] != j) {
-            if (a >= 0)
-                s_stats.mix_runs_lost++;
-            for (k = 0; k < b->len; k++)
-                s_pair[b->start + k] = -1;
-            continue;
-        }
-        /* a particle: a few vertices of a translucent polygon (alpha 1-30) */
-        const int particle = b->len <= 8 && is_translucent(&f->vtx[b->start]);
-        for (k = 0; k < b->len; k++) {
-            const int ia = ra[a].start + k;
-            s_pair[b->start + k] =
-                can_mix(&s_prev_vtx[ia], &f->vtx[b->start + k], &jumps, particle)
-                    ? (uv_same[j] ? ia : ia | PAIR_UV_MOVED) : -1;
-        }
-        paired += b->len;
-        if (!uv_same[j])
-            s_stats.mix_uv_moved += (uint32_t)b->len;
-    }
-    s_stats.mix_vertices += (uint32_t)f->nvtx;
-    s_stats.mix_paired += (uint32_t)paired;
-    if (!paired)
-        return MIX_UNMATCHED;
-    if (jumps * 2 >= paired)
-        return MIX_CUT;
-    return MIX_DONE;
-}
-
-/* The frame's vertices at fraction t of the way from A to B (s_pair) into s_mix_vtx. */
-static void mix_at(const KhGxFrame *f, float t)
-{
-    const KhGxVertex *bv = f->vtx;
-    const int ti = (int)(t * 256.0f + 0.5f);
-    int i;
-    for (i = 0; i < f->nvtx; i++) {
-        const KhGxVertex *b = &bv[i];
-        KhGxVertex *m = &s_mix_vtx[i];
-        const KhGxVertex *a;
-        if (s_pair[i] < 0) {
-            *m = *b;
-            continue;
-        }
-        a = &s_prev_vtx[s_pair[i] & ~PAIR_UV_MOVED];
-        m->x = a->x + (b->x - a->x) * t;
-        m->y = a->y + (b->y - a->y) * t;
-        m->z = a->z + (b->z - a->z) * t;
-        m->w = a->w + (b->w - a->w) * t;
-        if (s_pair[i] & PAIR_UV_MOVED) {
-            /* scrolled (and maybe wrapped round): mixed, it could run back across the texture */
-            m->s = b->s;
-            m->t = b->t;
-        } else {
-            m->s = a->s + (b->s - a->s) * t;
-            m->t = a->t + (b->t - a->t) * t;
-        }
-        m->r = (uint8_t)(a->r + (((b->r - a->r) * ti + 128) >> 8));
-        m->g = (uint8_t)(a->g + (((b->g - a->g) * ti + 128) >> 8));
-        m->b = (uint8_t)(a->b + (((b->b - a->b) * ti + 128) >> 8));
-        m->a = b->a;
-        m->tag = b->tag;
-    }
-}
+/* A halfway 3D frame, followed by the authored frame on the next VBlank. */
+static KhGxCamera s_previous_camera;
+static KhGxVertex *s_interpolation_vertices;
+static int s_previous_count;
+static uint32_t s_camera_serial, s_camera_vblank, s_camera_state;
+static int s_camera_a_top, s_midpoint_drawn;
 
 volatile int kh_gpu3d_direct;
 uint32_t (*kh_gpu3d_clock)(void);
 
-/* 60 fps, timed: each game frame B is stamped with the display's VBlank count when it first
- * comes (vb_b), and each display frame shows the point between the frame before it (A) and B
- * that this VBlank stands for, (now - vb_b + 1) / (vb_b - vb_a): halfway at the 30 fps
- * cadence, a third and two thirds when a frame took three VBlanks, B itself when it came one
- * VBlank after A. Before (to 0.4.6) B was mixed only after A had been up for two display
- * frames, and the halfway point always: a frame the display missed, or one the game took
- * longer over, left that frame unmixed, one in five in the field (0.4.6's log). */
-static KhGxVertex *s_last_vtx; /* a copy of B: A when the next frame comes */
-static int s_last_nvtx = -1;
-static uint32_t s_last_disp3dcnt;
-static uint32_t s_vb_b, s_interval;
-static int s_pair_ok, s_final_drawn;
-static float s_t_drawn;
-
-static unsigned render_timed(const KhGxFrame *f)
+static unsigned render_interpolated(const KhGxFrame *f)
 {
-    const uint32_t vb = kh_gpu3d_clock ? kh_gpu3d_clock() : 0;
-    float t;
-    if (f->serial != s_last_serial) {
-        int why;
-        s_last_serial = f->serial;
-        if (!s_prev_vtx) {
-            s_prev_vtx = malloc(sizeof(KhGxVertex) * KH_GX_MAX_VERTICES);
-            s_mix_vtx = malloc(sizeof(KhGxVertex) * KH_GX_MAX_VERTICES);
-            s_last_vtx = malloc(sizeof(KhGxVertex) * KH_GX_MAX_VERTICES);
-            if (!s_prev_vtx || !s_mix_vtx || !s_last_vtx)
-                return draw_frame(f, f->vtx);
-            s_last_nvtx = -1;
+    const uint32_t vb = kh_gpu3d_clock();
+    if (f->serial != s_camera_serial || f->serial != s_last_serial) {
+        const uint32_t interval = vb - s_camera_vblank;
+        const int consecutive = s_camera_serial && f->serial - s_camera_serial == 1 &&
+                                interval >= 2 && interval <= 4 &&
+                                f->disp3dcnt == s_camera_state && f->built_a_top == s_camera_a_top;
+        const KhGxVertex *vertices = f->vtx;
+        s_last_serial = s_camera_serial = f->serial;
+        s_camera_vblank = vb;
+        s_camera_state = f->disp3dcnt;
+        s_camera_a_top = f->built_a_top;
+        s_midpoint_drawn = 0;
+
+        if (!s_interpolation_vertices)
+            s_interpolation_vertices = malloc(2 * KH_GX_MAX_VERTICES * sizeof(KhGxVertex));
+        if (s_interpolation_vertices) {
+            KhGxVertex *previous = s_interpolation_vertices;
+            KhGxVertex *midpoint = previous + KH_GX_MAX_VERTICES;
+            const size_t bytes = (size_t)f->nvtx * sizeof(*vertices);
+            if (consecutive) {
+                float from_previous[16], from_current[16];
+                const KhCameraMotion motion = kh_camera_midpoint(&s_previous_camera, &f->camera,
+                                                                 from_previous, from_current);
+                if (motion != KH_CAMERA_CUT) {
+                    if (motion == KH_CAMERA_MOVING) {
+                        kh_camera_reproject(previous, previous, s_previous_count, from_previous);
+                        kh_camera_reproject(midpoint, f->vtx, f->nvtx, from_current);
+                    } else {
+                        memcpy(midpoint, f->vtx, bytes);
+                    }
+                    const unsigned moved = kh_motion_midpoint(previous, s_previous_count,
+                                                               midpoint, f->nvtx);
+                    if (motion == KH_CAMERA_MOVING || moved) {
+                        vertices = midpoint;
+                        s_midpoint_drawn = 1;
+                        kh_gpu3d_mixes++;
+                        s_stats.interpolated++;
+                        s_stats.motion_vertices += moved;
+                    }
+                }
+            }
+            memcpy(previous, f->vtx, bytes);
+            s_previous_count = f->nvtx;
         }
-        {
-            /* A is the copy of the frame before; B's copy for the next one */
-            KhGxVertex *tmp = s_prev_vtx;
-            s_prev_vtx = s_last_vtx;
-            s_last_vtx = tmp;
-        }
-        s_prev_nvtx = s_last_nvtx;
-        s_prev_disp3dcnt = s_last_disp3dcnt;
-        memcpy(s_last_vtx, f->vtx, sizeof(KhGxVertex) * (size_t)f->nvtx);
-        s_last_nvtx = f->nvtx;
-        s_last_disp3dcnt = f->disp3dcnt;
-        s_interval = vb - s_vb_b;
-        if (s_interval < 1)
-            s_interval = 1;
-        if (s_interval > 4)
-            s_interval = 4; /* after a pause or a load: over the usual time, not all of it */
-        s_vb_b = vb;
-        why = s_prev_nvtx < 0 ? MIX_NONE : mix_vertices(f);
-        s_stats.mix_reason[why]++;
-        s_pair_ok = why == MIX_DONE;
-        s_final_drawn = 0;
-        s_t_drawn = -1.0f;
+        s_previous_camera = f->camera;
+        return draw_frame(f, vertices);
     }
-    t = s_pair_ok ? (float)(vb - s_vb_b + 1) / (float)s_interval : 1.0f;
-    if (t >= 1.0f) {
-        if (s_final_drawn)
-            return s_color; /* the target still holds B */
-        s_final_drawn = 1;
+    if (s_midpoint_drawn && vb != s_camera_vblank) {
+        s_midpoint_drawn = 0;
         return draw_frame(f, f->vtx);
     }
-    if (t == s_t_drawn)
-        return s_color;
-    s_t_drawn = t;
-    mix_at(f, t);
-    kh_gpu3d_mixes++;
-    s_stats.interpolated++;
-    return draw_frame(f, s_mix_vtx);
+    return s_color;
 }
 
-void kh_gpu3d_forget_previous(void)
-{
-    s_prev_nvtx = -1;
-}
-
-/* Without interpolation (30 fps) a new frame B is shown one display frame after it comes,
- * with its 2D, drawn over two display frames (game.c); at once in dual 3D (frames for the two
- * screens in turn) and with the screen at 30 fps (each display frame a game frame). */
 /* A frame's 3D in a line, for the trace after an enemy's defeat (game.c): what can turn the
  * screen white for a moment (a flash after some enemies' defeat). Polygons by mode, the
  * translucent ones, the largest on screen (its share of the screen, attributes, texture and
@@ -1824,31 +1601,14 @@ unsigned kh_gpu3d_render(const KhGxFrame *f)
     if (kh_gpu3d_test_skip)
         return s_color; /* config debug = 3: the GPU test without the 3D */
     if (kh_config.frame_interpolation && !kh_gpu3d_direct && kh_gpu3d_clock)
-        return render_timed(f);
-    s_last_nvtx = -1; /* the timed path starts afresh */
-    if (f->serial == s_last_serial) {
-        s_shown_count++;
-        if (s_final_pending) {
-            s_final_pending = 0;
-            return draw_frame(f, f->vtx);
-        }
-        return s_color; /* same frame as last time: the target still holds it */
-    }
-    s_last_serial = f->serial;
-    {
-        const int was_shown = s_shown_count;
-        s_shown_count = 0;
-        if (kh_gpu3d_direct) {
-            s_stats.mix_reason[MIX_DIRECT] += (uint32_t)(kh_config.frame_interpolation != 0);
-        } else if (was_shown >= 1 && !s_final_pending) {
-            /* B one display frame from now: shown at once instead, B would come a frame early
-             * and the motion stutter (0.0.74) */
-            s_final_pending = 1;
-            return s_color; /* the target still holds A */
-        }
-        s_final_pending = 0;
+        return render_interpolated(f);
+    s_camera_serial = 0;
+    if (s_midpoint_drawn || f->serial != s_last_serial) {
+        s_midpoint_drawn = 0;
+        s_last_serial = f->serial;
         return draw_frame(f, f->vtx);
     }
+    return s_color;
 }
 
 void kh_gpu3d_take_stats(KhGpu3dStats *out)

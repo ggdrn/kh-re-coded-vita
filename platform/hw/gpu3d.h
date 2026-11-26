@@ -17,10 +17,7 @@ void kh_gpu3d_set_scale(int scale);
 void kh_gpu3d_set_scale_quarters(int q);
 int kh_gpu3d_scale_quarters(void);
 void kh_gpu3d_reload_textures(void);
-/* The next frame is not to be mixed with the last (60 fps mode): a different picture. */
-void kh_gpu3d_forget_previous(void);
-/* Each frame drawn as it comes, nothing held back for the 60 fps mix (the display loop sets it
- * while the screens trade places frame by frame). */
+/* Present authored frames directly in modes such as dual-screen 3D. */
 extern volatile int kh_gpu3d_direct;
 /* The target the next frames are drawn into, 0 or 1 (the display thread, before
  * kh_gpu3d_prepare): the dual-3D cutscenes keep each screen's 3D in its own, shown again
@@ -30,17 +27,9 @@ void kh_gpu3d_select_target(int target);
 /* Target 1 deleted (with target 0 chosen): out of the cutscenes, its video memory back. */
 void kh_gpu3d_drop_second_target(void);
 
-/* The single screen's field HUD (hw/fieldhud.c, khdays-port's `shape3d hud`): the
- * frame's flat polygons (KhGxPolygon flat: the HUD's 3D pieces) wholly inside the DS rectangle
- * src (x0, y0, x1, y1, DS dots) are drawn moved, at NDC x = mx * px + cx, y = my * py + cy from
- * their DS position (px, py); with hide, the flat ones smaller than a quarter of the screen are
- * not drawn. NULL: as the game lays them out. */
-typedef struct {
-    int place, hide;
-    float src[4];
-    float mx, cx, my, cy;
-} KhGpu3dHudPlace;
-void kh_gpu3d_set_hud_place(const KhGpu3dHudPlace *p);
+/* Scale the field HUD's flat 3D pieces around their bottom corners. */
+void kh_gpu3d_set_field_hud(int percent, float width, int coliseum);
+void kh_gpu3d_set_projection_width(float width);
 
 /* Draw the frame; returns the GL texture holding the 3D layer (premultiplied RGBA, GL
  * orientation: row 0 is the bottom of the screen), 0 when there is nothing to show. */
@@ -56,7 +45,7 @@ void kh_gpu3d_prepare(const KhGxFrame *frame);
 extern volatile int kh_gpu3d_debug;
 /* halfway mixes shown so far (60 fps mode), for the frame-rate counter */
 extern volatile uint32_t kh_gpu3d_mixes;
-/* the display's VBlank count (game.c), for the 60 fps mix's timing; NULL: no interpolation */
+/* The display's VBlank count (game.c), for interpolation timing. */
 extern uint32_t (*kh_gpu3d_clock)(void);
 #define KH_GPU3D_DEBUG_MODES 4
 
@@ -83,15 +72,7 @@ typedef struct {
      * the worst frame's steps and counts */
     uint32_t hashed, hash_us, decode_us, upload_us;
     uint32_t worst_hash_us, worst_decode_us, worst_upload_us, worst_hashed, worst_decoded;
-    uint32_t interpolated; /* frames shown after a halfway mix (60 fps interpolation) */
-    /* new frames by what came of their mix: done, dual 3D, the previous one shown once only,
-     * the previous one's own frame still to show, none before, 3D settings changed, nothing
-     * paired, a camera cut; and the vertices of the mixed ones, of them paired */
-    uint32_t mix_reason[8], mix_vertices, mix_paired;
-    /* of the paired vertices: in models whose texture coordinates moved (scrolling water,
-     * sky), paired by place alone; and the runs left to B because a nearer one took their A */
-    uint32_t mix_uv_moved, mix_runs_lost;
-    uint32_t mix_snapped; /* particle vertices left where B has them (a jump, or w <= 0) */
+    uint32_t interpolated, motion_vertices; /* midpoint frames and blended vertices */
 } KhGpu3dStats;
 void kh_gpu3d_take_stats(KhGpu3dStats *out);
 /* a frame's 3D in one line of the log (the trace after an enemy's defeat, game.c) */
