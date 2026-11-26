@@ -42,6 +42,9 @@ enum {
 void video_set_field_display(int widescreen, int single, int stretch, unsigned panel);
 int video_map_field_touch(int px, int py, int first, int *x, int *y);
 unsigned video_take_field_tab_request(void);
+enum { VIDEO_FIELD_TAB_WIDTH = 64, VIDEO_FIELD_TAB_HEIGHT = 28 };
+/* tab 0 opens the Tree, tab 1 returns to the map. Pixels are RGBA with binary alpha. */
+void video_set_native_field_tab(unsigned tab, const uint32_t *pixels);
 /* config single_screen before the game (the title's overlay): one screen at a time, the
  * title's menu on the left over the player's picture (ux0:data/khrecoded/menu_bg.png). */
 void video_set_single_menus(int on);

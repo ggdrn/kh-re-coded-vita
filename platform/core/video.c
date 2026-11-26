@@ -827,6 +827,7 @@ static unsigned s_field_touch;
 static unsigned s_tab_request = VIDEO_FIELD_MODE_MASK;
 static unsigned s_field_tab_mode = VIDEO_FIELD_MODE_MASK;
 static GLuint s_field_tab_tex[2];
+static int s_field_tab_native[2];
 static int field_panel_bottom(void);
 
 unsigned video_take_field_tab_request(void)
@@ -949,6 +950,18 @@ static void init_field_tab(void)
         s_field_tab_tex[tab] = new_texture(W, H, GL_NEAREST);
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, W, H, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
     }
+}
+
+void video_set_native_field_tab(unsigned tab, const uint32_t *pixels)
+{
+    uint32_t rgba[VIDEO_FIELD_TAB_WIDTH * VIDEO_FIELD_TAB_HEIGHT];
+    /* Match the alpha encoding of an isolated 2D layer in the panel shader. */
+    for (unsigned i = 0; i < sizeof(rgba) / sizeof(rgba[0]); i++)
+        rgba[i] = pixels[i] ? (pixels[i] & 0xffffffu) | 0xfe000000u : 0;
+    glBindTexture(GL_TEXTURE_2D, s_field_tab_tex[tab]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, VIDEO_FIELD_TAB_WIDTH, VIDEO_FIELD_TAB_HEIGHT,
+                 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+    s_field_tab_native[tab] = 1;
 }
 
 /* a dual-3D scene running (video_set_capture_dual) */
@@ -1522,7 +1535,7 @@ static const ScreenRect s_board_src = { 8, 16, 240, DS_SCREEN_H - 16 };
 static const ScreenRect s_tree_src = { 0, 16, DS_SCREEN_W, DS_SCREEN_H - 16 };
 /* The native tabs extend to the right edge, above the bottom description. */
 static const ScreenRect s_toggle_src = { 188, 134, 68, 32 };
-static const ScreenRect s_toggle_dst = { 8, 76, 80, 31 };
+static const ScreenRect s_toggle_dst = { 8, 76, 80, 35 };
 
 static ScreenRect field_panel_rect(ScreenRect src, int scale)
 {
@@ -1801,9 +1814,13 @@ static void draw_field_panels(void)
             memset(s_panel, 0, sizeof(s_panel));
         }
     }
-    if (s_field_tab_mode <= VIDEO_FIELD_TREE)
-        draw_field_quad(s_field_tab_tex[s_field_tab_mode == VIDEO_FIELD_TREE],
-                        s_toggle_dst, 0, 0, 1, 1, FILTER_TEXEL);
+    if (s_field_tab_mode <= VIDEO_FIELD_TREE) {
+        const unsigned tab = s_field_tab_mode == VIDEO_FIELD_TREE;
+        if (s_field_tab_native[tab])
+            s_panel[0] = 3.0f;
+        draw_field_quad(s_field_tab_tex[tab], s_toggle_dst, 0, 0, 1, 1, FILTER_TEXEL);
+        s_panel[0] = 0.0f;
+    }
 }
 
 /* One screen in its rectangle */

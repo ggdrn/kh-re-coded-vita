@@ -7,6 +7,7 @@
  * cartridge header in the shared area and the ARM7's PXI handlers. */
 #include "audio/audio_out.h"
 #include "audio/snd7.h"
+#include "hw/field_tabs.h"
 #include "hw/gpu2d.h"
 #include "hw/gpu3d.h"
 #include "hw/gx3d.h"
@@ -132,6 +133,7 @@ static int game_thread(SceSize args, void *argp)
 static int boot_state(void)
 {
     kh_romfs_init();
+    kh_load_field_tabs(kh_config.language);
     kh_button_icons_init();
     kh_gx3d_init();
     audio_out_init();

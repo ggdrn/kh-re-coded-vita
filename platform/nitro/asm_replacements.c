@@ -13,6 +13,7 @@
 #include "hw/shared_area.h"
 #include "log.h"
 #include "nitro/backup.h"
+#include "nitro/lz.h"
 #include "paths.h"
 
 #include <psp2/appmgr.h>
@@ -266,6 +267,18 @@ l29:
     ctx->lengthFlg = (uint8_t)lenflg;
     ctx->exFormat = (uint8_t)ex;
     return count;
+}
+
+int kh_nitro_lz11(const uint8_t *src, uint32_t size, uint8_t *dst, uint32_t capacity)
+{
+    if (size < 4 || src[0] != 0x11)
+        return 0;
+    const uint32_t out_size = src[1] | (uint32_t)src[2] << 8 | (uint32_t)src[3] << 16;
+    if (out_size == 0 || out_size > capacity)
+        return 0;
+    MIUncompContextLZ ctx = { .destp = dst, .destCount = (int32_t)out_size,
+                             .lengthFlg = 3, .exFormat = 1 };
+    return func_02004484(&ctx, src + 4, size - 4) == 0 ? (int)out_size : 0;
 }
 
 /* The crt0 routine that decompresses the ARM9 binary in place: the port's code is never
