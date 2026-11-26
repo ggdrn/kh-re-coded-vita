@@ -864,13 +864,14 @@ static void draw_composed(int screen)
                 continue;
             /* the corner shrunk to its own edges, then only the box the HUD fills in it */
             /* at the edges, each corner moved out by the width the 3D has beside the 4:3 2D */
-            const float shift = edges ? (1.0f - hud) * 0.5f * r->w * ((b & 1) ? 1.0f : -1.0f) : 0.0f;
+            const int right = b != KH_FIELD_HUD_COMBO_LIMIT && (b & 1);
+            const float shift = edges ? (1.0f - hud) * 0.5f * r->w * (right ? 1.0f : -1.0f) : 0.0f;
             const float zx0 = r->x + (((float)q[0] / DS_SCREEN_W - 0.5f) * hud + 0.5f) * r->w + shift;
             const float zx1 = r->x + (((float)q[2] / DS_SCREEN_W - 0.5f) * hud + 0.5f) * r->w + shift;
             const float zy0 = r->y + (float)q[1] / DS_SCREEN_H * r->h;
             const float zy1 = r->y + (float)q[3] / DS_SCREEN_H * r->h;
             const float sx = (zx1 - zx0) / (q[2] - q[0]) * k, sy = (zy1 - zy0) / (q[3] - q[1]) * k;
-            const float ox = (b & 1) ? zx1 - (q[2] - q[0]) * sx : zx0; /* right ones keep their right edge */
+            const float ox = right ? zx1 - (q[2] - q[0]) * sx : zx0;
             float oy = (b == 2 || b == 3) ? zy1 - (q[3] - q[1]) * sy : zy0;
             if ((b == KH_HUD_ITEM_NOTICE || b == KH_FIELD_HUD_TREE_NOTICE) && s_single) {
                 const int panel_bottom = field_panel_bottom();
@@ -1778,7 +1779,10 @@ static void draw_field_panels(void)
     if (src.h) {
         const GLuint bottom = s_tex_cur(1);
         const ScreenRect dst = active_field_panel_rect(src);
-        s_panel[1] = 5.0f;
+        if ((s_field_panel & VIDEO_FIELD_MODE_MASK) == VIDEO_FIELD_TREE)
+            s_panel[0] = 3.0f; /* Tree artwork and text with transparent gaps */
+        else
+            s_panel[1] = 5.0f;
         s_panel[2] = (float)dst.w, s_panel[3] = (float)dst.h;
         s_panel_rect[0] = (float)src.x / DS_SCREEN_W;
         s_panel_rect[1] = (float)src.y / DS_SCREEN_H;

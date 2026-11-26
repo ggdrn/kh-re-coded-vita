@@ -119,7 +119,7 @@ volatile uint8_t kh_gpu2d_zone_rows[2][192];
 volatile int kh_gpu2d_zone_start[2] = { 60, 90 };
 volatile int32_t kh_gpu2d_hud_box[KH_FIELD_HUD_BOX_COUNT][4] = {
     { 256, 192, 0, 0 }, { 256, 192, 0, 0 }, { 256, 192, 0, 0 }, { 256, 192, 0, 0 },
-    { 256, 192, 0, 0 }, { 256, 192, 0, 0 }, { 256, 192, 0, 0 }
+    { 256, 192, 0, 0 }, { 256, 192, 0, 0 }, { 256, 192, 0, 0 }, { 256, 192, 0, 0 }
 };
 
 static inline void amin(volatile int32_t *p, int32_t v)
@@ -158,6 +158,8 @@ static void hud_codes(const Engine *e, int line, const uint16_t *id0, uint8_t *c
             }
     const int *notice = kh_field_hud_zone(KH_FIELD_HUD_TREE_NOTICE);
     const int notice_row = kh_gpu2d_tree_notice && line >= notice[1] && line < notice[3];
+    const int *combo = kh_field_hud_zone(KH_FIELD_HUD_COMBO_LIMIT);
+    const int combo_row = kh_gpu2d_arrow_prompt && line >= combo[1] && line < combo[3];
     for (z = 0; z < KH_FIELD_HUD_BOX_COUNT; z++) {
         if (coliseum && z != KH_HUD_COMMANDS && z != KH_HUD_PLAYER_HP)
             continue;
@@ -166,6 +168,8 @@ static void hud_codes(const Engine *e, int line, const uint16_t *id0, uint8_t *c
         if (line < zone[1] || line >= zone[3])
             continue;
         if (!coliseum && ((z == KH_FIELD_HUD_TREE_NOTICE && !notice_row) || (z == 2 && notice_row)))
+            continue;
+        if (z == KH_FIELD_HUD_COMBO_LIMIT && !combo_row)
             continue;
         if (z == KH_FIELD_HUD_RIGHT_NOTICE && !kh_gpu2d_right_notice)
             continue;
@@ -177,6 +181,8 @@ static void hud_codes(const Engine *e, int line, const uint16_t *id0, uint8_t *c
         int start_x = !coliseum && z == KH_HUD_COMMANDS && kh_gpu2d_hud_edges && !full_width_notice &&
                       line < kh_field_hud_zone(KH_HUD_ITEM_NOTICE)[3] ?
                       kh_field_hud_zone(KH_HUD_ITEM_NOTICE)[2] : zone[0];
+        if (!coliseum && z == KH_HUD_COMMANDS && combo_row)
+            start_x = combo[2];
         const int area_party_hp = !coliseum && z == KH_HUD_PLAYER_HP && kh_gpu2d_area_party_hp;
         if (!coliseum && z == KH_HUD_PLAYER_HP && line < 90) {
             if (!area_party_hp || (kh_gpu2d_right_notice && line < kh_field_hud_zone(KH_FIELD_HUD_RIGHT_NOTICE)[3]))
@@ -1081,17 +1087,21 @@ void kh_gpu2d_init(void)
     init_rgba();
 }
 
-static int render_lines(int engine, uint32_t *fb, int y0, int y1, int graphics)
+static int render_lines(int engine, uint32_t *fb, int y0, int y1, int graphics, int tree)
 {
     Engine e;
     Scratch sc;
     int mode, line, x, mmode, mf = 0;
 
     engine_setup(&e, engine);
+    /* The Tree uses BG2 for the nodes and connections, BG0 for description text
+     * and OBJ for the selection. BG1 and BG3 supply its frame and wallpaper. */
+    if (tree)
+        e.dispcnt &= ~((1u << 9) | (1u << 11));
     mode = graphics ? 1 : (e.dispcnt >> 16) & (e.is_a ? 3 : 1);
     fb += y0 * W;
     if (mode == 0 || (e.dispcnt & 0x80)) { /* display off, or forced blank: white */
-        memset(fb, 0xff, (size_t)(y1 - y0) * W * sizeof(*fb));
+        memset(fb, tree ? 0 : 0xff, (size_t)(y1 - y0) * W * sizeof(*fb));
         return 0;
     }
     mmode = graphics || kh_gpu2d_plain[engine] ? 0 : master_mode(&e, &mf);
@@ -1140,6 +1150,9 @@ static int render_lines(int engine, uint32_t *fb, int y0, int y1, int graphics)
                 fb[x] = (to_rgba(row[x]) & 0xffffffu) | (uint32_t)code[x] << 24;
         } else {
             row_out(row, fb, mmode, mf);
+            if (tree)
+                for (x = 0; x < W; x++)
+                    fb[x] = sc.id0[x] == L_BD ? 0 : (fb[x] & 0xffffffu) | 0xfe000000u;
         }
         if (sc.prof) /* the whole line: the composition is what BGs and sprites leave */
             prof_add(&s_prof_us[!e.is_a][2], (uint32_t)(prof_now(sc.prof) - t) * 8);
@@ -1149,17 +1162,22 @@ static int render_lines(int engine, uint32_t *fb, int y0, int y1, int graphics)
 
 int kh_gpu2d_render_lines(int engine, uint32_t *fb, int y0, int y1)
 {
-    return render_lines(engine, fb, y0, y1, 0);
+    return render_lines(engine, fb, y0, y1, 0, 0);
+}
+
+int kh_gpu2d_render_tree_lines(uint32_t *fb, int y0, int y1)
+{
+    return render_lines(KH_ENGINE_B, fb, y0, y1, 0, 1);
 }
 
 int kh_gpu2d_render_graphics(int engine, uint32_t *fb)
 {
-    return render_lines(engine, fb, 0, 192, 1);
+    return render_lines(engine, fb, 0, 192, 1, 0);
 }
 
 int kh_gpu2d_render_graphics_lines(int engine, uint32_t *fb, int y0, int y1)
 {
-    return render_lines(engine, fb, y0, y1, 1);
+    return render_lines(engine, fb, y0, y1, 1, 0);
 }
 
 int kh_gpu2d_render(int engine, uint32_t *fb)

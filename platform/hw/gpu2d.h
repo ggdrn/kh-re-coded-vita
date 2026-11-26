@@ -33,6 +33,8 @@ int kh_gpu2d_render(int engine, uint32_t *fb);
  * be rendered in parallel. kh_gpu2d_init first. */
 void kh_gpu2d_init(void);
 int kh_gpu2d_render_lines(int engine, uint32_t *fb, int y0, int y1);
+/* Engine B's live Tree layers, with panel-compositor alpha codes. */
+int kh_gpu2d_render_tree_lines(uint32_t *fb, int y0, int y1);
 
 /* Diagnosis: one engine's BGs and sprites, each on its own (256x192 RGBA, alpha 255 where the
  * layer has a pixel). */
@@ -64,15 +66,15 @@ extern volatile int kh_gpu2d_area_party_hp;
 enum {
     KH_HUD_ITEM_NOTICE = 0, KH_HUD_COMMANDS = 2, KH_HUD_PLAYER_HP,
     KH_FIELD_HUD_TREE_NOTICE, KH_FIELD_HUD_RIGHT_NOTICE,
-    KH_FIELD_HUD_SECTOR_GAUGE, KH_FIELD_HUD_BOX_COUNT
+    KH_FIELD_HUD_SECTOR_GAUGE, KH_FIELD_HUD_COMBO_LIMIT, KH_FIELD_HUD_BOX_COUNT
 };
 /* Native HUD regions for Obtained, target HP, command deck, Sora's HP, Tree,
- * level notices and the sector objective gauge. */
+ * level notices, the sector objective gauge and Combo Limit. */
 static inline const int *kh_field_hud_zone(int corner)
 {
     static const int zones[KH_FIELD_HUD_BOX_COUNT][4] = {
         { 0, 40, 120, 72 }, { 176, 0, 256, 24 }, { 0, 60, 140, 192 }, { 140, 64, 256, 192 },
-        { 0, 80, 120, 112 }, { 160, 40, 256, 72 }, { 8, 8, 136, 16 }
+        { 0, 80, 120, 112 }, { 160, 40, 256, 72 }, { 8, 8, 136, 16 }, { 0, 128, 80, 168 }
     };
     return zones[corner];
 }

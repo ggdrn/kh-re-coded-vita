@@ -264,6 +264,7 @@ typedef struct {
     uint32_t *fb[3]; /* engine A's screen, engine B's, the capture's source A */
     int a3d[BANDS];
     int eng[3], neng; /* the engines drawn this frame */
+    int transparent_tree;
 } Frame2d;
 
 /* engine A was among the engines drawn: only then do the bands say where its 3D pixels are */
@@ -326,11 +327,14 @@ static void render_chunk(int chunk, void *arg)
     Frame2d *f = arg;
     const int engine = f->eng[chunk % f->neng], band = chunk / f->neng;
     const uint64_t t = sceKernelGetProcessTimeWide();
-    int r = engine == ENG_CAPTURE
-                ? kh_gpu2d_render_graphics_lines(KH_ENGINE_A, f->fb[engine], band * BAND_LINES,
-                                                 (band + 1) * BAND_LINES)
-                : kh_gpu2d_render_lines(engine, f->fb[engine], band * BAND_LINES,
-                                        (band + 1) * BAND_LINES);
+    const int y0 = band * BAND_LINES, y1 = y0 + BAND_LINES;
+    int r;
+    if (engine == ENG_CAPTURE)
+        r = kh_gpu2d_render_graphics_lines(KH_ENGINE_A, f->fb[engine], y0, y1);
+    else if (engine == KH_ENGINE_B && f->transparent_tree)
+        r = kh_gpu2d_render_tree_lines(f->fb[engine], y0, y1);
+    else
+        r = kh_gpu2d_render_lines(engine, f->fb[engine], y0, y1);
     if (engine == KH_ENGINE_A)
         f->a3d[band] = r;
     __atomic_add_fetch(&s_2d_engine_us[engine], (uint32_t)(sceKernelGetProcessTimeWide() - t),
@@ -809,6 +813,8 @@ static void present(void)
                                        VIDEO_FIELD_MODE_MASK;
     if (scene_paused || turn_battle)
         display_panel = VIDEO_FIELD_MODE_MASK | VIDEO_FIELD_PANEL_HIDDEN;
+    const int transparent_tree = single && !stretch &&
+                                 (display_panel & VIDEO_FIELD_MODE_MASK) == VIDEO_FIELD_TREE;
     video_set_pause_dim(field_dim, blend_control, blend_brightness);
     video_set_field_display(widescreen, single, stretch, display_panel);
     const int menu_open = portmenu_is_open();
@@ -927,6 +933,9 @@ static void present(void)
         stage_max(&s_join_max, d);
     }
 
+    const int tree_changed = f2d.transparent_tree != transparent_tree;
+    f2d.transparent_tree = transparent_tree;
+
     /* The 2D image only changes when the game has finished a frame (its SWAP_BUFFERS) and the
      * VBlank after it has applied the frame's OAM and register updates: at the game's 30 fps
      * every other display frame would draw the same picture again. At least every 4 VBlanks
@@ -940,8 +949,8 @@ static void present(void)
         }
         /* dual 3D: the engines change screens with every toggle, so both are drawn each
          * time (a skipped one left the other engine's picture on its screen, 0.0.88) */
-        draw2d = dual || coliseum_hud_changed || (!smooth_3d && shortcut_sync_frames) || (pending && vb != serial_vb) ||
-                 vb - drawn_vb >= 4;
+        draw2d = dual || coliseum_hud_changed || tree_changed || (!smooth_3d && shortcut_sync_frames) ||
+                 (pending && vb != serial_vb) || vb - drawn_vb >= 4;
         if (draw2d) {
             pending = 0;
             drawn_vb = vb;
@@ -975,7 +984,7 @@ static void present(void)
             for (i = 0; i < 2; i++)
                 if (i == KH_ENGINE_B && skip_b)
                     continue;
-                else if (single || dual || i != inset_engine || (parity & 1))
+                else if (single || dual || tree_changed || i != inset_engine || (parity & 1))
                     f2d.eng[f2d.neng++] = i;
             parity++;
         }
@@ -1068,7 +1077,7 @@ static void present(void)
         else
             workers_begin(render_chunk, BANDS * f2d.neng, &f2d);
         if (f2d.neng && !dual && !lock30 && !capture_gfx) {
-            async_2d = !single && !shortcut_sync_frames && !coliseum_hud_changed;
+            async_2d = !single && !shortcut_sync_frames && !coliseum_hud_changed && !tree_changed;
             async_top = a_on_top;
             if (async_2d)
                 s_2d_async++;

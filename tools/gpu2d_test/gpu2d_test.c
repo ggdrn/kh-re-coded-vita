@@ -333,6 +333,7 @@ static int scene_combo_limit_arrows(void)
     tile4(kh_vram_bg_a, 0, 1, 2);
     const uint16_t tile = 1;
     uint8_t *row = kh_vram_bg_a + 31 * 0x800 + 16 * 64;
+    memcpy(row, &tile, 2); /* left-aligned Combo Limit counter */
     for (int col = 14; col < 18; col++)
         memcpy(row + col * 2, &tile, 2);
     row += 5 * 64;
@@ -342,9 +343,15 @@ static int scene_combo_limit_arrows(void)
     kh_gpu2d_hud_edges = 1;
     kh_gpu2d_arrow_prompt = 1;
     memset((void *)kh_gpu2d_zone_rows, 0, sizeof(kh_gpu2d_zone_rows));
+    volatile int32_t *combo = kh_gpu2d_hud_box[KH_FIELD_HUD_COMBO_LIMIT];
+    combo[0] = 256;
+    combo[1] = 192;
+    combo[2] = combo[3] = 0;
     kh_gpu2d_render(0, fb);
     int ok = !kh_gpu2d_zone_rows[0][128] && !kh_gpu2d_zone_rows[1][128] &&
              (fb[168 * 256 + 16] >> 24) == 0xfe && (fb[168 * 256 + 232] >> 24) == 0xfe;
+    ok &= combo[0] == 0 && combo[1] == 128 && combo[2] == 8 && combo[3] == 136;
+    ok &= (fb[128 * 256] >> 24) == 0xfe;
     for (int x = 112; x < 144; x++)
         ok &= (fb[128 * 256 + x] >> 24) == 0xff;
     kh_gpu2d_arrow_prompt = 0;
@@ -352,8 +359,46 @@ static int scene_combo_limit_arrows(void)
     ok &= (fb[128 * 256 + 128] >> 24) == 0xfe && (fb[128 * 256 + 142] >> 24) == 0xfe;
     kh_gpu2d_hud_mode = 0;
     kh_gpu2d_hud_edges = 0;
-    puts(ok ? "ok combo_limit: center arrows stay put while corner HUD moves"
-            : "FAIL combo_limit: center arrows and corner HUD lost their positions");
+    puts(ok ? "ok combo_limit: left counter is isolated and center arrows stay put"
+            : "FAIL combo_limit: counter or center arrows lost their placement");
+    return !ok;
+}
+
+static int scene_transparent_tree(void)
+{
+    static uint32_t fb[256 * 192];
+    reset();
+    w32(0x04001000, 0x00010000 | 0x1f00);
+    const uint16_t tile = 1;
+    for (int bg = 0; bg < 4; bg++) {
+        const int base = 10 + bg;
+        w16(0x04001008 + 2 * bg, (base << 8) | bg);
+        memcpy(kh_vram_bg_b + base * 0x800 + (10 * 32 + bg) * 2, &tile, 2);
+    }
+    tile4(kh_vram_bg_b, 0, 1, 2);
+    pal(0x400, 0, RGB(0, 0, 12)); /* native backdrop must be transparent too */
+    pal(0x400, 1, RGB(25, 25, 25));
+    pal(0x600, 1, RGB(25, 14, 0));
+    tile4(kh_vram_obj_b, 0, 0, 2);
+    oam(1, 0, 80, 32, 0);
+
+    kh_gpu2d_render(KH_ENGINE_B, fb);
+    const uint32_t artwork = fb[80 * 256];
+    const uint32_t cursor = fb[80 * 256 + 32];
+    int ok = (artwork >> 24) == 0xff && (cursor & 0xffffff) != (artwork & 0xffffff) &&
+             fb[80 * 256 + 8] == artwork && fb[80 * 256 + 24] == artwork;
+    kh_gpu2d_render_tree_lines(fb, 72, 96);
+    ok &= fb[80 * 256] == (artwork & 0xffffffu) + 0xfe000000u &&
+          fb[80 * 256 + 16] == fb[80 * 256] &&
+          fb[80 * 256 + 32] == (cursor & 0xffffffu) + 0xfe000000u &&
+          fb[80 * 256 + 8] == 0 && fb[80 * 256 + 24] == 0 && fb[80 * 256 + 40] == 0;
+    kh_gpu2d_render(KH_ENGINE_B, fb);
+    ok &= fb[80 * 256 + 8] == artwork && fb[80 * 256 + 24] == artwork;
+    w32(0x04001000, 0x00010080);
+    kh_gpu2d_render_tree_lines(fb, 72, 96);
+    ok &= fb[80 * 256] == 0;
+    puts(ok ? "ok tree: text, nodes and cursor show over a transparent background"
+            : "FAIL tree: transparent layers or normal bottom screen changed");
     return !ok;
 }
 
@@ -489,6 +534,7 @@ int main(void)
     int failures = scene_mmem_fifo();
     failures |= scene_field_caption();
     failures |= scene_combo_limit_arrows();
+    failures |= scene_transparent_tree();
     failures |= scene_sector_gauge();
     failures |= scene_area_party_hud();
     failures |= scene_coliseum_hud();
