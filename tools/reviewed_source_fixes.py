@@ -220,6 +220,18 @@ void kh_camera_commit_field_projection(void *work)
             if text.count(old) != 1:
                 raise ValueError(f'Unexpected moving field object collision layout: {old}')
             text = text.replace(old, new)
+    if relative == 'eu/src/ov034/data/Data_ov034_020be980.c':
+        # This is a table of six-byte room counts. The word at 0x020be984
+        # contains two counts for room 0, which ApplyResultsPartyBonus sums.
+        reference = '(void *)data_ov001_020a0101'
+        if text.count(reference) != 1:
+            raise ValueError('Unexpected digital-sector room count relocation')
+        text = text.replace(reference, '(void *)0x020A0101')
+        text = text.replace('extern u8 data_ov001_020a0101[];\n\n', '')
+        text = text.replace('void *gResultsMemberBonusValues[30]', 'u32 gResultsMemberBonusValues[30]')
+        text, words = re.subn(r'\(void \*\)(0x[0-9A-Fa-f]+)', r'\1u', text)
+        if words != 30:
+            raise ValueError('Unexpected digital-sector room count table size')
     # The 40-byte digital-sector records contain packed gameplay values.
     # These words only look like DS addresses. Relocating them changes board
     # population and challenge parameters. Literals verified against BK9P.

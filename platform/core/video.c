@@ -826,7 +826,7 @@ static int s_field_panel_ready;
 static unsigned s_field_touch;
 static unsigned s_tab_request = VIDEO_FIELD_MODE_MASK;
 static unsigned s_field_tab_mode = VIDEO_FIELD_MODE_MASK;
-static GLuint s_field_tab_tex[2];
+static GLuint s_field_tab_tex[2], s_tree_description_tex;
 static int s_field_tab_native[2];
 static int field_panel_bottom(void);
 
@@ -929,11 +929,14 @@ static GLuint new_texture(int w, int h, GLint filter)
     return t;
 }
 
-static void init_field_tab(void)
+static void init_field_panels(void)
 {
     enum { W = 40, H = 16 };
     static const char *const labels[] = { "TREE", "MAP" };
+    static const uint32_t description_color = 0xff201812u;
     uint32_t pixels[W * H];
+    s_tree_description_tex = new_texture(1, 1, GL_NEAREST);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, &description_color);
     for (unsigned tab = 0; tab < sizeof(labels) / sizeof(labels[0]); tab++) {
         const char *label = labels[tab];
         const int label_x = (W - (int)strlen(label) * 8) / 2;
@@ -1674,7 +1677,7 @@ void video_init(void)
     s_layout = (ScreenLayout)(kh_config.layout % LAYOUT_COUNT);
     compute_layout();
     compose_init();
-    init_field_tab();
+    init_field_panels();
     capture_init();
     LOG("video: vitaGL up, layout %d", s_layout);
 }
@@ -1755,7 +1758,7 @@ static void draw_panels(void)
 }
 
 static void draw_field_quad(GLuint tex, ScreenRect dst, float u0, float v0, float u1, float v1,
-                            int filter)
+                            float alpha, int filter)
 {
     const float x0 = dst.x / (DISPLAY_W / 2.0f) - 1.0f;
     const float x1 = (dst.x + dst.w) / (DISPLAY_W / 2.0f) - 1.0f;
@@ -1763,14 +1766,30 @@ static void draw_field_quad(GLuint tex, ScreenRect dst, float u0, float v0, floa
     const float y1 = 1.0f - (dst.y + dst.h) / (DISPLAY_H / 2.0f);
     const float quad[16] = { x0, y0, u0, v0, x1, y0, u1, v0,
                              x0, y1, u0, v1, x1, y1, u1, v1 };
-    compose_pass(quad, tex, 0, 0, 0, 0, 1.0f, 1.0f, filter);
+    compose_pass(quad, tex, 0, 0, 0, 0, 1.0f, alpha, filter);
 }
 
 static void draw_field_panel(GLuint tex, ScreenRect src, ScreenRect dst)
 {
     draw_field_quad(tex, dst, (float)src.x / DS_SCREEN_W, (float)src.y / DS_SCREEN_H,
                     (float)(src.x + src.w) / DS_SCREEN_W, (float)(src.y + src.h) / DS_SCREEN_H,
-                    FILTER_2D);
+                    1.0f, FILTER_2D);
+}
+
+enum { FIELD_PANEL_RADIUS = 5 };
+
+static void draw_tree_description_background(ScreenRect src, ScreenRect dst)
+{
+    /* ov025 uses three tile rows starting at row 21 for the description. */
+    const int text_top = 21 * 8 - 2;
+    const int top = dst.y + (text_top - src.y) * dst.h / src.h;
+    const ScreenRect box = { dst.x, top, dst.w, dst.y + dst.h - top };
+    s_panel[1] = FIELD_PANEL_RADIUS;
+    s_panel[2] = (float)box.w;
+    s_panel[3] = (float)box.h;
+    s_panel_rect[0] = s_panel_rect[1] = 0.0f;
+    s_panel_rect[2] = s_panel_rect[3] = 1.0f;
+    draw_field_quad(s_tree_description_tex, box, 0, 0, 1, 1, 0.88f, FILTER_TEXEL);
 }
 
 static void draw_field_panels(void)
@@ -1779,10 +1798,13 @@ static void draw_field_panels(void)
     if (src.h) {
         const GLuint bottom = s_tex_cur(1);
         const ScreenRect dst = active_field_panel_rect(src);
-        if ((s_field_panel & VIDEO_FIELD_MODE_MASK) == VIDEO_FIELD_TREE)
+        if ((s_field_panel & VIDEO_FIELD_MODE_MASK) == VIDEO_FIELD_TREE) {
+            draw_tree_description_background(src, dst);
+            s_panel[1] = 0.0f;
             s_panel[0] = 3.0f; /* Tree artwork and text with transparent gaps */
-        else
-            s_panel[1] = 5.0f;
+        } else {
+            s_panel[1] = FIELD_PANEL_RADIUS;
+        }
         s_panel[2] = (float)dst.w, s_panel[3] = (float)dst.h;
         s_panel_rect[0] = (float)src.x / DS_SCREEN_W;
         s_panel_rect[1] = (float)src.y / DS_SCREEN_H;
@@ -1795,7 +1817,7 @@ static void draw_field_panels(void)
         const unsigned tab = s_field_tab_mode == VIDEO_FIELD_TREE;
         if (s_field_tab_native[tab])
             s_panel[0] = 3.0f;
-        draw_field_quad(s_field_tab_tex[tab], s_toggle_dst, 0, 0, 1, 1, FILTER_TEXEL);
+        draw_field_quad(s_field_tab_tex[tab], s_toggle_dst, 0, 0, 1, 1, 1.0f, FILTER_TEXEL);
         s_panel[0] = 0.0f;
     }
 }
