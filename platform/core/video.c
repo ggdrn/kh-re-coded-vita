@@ -872,7 +872,7 @@ static void draw_composed(int screen)
             const float sx = (zx1 - zx0) / (q[2] - q[0]) * k, sy = (zy1 - zy0) / (q[3] - q[1]) * k;
             const float ox = (b & 1) ? zx1 - (q[2] - q[0]) * sx : zx0; /* right ones keep their right edge */
             float oy = (b == 2 || b == 3) ? zy1 - (q[3] - q[1]) * sy : zy0;
-            if (b == KH_FIELD_HUD_RIGHT_NOTICE && s_single) {
+            if ((b == KH_HUD_ITEM_NOTICE || b == KH_FIELD_HUD_TREE_NOTICE) && s_single) {
                 const int panel_bottom = field_panel_bottom();
                 if (panel_bottom && oy < panel_bottom + 8)
                     oy = panel_bottom + 8;
@@ -1528,19 +1528,18 @@ int video_on_inset(int px, int py)
     return px >= r->x && px < r->x + r->w && py >= r->y && py < r->y + r->h;
 }
 
-/* Maps and the interactive Tree share the upper-right anchor in One Screen. */
+/* Maps and the interactive Tree share the upper-left anchor in One Screen. */
 /* Both map layouts use the same 250x128 frame beneath LOCATION. */
 static const ScreenRect s_map_src = { 3, 28, 250, 128 };
 static const ScreenRect s_board_src = { 8, 16, 240, DS_SCREEN_H - 16 };
 static const ScreenRect s_tree_src = { 0, 16, DS_SCREEN_W, DS_SCREEN_H - 16 };
-/* The native tabs extend to the right edge, above the bottom description. */
-static const ScreenRect s_toggle_src = { 188, 134, 68, 32 };
-static const ScreenRect s_toggle_dst = { 8, 76, 80, 35 };
+/* The native tab's open end meets the edge of the display. */
+static const ScreenRect s_toggle_dst = { DISPLAY_W - 80, 76, 80, 35 };
 
 static ScreenRect field_panel_rect(ScreenRect src, int scale)
 {
     const int w = src.w * scale / 100, h = src.h * scale / 100;
-    return (ScreenRect){ DISPLAY_W - w - 8, 82, w, h };
+    return (ScreenRect){ 8, 82, w, h };
 }
 
 static ScreenRect field_tree_rect(void)
@@ -1580,15 +1579,6 @@ static int in_rect(ScreenRect r, int x, int y)
     return x >= r.x && y >= r.y && x < r.x + r.w && y < r.y + r.h;
 }
 
-static ScreenRect field_panel_subrect(ScreenRect src, ScreenRect dst, ScreenRect part)
-{
-    const int x = dst.x + (part.x - src.x) * dst.w / src.w;
-    const int y = dst.y + (part.y - src.y) * dst.h / src.h;
-    const int right = dst.x + (part.x + part.w - src.x) * dst.w / src.w;
-    const int bottom = dst.y + (part.y + part.h - src.y) * dst.h / src.h;
-    return (ScreenRect){ x, y, right - x, bottom - y };
-}
-
 int video_map_field_touch(int px, int py, int first, int *x, int *y)
 {
     static int gesture;
@@ -1603,8 +1593,7 @@ int video_map_field_touch(int px, int py, int first, int *x, int *y)
             __atomic_store_n(&s_tab_request, mode, __ATOMIC_RELEASE);
         } else if (mode == VIDEO_FIELD_TREE) {
             tree = field_tree_rect();
-            const ScreenRect tab = field_panel_subrect(s_tree_src, tree, s_toggle_src);
-            gesture = in_rect(tree, px, py) && !in_rect(tab, px, py);
+            gesture = in_rect(tree, px, py);
         }
     }
     if (panel != gesture_panel) {
@@ -1782,37 +1771,20 @@ static void draw_field_panel(GLuint tex, ScreenRect src, ScreenRect dst)
                     FILTER_2D);
 }
 
-static void draw_field_panel_without_tab(GLuint tex, ScreenRect src, ScreenRect dst, ScreenRect tab)
-{
-    const int tab_bottom = tab.y + tab.h;
-    const ScreenRect parts[] = {
-        { src.x, src.y, src.w, tab.y - src.y },
-        { src.x, tab.y, tab.x - src.x, tab.h },
-        { src.x, tab_bottom, src.w, src.y + src.h - tab_bottom }
-    };
-    for (unsigned i = 0; i < sizeof(parts) / sizeof(parts[0]); i++)
-        draw_field_panel(tex, parts[i], field_panel_subrect(src, dst, parts[i]));
-}
-
 static void draw_field_panels(void)
 {
     const ScreenRect src = active_field_panel_source();
     if (src.h) {
         const GLuint bottom = s_tex_cur(1);
-        const unsigned mode = s_field_panel & VIDEO_FIELD_MODE_MASK;
         const ScreenRect dst = active_field_panel_rect(src);
-        if (mode == VIDEO_FIELD_TREE) {
-            draw_field_panel_without_tab(bottom, src, dst, s_toggle_src);
-        } else {
-            s_panel[1] = 5.0f;
-            s_panel[2] = (float)dst.w, s_panel[3] = (float)dst.h;
-            s_panel_rect[0] = (float)src.x / DS_SCREEN_W;
-            s_panel_rect[1] = (float)src.y / DS_SCREEN_H;
-            s_panel_rect[2] = (float)(src.x + src.w) / DS_SCREEN_W;
-            s_panel_rect[3] = (float)(src.y + src.h) / DS_SCREEN_H;
-            draw_field_panel(bottom, src, dst);
-            memset(s_panel, 0, sizeof(s_panel));
-        }
+        s_panel[1] = 5.0f;
+        s_panel[2] = (float)dst.w, s_panel[3] = (float)dst.h;
+        s_panel_rect[0] = (float)src.x / DS_SCREEN_W;
+        s_panel_rect[1] = (float)src.y / DS_SCREEN_H;
+        s_panel_rect[2] = (float)(src.x + src.w) / DS_SCREEN_W;
+        s_panel_rect[3] = (float)(src.y + src.h) / DS_SCREEN_H;
+        draw_field_panel(bottom, src, dst);
+        memset(s_panel, 0, sizeof(s_panel));
     }
     if (s_field_tab_mode <= VIDEO_FIELD_TREE) {
         const unsigned tab = s_field_tab_mode == VIDEO_FIELD_TREE;

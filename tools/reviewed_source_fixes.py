@@ -90,6 +90,16 @@ def apply(relative,text):
         text = ('extern int video_single_screen(void);\n' + text
                 .replace(show, '&& !video_single_screen() ' + show)
                 .replace(hide, '&& (video_single_screen() || !CanOpenFieldMenu_020735d8())) || !func_ov001_0207b5f4()'))
+    if relative == 'src/ov025/menu_widgets/UpdateMenuScreen_020b5f08.c':
+        # One Screen draws the native MAP sprite at the display edge. Hide
+        # the original widget before the Tree's other elements go to OAM.
+        hide = 'if (!func_ov001_0207b5f4() || !IsFieldPanelHidden_0207187c() || func_ov001_02064490())'
+        show = 'else if (func_ov001_0207b5f4() && IsFieldPanelHidden_0207187c() && !func_ov001_02064490()'
+        if text.count(hide) != 1 or text.count(show) != 1:
+            raise ValueError('Unexpected Tree tab visibility rules')
+        text = ('extern int video_single_screen(void);\n' + text
+                .replace(hide, hide.replace('if (', 'if (video_single_screen() || ', 1))
+                .replace(show, show.replace('if (', 'if (!video_single_screen() && ', 1)))
     if relative == 'eu/src/overlays/ov075/calls/DrawMatrixMenu.c':
         # Show installed chips and revealed CPU/bonus nodes in their full
         # colors. Keep their saved state and the powered link animations.

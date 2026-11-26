@@ -81,6 +81,7 @@ extern void __real_DrawGradientRect(unsigned, unsigned, unsigned, unsigned,
                                     unsigned, unsigned, unsigned);
 extern void __real_RefreshActiveMenuObjects(void);
 extern void __real_DrawChannelMeter(void *meter, int channel);
+extern void __real_DrawSpriteFrameQuadWithDepthUpdate(void *marker);
 
 void __wrap_DrawGradientRect(unsigned x0, unsigned y0, unsigned x1, unsigned y1,
                              unsigned mode, unsigned color, unsigned shade)
@@ -104,6 +105,14 @@ void __wrap_RefreshActiveMenuObjects(void)
 {
     kh_gx3d_set_field_geometry(KH_GX_FIELD_MARKER);
     __real_RefreshActiveMenuObjects();
+    kh_gx3d_set_field_geometry(KH_GX_FIELD_GEOMETRY_DEFAULT);
+}
+
+void __wrap_DrawSpriteFrameQuadWithDepthUpdate(void *marker)
+{
+    /* The Coliseum projects these sprites with the native 4:3 camera in software. */
+    kh_gx3d_set_field_geometry(KH_GX_FIELD_MARKER);
+    __real_DrawSpriteFrameQuadWithDepthUpdate(marker);
     kh_gx3d_set_field_geometry(KH_GX_FIELD_GEOMETRY_DEFAULT);
 }
 
