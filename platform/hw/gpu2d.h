@@ -75,12 +75,13 @@ static inline const int *kh_field_hud_zone(int corner)
     };
     return zones[corner];
 }
-/* The Coliseum HP frame starts in tile column 17. Keep its left cap with
- * the rest of the frame, clear of the command menu at the other corner. */
+/* The Coliseum HP frame starts in tile column 17. Its top edge rises
+ * two tile rows for each additional party member. Include all three
+ * native meter rows so the frame and fill share the bottom-right anchor. */
 static inline const int *kh_coliseum_hud_zone(int corner)
 {
     static const int commands[4] = { 0, 96, 128, 192 };
-    static const int player_hp[4] = { 128, 160, 256, 192 };
+    static const int player_hp[4] = { 128, 136, 256, 192 };
     return corner == KH_HUD_COMMANDS ? commands : player_hp;
 }
 

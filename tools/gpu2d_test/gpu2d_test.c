@@ -402,8 +402,10 @@ static int scene_coliseum_hud(void)
     uint16_t *map = (uint16_t *)(kh_vram_bg_a + 31 * 0x800);
     map[14 * 32 + 0] = 1;           /* command header */
     map[23 * 32 + 9] = 1;           /* command row */
-    for (int col = 17; col < 32; col++)
-        map[21 * 32 + col] = 1;     /* HP frame and fill cross the field split at x=140 */
+    /* Party-wide frame, with cap rows above the old y=160 boundary. */
+    for (int row = 17; row <= 23; row++)
+        for (int col = 17; col < 32; col++)
+            map[row * 32 + col] = 1;
     map[20 * 32 + 20] = 0xf000 | 958; /* centered caption inside the right rectangle */
     map[2 * 32 + 29] = 1;           /* upper battle notice */
 
@@ -417,13 +419,18 @@ static int scene_coliseum_hud(void)
     kh_gpu2d_render(0, fb);
     const int ok = (fb[112 * 256] >> 24) == 0xfe &&
                    (fb[184 * 256 + 79] >> 24) == 0xfe &&
+                   (fb[136 * 256 + 136] >> 24) == 0xfe && /* third member */
+                   (fb[152 * 256 + 136] >> 24) == 0xfe && /* second member */
+                   (fb[152 * 256 + 255] >> 24) == 0xfe &&
                    (fb[168 * 256 + 136] >> 24) == 0xfe &&
                    (fb[168 * 256 + 255] >> 24) == 0xfe &&
                    (fb[160 * 256 + 160] >> 24) == 0xff &&
                    (fb[16 * 256 + 232] >> 24) == 0xff &&
                    kh_gpu2d_hud_box[KH_HUD_COMMANDS][2] == 80 &&
                    kh_gpu2d_hud_box[KH_HUD_PLAYER_HP][0] == 136 &&
-                   kh_gpu2d_hud_box[KH_HUD_PLAYER_HP][2] == 256;
+                   kh_gpu2d_hud_box[KH_HUD_PLAYER_HP][1] == 136 &&
+                   kh_gpu2d_hud_box[KH_HUD_PLAYER_HP][2] == 256 &&
+                   kh_gpu2d_hud_box[KH_HUD_PLAYER_HP][3] == 192;
     kh_gpu2d_hud_mode = KH_HUD_OFF;
     puts(ok ? "ok coliseum_hud: complete command and HP blocks, notices in place"
             : "FAIL coliseum_hud: a block was split or a notice was moved");
