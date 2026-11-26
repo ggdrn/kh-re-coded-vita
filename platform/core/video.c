@@ -1516,11 +1516,12 @@ int video_on_inset(int px, int py)
 }
 
 /* Maps and the interactive Tree share the upper-right anchor in One Screen. */
-static const ScreenRect s_map_src = { 8, 16, 240, DS_SCREEN_H - 16 };
+/* Both map layouts use the same 250x128 frame beneath LOCATION. */
+static const ScreenRect s_map_src = { 3, 28, 250, 128 };
+static const ScreenRect s_board_src = { 8, 16, 240, DS_SCREEN_H - 16 };
 static const ScreenRect s_tree_src = { 0, 16, DS_SCREEN_W, DS_SCREEN_H - 16 };
 /* The native tabs extend to the right edge, above the bottom description. */
 static const ScreenRect s_toggle_src = { 188, 134, 68, 32 };
-static const ScreenRect s_board_tab_src = { 190, 140, 66, 30 };
 static const ScreenRect s_toggle_dst = { 8, 76, 80, 31 };
 
 static ScreenRect field_panel_rect(ScreenRect src, int scale)
@@ -1542,7 +1543,7 @@ static ScreenRect active_field_panel_source(void)
     if (mode == VIDEO_FIELD_TREE)
         return s_tree_src;
     if (s_field_panel & VIDEO_FIELD_MAP_VISIBLE)
-        return s_map_src;
+        return mode == VIDEO_FIELD_BOARD ? s_board_src : s_map_src;
     return (ScreenRect){ 0, 0, 0, 0 };
 }
 
@@ -1787,8 +1788,18 @@ static void draw_field_panels(void)
         const GLuint bottom = s_tex_cur(1);
         const unsigned mode = s_field_panel & VIDEO_FIELD_MODE_MASK;
         const ScreenRect dst = active_field_panel_rect(src);
-        draw_field_panel_without_tab(bottom, src, dst,
-                                     mode == VIDEO_FIELD_BOARD ? s_board_tab_src : s_toggle_src);
+        if (mode == VIDEO_FIELD_TREE) {
+            draw_field_panel_without_tab(bottom, src, dst, s_toggle_src);
+        } else {
+            s_panel[1] = 5.0f;
+            s_panel[2] = (float)dst.w, s_panel[3] = (float)dst.h;
+            s_panel_rect[0] = (float)src.x / DS_SCREEN_W;
+            s_panel_rect[1] = (float)src.y / DS_SCREEN_H;
+            s_panel_rect[2] = (float)(src.x + src.w) / DS_SCREEN_W;
+            s_panel_rect[3] = (float)(src.y + src.h) / DS_SCREEN_H;
+            draw_field_panel(bottom, src, dst);
+            memset(s_panel, 0, sizeof(s_panel));
+        }
     }
     if (s_field_tab_mode <= VIDEO_FIELD_TREE)
         draw_field_quad(s_field_tab_tex[s_field_tab_mode == VIDEO_FIELD_TREE],

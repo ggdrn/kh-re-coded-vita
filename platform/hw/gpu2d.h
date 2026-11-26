@@ -60,6 +60,7 @@ extern volatile int kh_gpu2d_tree_notice;
 extern volatile int kh_gpu2d_right_notice;
 extern volatile int kh_gpu2d_arrow_prompt;
 extern volatile int kh_gpu2d_sector;
+extern volatile int kh_gpu2d_area_party_hp;
 enum {
     KH_HUD_ITEM_NOTICE = 0, KH_HUD_COMMANDS = 2, KH_HUD_PLAYER_HP,
     KH_FIELD_HUD_TREE_NOTICE, KH_FIELD_HUD_RIGHT_NOTICE,
@@ -70,7 +71,7 @@ enum {
 static inline const int *kh_field_hud_zone(int corner)
 {
     static const int zones[KH_FIELD_HUD_BOX_COUNT][4] = {
-        { 0, 40, 120, 72 }, { 176, 0, 256, 24 }, { 0, 60, 140, 192 }, { 140, 90, 256, 192 },
+        { 0, 40, 120, 72 }, { 176, 0, 256, 24 }, { 0, 60, 140, 192 }, { 140, 64, 256, 192 },
         { 0, 80, 120, 112 }, { 160, 40, 256, 72 }, { 8, 8, 136, 16 }
     };
     return zones[corner];

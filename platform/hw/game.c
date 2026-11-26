@@ -394,7 +394,8 @@ void kh_dual3d_toggled(void)
 static unsigned s_field_panel = 0xff;
 enum { FIELD_MESSAGE_WINDOW = 1 << 10, FIELD_MESSAGE_SPRITE = 1 << 11,
        FIELD_TREE_NOTICE = 1 << 12, FIELD_RIGHT_NOTICE = 1 << 13,
-       FIELD_ARROW_PROMPT = 1 << 14, FIELD_SECTOR = 1 << 15 };
+       FIELD_ARROW_PROMPT = 1 << 14, FIELD_SECTOR = 1 << 15,
+       FIELD_AREA_GAUGE = 1 << 16 };
 extern unsigned GetLoadedSubsceneMode(void);
 extern unsigned GetMessageWindowPhaseGroup(void);
 extern int IsCommonFieldMessageSpriteActive(void);
@@ -410,6 +411,7 @@ extern int PlaySoundEffect(int channel, int id);
 extern const void *gResultsScreenWorkPointer;
 extern const void *gContinueScreenContext;
 extern const void *gBattleGaugeGlobalStorage;
+extern const void *gAreaSceneGaugeGlobalsStorage[];
 extern const int8_t *gResultsScreenPointersPrefix[];
 extern const uint8_t *gResultsScreenTaskHandle;
 extern struct { const void *buffer, *work, *extra; } gEvent2DPanelManager;
@@ -1003,7 +1005,8 @@ static void present(void)
         kh_gpu2d_tree_notice = (panel & FIELD_TREE_NOTICE) != 0;
         kh_gpu2d_right_notice = (panel & FIELD_RIGHT_NOTICE) != 0;
         kh_gpu2d_arrow_prompt = (panel & FIELD_ARROW_PROMPT) != 0;
-        kh_gpu2d_sector = (panel & FIELD_SECTOR) != 0;
+        kh_gpu2d_sector = (panel & FIELD_SECTOR) || (single && (panel & FIELD_AREA_GAUGE));
+        kh_gpu2d_area_party_hp = (panel & FIELD_AREA_GAUGE) != 0;
         video_set_hud_shrink(move_hud_2d || coliseum_hud, coliseum_hud);
         kh_gpu3d_set_field_hud(move_hud || coliseum_hud ? kh_config.hud_size : 100,
                               video_hud_edges() ? hud : 1.0f, coliseum_hud,
@@ -1708,6 +1711,9 @@ static void swap_wait(void)
             panel |= FIELD_ARROW_PROMPT;
         if (sector)
             panel |= FIELD_SECTOR;
+        /* Olympus uses the area-scene gauge outside the System Sector session type. */
+        if (kh_overlay_loaded(35) && gAreaSceneGaugeGlobalsStorage[1])
+            panel |= FIELD_AREA_GAUGE;
     }
     __atomic_store_n(&s_field_panel, panel, __ATOMIC_RELEASE);
     {

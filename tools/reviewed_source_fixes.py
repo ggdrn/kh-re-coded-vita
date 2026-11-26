@@ -77,6 +77,39 @@ def apply(relative,text):
         if text.count(old) != 1 or text.count(call) != 1:
             raise ValueError('Unexpected Olympus stage marker callback removal')
         text = text.replace(old, new).replace(call, 'RemoveTaggedListEntries((int)UpdateStageMarkers);')
+    if relative in (
+        'src/ov023/menu_graphics/UpdateMapMenuState_020b6afc.c',
+        'src/ov024/unclassified_helpers/UpdateBoardScreen_020b6df4.c',
+    ):
+        # The One Screen compositor supplies the touch tab. Hide the native
+        # widget itself on these two panels so the map behind it stays visible.
+        show = '&& CanOpenFieldMenu_020735d8() && func_ov001_0207b5f4()'
+        hide = '&& !CanOpenFieldMenu_020735d8()) || !func_ov001_0207b5f4()'
+        if text.count(show) != 1 or text.count(hide) != 1:
+            raise ValueError('Unexpected map tab visibility rules in ' + relative)
+        text = ('extern int video_single_screen(void);\n' + text
+                .replace(show, '&& !video_single_screen() ' + show)
+                .replace(hide, '&& (video_single_screen() || !CanOpenFieldMenu_020735d8())) || !func_ov001_0207b5f4()'))
+    if relative == 'eu/src/overlays/ov075/calls/DrawMatrixMenu.c':
+        # Show installed chips and revealed CPU/bonus nodes in their full
+        # colors. Keep their saved state and the powered link animations.
+        chip_tint = '''            if (!IsItemUnlocked(item)) {
+                color = 0x7bde;
+            }
+'''
+        old_node_tint = '''            if (item->placed) {
+                color = 0x3def;
+            }
+'''
+        chip_tint_test = '''static inline BOOL IsItemUnlocked(GridItem *item)
+{
+    return item->type == 1 && (gSaveIoStateDataTail->unlockMask & (1 << item->groupBit));
+}
+
+'''
+        if text.count(chip_tint) != 1 or text.count(old_node_tint) != 3 or text.count(chip_tint_test) != 1:
+            raise ValueError('Unexpected Stat Matrix tint logic')
+        text = text.replace(chip_tint, '').replace(old_node_tint, '').replace(chip_tint_test, '')
     if relative == 'src/ov076/matrix_menu/SlotMenu_DrawSlotModels_020c7708.c':
         # The command icon is at z=0 in an ortho view whose eye and far clip
         # are both at 1024. Move only this quad off the Vita's clear depth.

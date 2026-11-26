@@ -390,6 +390,47 @@ static int scene_sector_gauge(void)
     return !ok;
 }
 
+static int scene_area_party_hud(void)
+{
+    static uint32_t fb[256 * 192];
+    reset();
+    w32(0x04000000, 0x00010000 | 0x1908); /* 3D, BG3 and OBJ */
+    w16(0x04000008, 3);
+    w16(0x0400000e, 31 << 8);
+    tile4(kh_vram_bg_a, 0, 1, 2);
+    const uint16_t tile = 1;
+    uint8_t *bg3 = kh_vram_bg_a + 31 * 0x800;
+    memcpy(bg3 + (1 * 32 + 1) * 2, &tile, 2);   /* BUG LV label */
+    memcpy(bg3 + (1 * 32 + 16) * 2, &tile, 2);  /* BUG LV right edge */
+    memcpy(bg3 + (10 * 32 + 20) * 2, &tile, 2); /* unrelated mid-screen pixel */
+    memcpy(bg3 + (23 * 32 + 29) * 2, &tile, 2); /* Sora's bar */
+    tile4(kh_vram_obj_a, 0, 0, 2);
+    oam(0, 0, 72, 236, 0); /* Cloud's portrait is above the old y=90 boundary. */
+
+    kh_gpu2d_hud_mode = KH_HUD_FIELD;
+    kh_gpu2d_hud_edges = 1;
+    kh_gpu2d_sector = 1;
+    kh_gpu2d_area_party_hp = 1;
+    kh_gpu2d_zone_start[1] = 184;
+    kh_gpu2d_render(0, fb);
+    int ok = (fb[72 * 256 + 236] >> 24) == 0xfe &&
+             (fb[184 * 256 + 232] >> 24) == 0xfe &&
+             (fb[80 * 256 + 160] >> 24) == 0xff &&
+             (fb[8 * 256 + 8] >> 24) == 0xfe &&
+             (fb[8 * 256 + 135] >> 24) == 0xfe;
+    kh_gpu2d_area_party_hp = 0;
+    kh_gpu2d_sector = 0;
+    kh_gpu2d_render(0, fb);
+    ok &= (fb[72 * 256 + 236] >> 24) == 0xff &&
+          (fb[8 * 256 + 8] >> 24) == 0xff;
+    kh_gpu2d_hud_mode = KH_HUD_OFF;
+    kh_gpu2d_hud_edges = 0;
+    kh_gpu2d_zone_start[1] = 90;
+    puts(ok ? "ok area_party_hud: upper portrait and complete BUG LV gauge relocate"
+            : "FAIL area_party_hud: upper portrait or BUG LV gauge stayed behind");
+    return !ok;
+}
+
 static int scene_coliseum_hud(void)
 {
     static uint32_t fb[256 * 192];
@@ -449,6 +490,7 @@ int main(void)
     failures |= scene_field_caption();
     failures |= scene_combo_limit_arrows();
     failures |= scene_sector_gauge();
+    failures |= scene_area_party_hud();
     failures |= scene_coliseum_hud();
     return failures;
 }

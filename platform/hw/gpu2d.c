@@ -114,6 +114,7 @@ volatile int kh_gpu2d_tree_notice;
 volatile int kh_gpu2d_right_notice;
 volatile int kh_gpu2d_arrow_prompt;
 volatile int kh_gpu2d_sector;
+volatile int kh_gpu2d_area_party_hp;
 volatile uint8_t kh_gpu2d_zone_rows[2][192];
 volatile int kh_gpu2d_zone_start[2] = { 60, 90 };
 volatile int32_t kh_gpu2d_hud_box[KH_FIELD_HUD_BOX_COUNT][4] = {
@@ -173,9 +174,17 @@ static void hud_codes(const Engine *e, int line, const uint16_t *id0, uint8_t *c
         if (z < 2 && (!kh_gpu2d_hud_edges || full_width_notice))
             continue;
         /* The obtained notice can share rows with the expanded command deck. */
-        const int start_x = !coliseum && z == 2 && kh_gpu2d_hud_edges && !full_width_notice &&
-                            line < kh_field_hud_zone(0)[3] ? kh_field_hud_zone(0)[2] : zone[0];
-        if (!coliseum && (z == 2 || z == 3)) {
+        int start_x = !coliseum && z == KH_HUD_COMMANDS && kh_gpu2d_hud_edges && !full_width_notice &&
+                      line < kh_field_hud_zone(KH_HUD_ITEM_NOTICE)[3] ?
+                      kh_field_hud_zone(KH_HUD_ITEM_NOTICE)[2] : zone[0];
+        const int area_party_hp = !coliseum && z == KH_HUD_PLAYER_HP && kh_gpu2d_area_party_hp;
+        if (!coliseum && z == KH_HUD_PLAYER_HP && line < 90) {
+            if (!area_party_hp || (kh_gpu2d_right_notice && line < kh_field_hud_zone(KH_FIELD_HUD_RIGHT_NOTICE)[3]))
+                continue;
+            /* The upper party portraits occupy only the rightmost columns. */
+            start_x = 216;
+        }
+        if (!coliseum && !area_party_hp && (z == KH_HUD_COMMANDS || z == KH_HUD_PLAYER_HP)) {
             for (x = start_x; x < zone[2]; x++)
                 if (id0[x] == L_BG1 || (id0[x] == L_BG3 && !fixed_bg3[x])) {
                     kh_gpu2d_zone_rows[z - 2][line] = 1;
