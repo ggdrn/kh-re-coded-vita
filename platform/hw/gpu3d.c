@@ -1080,10 +1080,9 @@ void kh_gpu3d_prepare(const KhGxFrame *f)
     s_njobs = 0;
 }
 
-/* The deck and HP may mix flat polygons with the 2D layers. Use the same
- * bottom-corner anchors as video.c so the pieces move together. */
+/* HUD polygons use the same anchors as the matching 2D layers in video.c. */
 static float s_hud_x = 1.0f, s_hud_y = 1.0f;
-static int s_hud_coliseum;
+static int s_hud_coliseum, s_hud_item_notice;
 static float s_projection_width = 1.0f;
 
 void kh_gpu3d_set_projection_width(float width)
@@ -1094,12 +1093,14 @@ void kh_gpu3d_set_projection_width(float width)
     }
 }
 
-void kh_gpu3d_set_field_hud(int percent, float width, int coliseum)
+void kh_gpu3d_set_field_hud(int percent, float width, int coliseum, int item_notice)
 {
     const float y = (float)percent / 100.0f;
     const float x = width * y;
-    if (x != s_hud_x || y != s_hud_y || coliseum != s_hud_coliseum) {
+    if (x != s_hud_x || y != s_hud_y || coliseum != s_hud_coliseum ||
+        item_notice != s_hud_item_notice) {
         s_hud_coliseum = coliseum;
+        s_hud_item_notice = item_notice;
         s_hud_x = x;
         s_hud_y = y;
         s_last_serial = 0;
@@ -1129,27 +1130,43 @@ static const KhGxVertex *placed_vertices(const KhGxFrame *f, const KhGxVertex *v
         return copied ? moved : vtx;
     for (i = 0; i < f->npoly; i++) {
         const KhGxPolygon *p = &f->poly[i];
-        float x0 = 1e9f, y0 = 1e9f, x1 = -1e9f, y1 = -1e9f;
-        float anchor;
-        if (!p->field_hud)
-            continue;
-        for (k = 0; k < p->count; k++) {
-            const KhGxVertex *v = &vtx[p->v[k]];
-            const float w = v->w != 0.0f ? v->w : 1.0f;
-            const float px = (v->x / w + 1.0f) * 128.0f, py = (1.0f - v->y / w) * 96.0f;
-            x0 = px < x0 ? px : x0, x1 = px > x1 ? px : x1;
-            y0 = py < y0 ? py : y0, y1 = py > y1 ? py : y1;
+        float anchor_x, anchor_y = -1.0f;
+        switch (p->field_hud) {
+        case KH_GX_FIELD_ITEM_NOTICE:
+            if (!s_hud_item_notice)
+                continue;
+            anchor_x = -1.0f;
+            anchor_y = 1.0f - kh_field_hud_zone(KH_HUD_ITEM_NOTICE)[1] / 96.0f;
+            break;
+        case KH_GX_FIELD_COLOSSEUM_HP:
+            if (!s_hud_coliseum)
+                continue;
+            anchor_x = 1.0f;
+            break;
+        case KH_GX_FIELD_HUD: {
+            float x0 = 1e9f, y0 = 1e9f, x1 = -1e9f, y1 = -1e9f;
+            for (k = 0; k < p->count; k++) {
+                const KhGxVertex *v = &vtx[p->v[k]];
+                const float w = v->w != 0.0f ? v->w : 1.0f;
+                const float px = (v->x / w + 1.0f) * 128.0f, py = (1.0f - v->y / w) * 96.0f;
+                x0 = px < x0 ? px : x0, x1 = px > x1 ? px : x1;
+                y0 = py < y0 ? py : y0, y1 = py > y1 ? py : y1;
+            }
+            const int *left = s_hud_coliseum ? kh_coliseum_hud_zone(KH_HUD_COMMANDS) :
+                                              kh_field_hud_zone(KH_HUD_COMMANDS);
+            const int *right = s_hud_coliseum ? kh_coliseum_hud_zone(KH_HUD_PLAYER_HP) :
+                                               kh_field_hud_zone(KH_HUD_PLAYER_HP);
+            if (x0 >= left[0] && x1 <= left[2] && y0 >= left[1] && y1 <= left[3])
+                anchor_x = -1.0f;
+            else if (x0 >= right[0] && x1 <= right[2] && y0 >= right[1] && y1 <= right[3])
+                anchor_x = 1.0f;
+            else
+                continue;
+            break;
         }
-        const int *left = s_hud_coliseum ? kh_coliseum_hud_zone(KH_HUD_COMMANDS) :
-                                          kh_field_hud_zone(KH_HUD_COMMANDS);
-        const int *right = s_hud_coliseum ? kh_coliseum_hud_zone(KH_HUD_PLAYER_HP) :
-                                           kh_field_hud_zone(KH_HUD_PLAYER_HP);
-        if (x0 >= left[0] && x1 <= left[2] && y0 >= left[1] && y1 <= left[3])
-            anchor = -1.0f;
-        else if (x0 >= right[0] && x1 <= right[2] && y0 >= right[1] && y1 <= right[3])
-            anchor = 1.0f;
-        else
+        default:
             continue;
+        }
         if (!copied) {
             memcpy(moved, vtx, (size_t)f->nvtx * sizeof(KhGxVertex));
             memset(done, 0, (size_t)f->nvtx);
@@ -1162,8 +1179,8 @@ static const KhGxVertex *placed_vertices(const KhGxFrame *f, const KhGxVertex *v
             if (done[n])
                 continue;
             done[n] = 1;
-            v->x = s_hud_x * v->x + anchor * (1.0f - s_hud_x) * w;
-            v->y = s_hud_y * v->y - (1.0f - s_hud_y) * w;
+            v->x = s_hud_x * v->x + anchor_x * (1.0f - s_hud_x) * w;
+            v->y = s_hud_y * v->y + anchor_y * (1.0f - s_hud_y) * w;
         }
     }
     return copied ? moved : vtx;

@@ -136,7 +136,7 @@ def main():
     subprocess.run([str(BIN/'arm-vita-eabi-gcc'),*COMMON_CFLAGS,'-c',str(out/'gen/ovdisp.S'),'-o',str(out/'gen/ovdisp.o')],check=True)
     hooks = ('UpdateTitlePanel', 'NNSi_G2dGetUnpackedFont', 'NNS_G2dGetUnpackedCharacterData',
              'NNS_G2dGetUnpackedBGCharacterData', 'DrawGradientRect', 'RefreshActiveMenuObjects',
-             'CloseResultsScreen', 'UpdateResultsScreen', 'UpdateChallengeScene',
+             'DrawChannelMeter', 'CloseResultsScreen', 'UpdateResultsScreen', 'UpdateChallengeScene',
              'UpdateStageLinkPanels',
              'StageEvents_CheckAllEvents', 'SubScene9_Request', 'SetSlotDisplayStyle',
              'SetSceneEntryPrimaryBgmId')

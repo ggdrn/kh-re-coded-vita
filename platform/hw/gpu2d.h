@@ -61,7 +61,7 @@ extern volatile int kh_gpu2d_right_notice;
 extern volatile int kh_gpu2d_arrow_prompt;
 extern volatile int kh_gpu2d_sector;
 enum {
-    KH_HUD_COMMANDS = 2, KH_HUD_PLAYER_HP,
+    KH_HUD_ITEM_NOTICE = 0, KH_HUD_COMMANDS = 2, KH_HUD_PLAYER_HP,
     KH_FIELD_HUD_TREE_NOTICE, KH_FIELD_HUD_RIGHT_NOTICE,
     KH_FIELD_HUD_SECTOR_GAUGE, KH_FIELD_HUD_BOX_COUNT
 };

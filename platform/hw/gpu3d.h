@@ -27,8 +27,8 @@ void kh_gpu3d_select_target(int target);
 /* Target 1 deleted (with target 0 chosen): out of the cutscenes, its video memory back. */
 void kh_gpu3d_drop_second_target(void);
 
-/* Scale the field HUD's flat 3D pieces around their bottom corners. */
-void kh_gpu3d_set_field_hud(int percent, float width, int coliseum);
+/* Scale the HUD's flat 3D pieces around the same anchors as their 2D layers. */
+void kh_gpu3d_set_field_hud(int percent, float width, int coliseum, int item_notice);
 void kh_gpu3d_set_projection_width(float width);
 
 /* Draw the frame; returns the GL texture holding the 3D layer (premultiplied RGBA, GL

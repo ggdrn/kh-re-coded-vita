@@ -36,7 +36,7 @@ typedef struct {
     uint8_t translucent;
     int16_t ytop, ybottom; /* screen rows, for the translucent sort */
     uint8_t flat;      /* built with an orthographic projection */
-    uint8_t field_hud; /* flat geometry emitted by a field HUD draw call */
+    uint8_t field_hud; /* KhGxFieldGeometry tag for flat HUD polygons, zero otherwise */
     uint32_t attr;     /* POLYGON_ATTR latched at BEGIN_VTXS */
     uint32_t teximage; /* TEXIMAGE_PARAM */
     uint32_t pltt;     /* PLTT_BASE */
@@ -46,6 +46,8 @@ enum KhGxFieldGeometry {
     KH_GX_FIELD_GEOMETRY_DEFAULT,
     KH_GX_FIELD_HUD,
     KH_GX_FIELD_MARKER,
+    KH_GX_FIELD_ITEM_NOTICE,
+    KH_GX_FIELD_COLOSSEUM_HP,
 };
 
 void kh_gx3d_set_field_geometry(enum KhGxFieldGeometry geometry);

@@ -79,12 +79,23 @@ extern int __real_UpdateTitlePanel(void);
 extern void __real_DrawGradientRect(unsigned, unsigned, unsigned, unsigned,
                                     unsigned, unsigned, unsigned);
 extern void __real_RefreshActiveMenuObjects(void);
+extern void __real_DrawChannelMeter(void *meter, int channel);
 
 void __wrap_DrawGradientRect(unsigned x0, unsigned y0, unsigned x1, unsigned y1,
                              unsigned mode, unsigned color, unsigned shade)
 {
-    kh_gx3d_set_field_geometry(KH_GX_FIELD_HUD);
+    /* DrawItemCountBadge draws its black backing at native rows 49–63. */
+    const int item_notice = y0 == 0x31 && y1 == 0x3f && x0 <= 2 && x1 <= 69 &&
+                            mode == 0x2000 && color == 0 && shade == 0;
+    kh_gx3d_set_field_geometry(item_notice ? KH_GX_FIELD_ITEM_NOTICE : KH_GX_FIELD_HUD);
     __real_DrawGradientRect(x0, y0, x1, y1, mode, color, shade);
+    kh_gx3d_set_field_geometry(KH_GX_FIELD_GEOMETRY_DEFAULT);
+}
+
+void __wrap_DrawChannelMeter(void *meter, int channel)
+{
+    kh_gx3d_set_field_geometry(KH_GX_FIELD_COLOSSEUM_HP);
+    __real_DrawChannelMeter(meter, channel);
     kh_gx3d_set_field_geometry(KH_GX_FIELD_GEOMETRY_DEFAULT);
 }
 
@@ -995,7 +1006,8 @@ static void present(void)
         kh_gpu2d_sector = (panel & FIELD_SECTOR) != 0;
         video_set_hud_shrink(move_hud_2d || coliseum_hud, coliseum_hud);
         kh_gpu3d_set_field_hud(move_hud || coliseum_hud ? kh_config.hud_size : 100,
-                              video_hud_edges() ? hud : 1.0f, coliseum_hud);
+                              video_hud_edges() ? hud : 1.0f, coliseum_hud,
+                              move_hud_2d && video_hud_edges());
     }
     {
         const KhGxFrame *frame3d = NULL;

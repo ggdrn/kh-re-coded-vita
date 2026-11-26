@@ -537,7 +537,8 @@ static void emit_polygon(const int *idx, int n, int odd)
         poly->v[i] = (uint16_t)idx[i];
     poly->count = (uint8_t)n;
     poly->flat = !perspective(s_clip);
-    poly->field_hud = poly->flat && s_field_geometry == KH_GX_FIELD_HUD;
+    poly->field_hud = poly->flat && s_field_geometry != KH_GX_FIELD_MARKER ?
+                      s_field_geometry : KH_GX_FIELD_GEOMETRY_DEFAULT;
     poly->attr = s_attr;
     poly->teximage = s_teximage;
     poly->pltt = s_pltt;

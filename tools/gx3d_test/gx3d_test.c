@@ -207,15 +207,23 @@ static void test_wide_projection(void)
     triangle(0x001f00c0, 0);
     kh_gx3d_set_field_geometry(KH_GX_FIELD_MARKER);
     triangle(0x001f00c0, 0);
+    kh_gx3d_set_field_geometry(KH_GX_FIELD_ITEM_NOTICE);
+    triangle(0x001f00c0, 0);
+    kh_gx3d_set_field_geometry(KH_GX_FIELD_COLOSSEUM_HP);
+    triangle(0x001f00c0, 0);
     kh_gx3d_set_field_geometry(KH_GX_FIELD_GEOMETRY_DEFAULT);
     port(0x50, 0);
     const KhGxFrame *f = kh_gx3d_acquire();
-    CHECK(f->npoly == 4 && !f->poly[0].flat && f->poly[1].flat,
+    CHECK(f->npoly == 6 && !f->poly[0].flat && f->poly[1].flat,
           "sideways perspective stays distinct from orthographic UI");
     CHECK(f->wide_x == 0.75f && (f->vtx[0].tag & KH_GX_VERTEX_WIDE) &&
           !(f->vtx[3].tag & KH_GX_VERTEX_WIDE), "ordinary UI keeps its native projection");
-    CHECK(!f->poly[1].field_hud && f->poly[2].field_hud && !f->poly[3].field_hud,
-          "only field HUD geometry can move to a corner");
+    CHECK(!f->poly[1].field_hud && f->poly[2].field_hud == KH_GX_FIELD_HUD && !f->poly[3].field_hud,
+          "ordinary flat polygons and world markers stay out of the HUD groups");
+    CHECK(f->poly[4].field_hud == KH_GX_FIELD_ITEM_NOTICE &&
+          f->poly[5].field_hud == KH_GX_FIELD_COLOSSEUM_HP &&
+          !(f->vtx[12].tag & KH_GX_VERTEX_WIDE) && !(f->vtx[15].tag & KH_GX_VERTEX_WIDE),
+          "item backing and HP fill retain separate HUD anchors");
     CHECK((f->vtx[9].tag & KH_GX_VERTEX_WIDE) &&
           f->vtx[9].x == f->vtx[3].x * 0.75f && f->vtx[9].y == f->vtx[3].y,
           "a flat target marker follows the widened world projection");
