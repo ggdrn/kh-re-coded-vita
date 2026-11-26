@@ -1529,9 +1529,10 @@ int video_on_inset(int px, int py)
 }
 
 /* Maps and the interactive Tree share the upper-left anchor in One Screen. */
-/* Both map layouts use the same 250x128 frame beneath LOCATION. */
+/* The sector's FLOOR/ENEMIES header is shorter than the normal map's
+ * LOCATION header. Both frames end just above INFORMATION. */
 static const ScreenRect s_map_src = { 3, 28, 250, 128 };
-static const ScreenRect s_board_src = { 8, 16, 240, DS_SCREEN_H - 16 };
+static const ScreenRect s_board_src = { 3, 20, 250, 136 };
 static const ScreenRect s_tree_src = { 0, 16, DS_SCREEN_W, DS_SCREEN_H - 16 };
 /* The native tab's open end meets the edge of the display. */
 static const ScreenRect s_toggle_dst = { DISPLAY_W - 80, 76, 80, 35 };
