@@ -33,7 +33,7 @@ void kh_gpu3d_set_projection_width(float width);
 
 /* Draw the frame; returns the GL texture holding the 3D layer (premultiplied RGBA, GL
  * orientation: row 0 is the bottom of the screen), 0 when there is nothing to show. */
-unsigned kh_gpu3d_render(const KhGxFrame *frame);
+unsigned kh_gpu3d_render(const KhGxFrame *frame, int transparent_clear);
 
 /* Before kh_gpu3d_render, with the helper core free: decodes the frame's new and changed
  * textures on both cores (platform/core/workers.h). Optional; render does the rest. */

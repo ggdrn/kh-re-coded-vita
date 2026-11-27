@@ -107,6 +107,7 @@ static Prog3d s_p3[2];
 static const Prog3d *s_cur3; /* the one in use while a frame is drawn */
 static uint32_t s_frame;
 static uint32_t s_last_serial;
+static int s_transparent_clear;
 /* the two targets (kh_gpu3d_select_target): s_fbo, s_color, s_depth and s_last_serial are the
  * chosen one's, the other one's kept here */
 static GLuint s_tgt_fbo[2], s_tgt_color[2], s_tgt_depth[2];
@@ -1210,7 +1211,7 @@ static unsigned draw_frame(const KhGxFrame *f, const KhGxVertex *vtx)
     glDisable(GL_CULL_FACE);
     {
         const uint32_t cc = reg32(f, 0x04000350);
-        const float a = (float)((cc >> 16) & 31) / 31.0f;
+        const float a = s_transparent_clear ? 0.0f : (float)((cc >> 16) & 31) / 31.0f;
         const float r = (float)(cc & 31) / 31.0f, g = (float)((cc >> 5) & 31) / 31.0f,
                     b = (float)((cc >> 10) & 31) / 31.0f;
         const uint32_t cd = reg32(f, 0x04000354) & 0x7fff;
@@ -1610,8 +1611,12 @@ void kh_gpu3d_describe(const KhGxFrame *f, char *out, int n)
 
 volatile int kh_gpu3d_test_skip;
 
-unsigned kh_gpu3d_render(const KhGxFrame *f)
+unsigned kh_gpu3d_render(const KhGxFrame *f, int transparent_clear)
 {
+    if (s_transparent_clear != transparent_clear) {
+        s_transparent_clear = transparent_clear;
+        s_last_serial = 0;
+    }
     apply_requests();
     if (!s_prog || !f)
         return 0;

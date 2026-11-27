@@ -402,6 +402,51 @@ static int scene_transparent_tree(void)
     return !ok;
 }
 
+static int scene_clean_start(void)
+{
+    static uint32_t fb[256 * 192];
+    const uint16_t tile = 1;
+    const int line = 40, map_row = (line / 8) * 64;
+    reset();
+    w32(0x04000000, 0x00011f08);
+    w32(0x04001000, 0x00011f00);
+    w16(0x0400000c, (10 << 8) | 2);
+    w16(0x0400000e, (11 << 8) | 3);
+    w16(0x0400100a, (12 << 8) | 1);
+    w16(0x0400100c, (10 << 8) | 2);
+    w16(0x0400100e, (11 << 8) | 3);
+    tile4(kh_vram_bg_a, 0, 1, 2);
+    tile4(kh_vram_bg_b, 0, 1, 2);
+    tile4(kh_vram_obj_a, 0, 0, 2);
+    tile4(kh_vram_obj_b, 0, 0, 2);
+    pal(0, 1, RGB(27, 27, 27));
+    pal(0x400, 1, RGB(27, 27, 27));
+    pal(0x200, 1, RGB(25, 14, 0));
+    pal(0x600, 1, RGB(25, 14, 0));
+    memcpy(kh_vram_bg_a + 10 * 0x800 + map_row + 2, &tile, 2); /* root text */
+    memcpy(kh_vram_bg_a + 11 * 0x800 + map_row + 4, &tile, 2); /* root wallpaper */
+    memcpy(kh_vram_bg_b + 12 * 0x800 + map_row + 28, &tile, 2); /* status text */
+    memcpy(kh_vram_bg_b + 10 * 0x800 + map_row + 6, &tile, 2); /* portrait area */
+    memcpy(kh_vram_bg_b + 10 * 0x800 + map_row + 30, &tile, 2); /* overview frame */
+    memcpy(kh_vram_bg_b + 11 * 0x800 + map_row + 4, &tile, 2); /* status wallpaper */
+    oam(0, 0, line, 32, 0);
+    oam(1, 0, line, 32, 0);
+
+    uint32_t *pixels = fb + line * 256;
+    int ok = kh_gpu2d_render_start_lines(KH_ENGINE_A, fb, line, line + 8, 1);
+    ok &= (pixels[8] >> 24) == 0xfe && pixels[16] == 0 && pixels[32] == 0;
+    kh_gpu2d_render_start_lines(KH_ENGINE_B, fb, line, line + 8, 1);
+    ok &= pixels[16] == 0 && (pixels[24] >> 24) == 0xfe && (pixels[32] >> 24) == 0xfe &&
+          (pixels[112] >> 24) == 0xfe && pixels[120] == 0;
+    kh_gpu2d_render_start_lines(KH_ENGINE_B, fb, line, line + 8, 0);
+    ok &= (pixels[120] >> 24) == 0xfe;
+    kh_gpu2d_render(KH_ENGINE_B, fb);
+    ok &= (pixels[16] >> 24) == 0xff;
+    puts(ok ? "ok start: isolated text, model, portrait and icons; overview frames omitted"
+            : "FAIL start: menu layer isolation changed native content");
+    return !ok;
+}
+
 static int scene_sector_gauge(void)
 {
     static uint32_t fb[256 * 192];
@@ -535,6 +580,7 @@ int main(void)
     failures |= scene_field_caption();
     failures |= scene_combo_limit_arrows();
     failures |= scene_transparent_tree();
+    failures |= scene_clean_start();
     failures |= scene_sector_gauge();
     failures |= scene_area_party_hud();
     failures |= scene_coliseum_hud();

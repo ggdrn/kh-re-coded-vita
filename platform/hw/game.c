@@ -265,6 +265,8 @@ typedef struct {
     int a3d[BANDS];
     int eng[3], neng; /* the engines drawn this frame */
     int transparent_tree;
+    int clean_start;
+    int start_overview;
 } Frame2d;
 
 /* engine A was among the engines drawn: only then do the bands say where its 3D pixels are */
@@ -331,6 +333,8 @@ static void render_chunk(int chunk, void *arg)
     int r;
     if (engine == ENG_CAPTURE)
         r = kh_gpu2d_render_graphics_lines(KH_ENGINE_A, f->fb[engine], y0, y1);
+    else if (f->clean_start)
+        r = kh_gpu2d_render_start_lines(engine, f->fb[engine], y0, y1, f->start_overview);
     else if (engine == KH_ENGINE_B && f->transparent_tree)
         r = kh_gpu2d_render_tree_lines(f->fb[engine], y0, y1);
     else
@@ -728,6 +732,17 @@ typedef struct {
 } StartRootMenu;
 
 static int s_start_root_ready;
+static unsigned s_start_selection;
+static int s_start_status_page;
+
+extern void __real_UpdateStatusMenu(void *menu);
+
+void __wrap_UpdateStatusMenu(void *menu)
+{
+    __real_UpdateStatusMenu(menu);
+    /* The first field of ov073 StatusMenu is the signed page index. */
+    __atomic_store_n(&s_start_status_page, *(const int8_t *)menu, __ATOMIC_RELEASE);
+}
 
 extern int GetPrimaryElementEnabled(void);
 extern void HandleRootMenuConfirm(StartRootMenu *menu);
@@ -737,6 +752,7 @@ void __wrap_UpdateRootMenuFrame(StartRootMenu *menu)
 {
     __real_UpdateRootMenuFrame(menu);
     const int ready = menu->full_menu && menu->mode == 0;
+    __atomic_store_n(&s_start_selection, menu->entry_count << 8 | menu->cursor, __ATOMIC_RELEASE);
     __atomic_store_n(&s_start_root_ready, ready, __ATOMIC_RELEASE);
     const int row = video_take_start_row();
     if (ready && row > 0 && row <= menu->entry_count &&
@@ -813,7 +829,7 @@ static void present(void)
     static int last_start_layout;
     const int start_layout_changed = start_layout != last_start_layout;
     last_start_layout = start_layout;
-    video_set_start_layout(start_layout);
+    video_set_start_layout(start_layout, __atomic_load_n(&s_start_selection, __ATOMIC_ACQUIRE));
     const int field_engine_3d = (KH_IO32(0x04000000) & 0x108) == 0x108;
     const int results = kh_overlay_loaded(34) &&
                         __atomic_load_n(&gResultsScreenWorkPointer, __ATOMIC_RELAXED);
@@ -976,6 +992,8 @@ static void present(void)
 
     const int tree_changed = f2d.transparent_tree != transparent_tree;
     f2d.transparent_tree = transparent_tree;
+    f2d.clean_start = start_layout == VIDEO_START_ROOT;
+    f2d.start_overview = __atomic_load_n(&s_start_status_page, __ATOMIC_ACQUIRE) == 0;
 
     /* The 2D image only changes when the game has finished a frame (its SWAP_BUFFERS) and the
      * VBlank after it has applied the frame's OAM and register updates: at the game's 30 fps
@@ -1129,7 +1147,7 @@ static void present(void)
         {
             uint64_t t = sceKernelGetProcessTimeWide(), d;
             if (on3d) {
-                tex3d = kh_gpu3d_render(frame3d);
+                tex3d = kh_gpu3d_render(frame3d, start_layout == VIDEO_START_ROOT);
             }
             d = sceKernelGetProcessTimeWide() - t;
             s_t3d_total += d;
@@ -1183,7 +1201,7 @@ static void present(void)
                               (int)((int16_t)(KH_IO16(0x04000010) << 7) >> 7), KH_IO16(0x04000052),
                               (uint16_t)(kh_ds_palette[0] | kh_ds_palette[1] << 8));
     }
-    if (a3d && !tex3d && upload2d) {
+    if (a3d && !tex3d && upload2d && start_layout != VIDEO_START_ROOT) {
         /* no 3D to lay in: the 3D pixels show what is under them */
         uint32_t *fb = a_on_top ? s_top : s_bottom;
         int i;

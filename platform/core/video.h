@@ -49,7 +49,7 @@ void video_set_native_field_tab(unsigned tab, const uint32_t *pixels);
  * title's menu on the left over the player's picture (ux0:data/khrecoded/menu_bg.png). */
 void video_set_single_menus(int on);
 enum { VIDEO_START_OFF, VIDEO_START_ROOT, VIDEO_START_MATRIX };
-void video_set_start_layout(int layout);
+void video_set_start_layout(int layout, unsigned selection);
 int video_start_layout_active(void);
 int video_map_start_touch(int px, int py, int first, int *x, int *y);
 int video_take_start_row(void);

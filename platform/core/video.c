@@ -176,6 +176,22 @@ static const char s_compose_fs[] =
     /* the 2D (HUD) kept 4:3 in the middle of a widescreen 3D: beside it, the 3D */
     "    float4 b = tex2D(u2d, v2d);\n"
     "    float4 t = tex2D(u3d, v3d);\n"
+    "#ifdef PANEL\n"
+    "    if (uPanel.x > 5.5) {\n"
+    "        float3 model = t.rgb / max(t.a, 0.001);\n"
+    "        if (uBright.x > 1.5) model *= 1.0 - uBright.y;\n"
+    "        return float4(model, t.a * step(0.0, v3d.x) * step(v3d.x, 1.0));\n"
+    "    }\n"
+    "    if (uPanel.x > 3.5) {\n"
+    "        float2 p = vUv * uPanel.zw;\n"
+    "        float2 e = min(p, uPanel.zw - p);\n"
+    "        float d = min(min(e.x, e.y), (e.x + e.y - uPanel.y) * 0.7071);\n"
+    "        float active = step(4.5, uPanel.x);\n"
+    "        float3 fill = lerp(float3(0.052, 0.087, 0.126), float3(0.031, 0.235, 0.74), active);\n"
+    "        float3 edge = lerp(float3(0.19, 0.41, 0.57), float3(0.05, 0.85, 1.0), active);\n"
+    "        return float4(lerp(edge, fill, saturate(d - 0.85)), saturate(d + 0.5));\n"
+    "    }\n"
+    "#endif\n"
     "    if (v2d.x < 0.0 || v2d.x > 1.0)\n"
     /* Outside the 4:3 HUD there is no 2D texel to carry BG0's brightness code.
      * Recreate that code during pause; the centre already carries it and must not
@@ -1152,6 +1168,7 @@ static void run_capture(void)
  * (menubg.c), the whole time */
 static int s_menus;
 static int s_start_layout;
+static unsigned s_start_selection;
 static int s_start_input_layout;
 static int s_start_row;
 static int s_menus_layout = -1; /* 2: the menu over the picture */
@@ -1620,9 +1637,10 @@ int video_map_field_touch(int px, int py, int first, int *x, int *y)
     return 0;
 }
 
-void video_set_start_layout(int layout)
+void video_set_start_layout(int layout, unsigned selection)
 {
     s_start_layout = layout;
+    s_start_selection = selection;
 }
 
 int video_start_layout_active(void)
@@ -1824,14 +1842,50 @@ static void draw_field_quad(GLuint tex, ScreenRect dst, float u0, float v0, floa
     draw_screen_region(tex, dst, u0, v0, u1, v1, 0, 0, alpha, filter);
 }
 
-static void draw_start_region(const StartRegion *region)
+static void draw_start_region(const StartRegion *region, int isolated)
 {
     const ScreenRect src = region->source;
-    const int has_3d = region->screen == s_3d_screen;
+    const int model = isolated && region == &start_regions[START_MODEL];
+    const int has_3d = region->screen == s_3d_screen && (!isolated || model);
+    if (model && !has_3d)
+        return;
+    if (isolated)
+        s_panel[0] = model ? 6.0f : 3.0f;
     draw_screen_region(s_tex_cur(region->screen), region->display,
                        (float)src.x / DS_SCREEN_W, (float)src.y / DS_SCREEN_H,
                        (float)(src.x + src.w) / DS_SCREEN_W, (float)(src.y + src.h) / DS_SCREEN_H,
                        has_3d ? s_3d_tex : 0, has_3d ? s_3d_bright : 0, 1.0f, FILTER_2D);
+    s_panel[0] = 0.0f;
+}
+
+static void draw_start_frame(ScreenRect dst, int selected)
+{
+    s_panel[0] = selected ? 5.0f : 4.0f;
+    s_panel[1] = 9.0f;
+    s_panel[2] = (float)dst.w;
+    s_panel[3] = (float)dst.h;
+    draw_field_quad(s_clear_tex, dst, 0, 0, 1, 1, 1.0f, FILTER_TEXEL);
+    memset(s_panel, 0, sizeof(s_panel));
+}
+
+static void draw_start_menu(void)
+{
+    const StartRegion *options = &start_regions[START_OPTIONS];
+    const unsigned count = s_start_selection >> 8;
+    const unsigned cursor = s_start_selection & 255;
+    const ScreenRect list = options->display;
+    for (unsigned row = 0; row < count && row < 7; row++) {
+        const int top = (int)row * 16 * list.h / options->source.h;
+        const int bottom = (int)(row + 1) * 16 * list.h / options->source.h;
+        draw_start_frame((ScreenRect){ list.x, list.y + top, list.w, bottom - top - 3 }, row == cursor);
+    }
+    draw_start_frame((ScreenRect){ 12, 12, 936, 46 }, 0);
+    draw_start_frame((ScreenRect){ 288, 76, 252, 294 }, 0);
+    draw_start_frame((ScreenRect){ 552, 76, 396, 49 }, 0);
+    draw_start_frame((ScreenRect){ 552, 133, 396, 237 }, 0);
+    draw_start_frame((ScreenRect){ 12, 394, 936, 79 }, 0);
+    for (unsigned i = 0; i < sizeof(start_regions) / sizeof(start_regions[0]); i++)
+        draw_start_region(&start_regions[i], 1);
 }
 
 static void draw_field_panel(GLuint tex, ScreenRect src, ScreenRect dst)
@@ -2165,11 +2219,10 @@ void video_present(const uint32_t *top, const uint32_t *bottom)
         s_holes_on = 0;
     }
     if (start_layout == VIDEO_START_ROOT) {
-        for (unsigned i = 0; i < sizeof(start_regions) / sizeof(start_regions[0]); i++)
-            draw_start_region(&start_regions[i]);
+        draw_start_menu();
     } else if (start_layout == VIDEO_START_MATRIX) {
         for (unsigned i = 0; i < sizeof(matrix_regions) / sizeof(matrix_regions[0]); i++)
-            draw_start_region(&matrix_regions[i]);
+            draw_start_region(&matrix_regions[i], 0);
     } else if (s_single && s_compose) {
         /* the field HUD's pieces, over the top screen and the panels: the first on top */
         for (k = s_npieces - 1; k >= 0; k--)

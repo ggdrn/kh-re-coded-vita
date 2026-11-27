@@ -38,6 +38,7 @@ typedef struct {
     const uint16_t *obj_ext;
     uint32_t dispcnt;
     int has3d;
+    int start_overview;
 } Engine;
 
 typedef struct {
@@ -892,6 +893,11 @@ static void compose_line(const Engine *e, int line, uint16_t *out, uint8_t *code
     t0 = prof_now(sc->prof);
     for (bg = 0; bg < 4; bg++) {
         shown[bg] = render_bg(e, bg, line, bgl[bg]);
+        if (shown[bg] && e->start_overview && bg == L_BG2 && line >= 24 && line < 144) {
+            /* The overview tags draw row frames on BG2. Keep its portrait area. */
+            const int left = line < 105 ? 112 : 0;
+            memset(bgl[bg] + left, 0, (W - left) * sizeof(bgl[bg][0]));
+        }
         prio[bg] = io16(e, 0x08 + 2 * bg) & 3;
     }
     t1 = prof_now(sc->prof);
@@ -1087,7 +1093,9 @@ void kh_gpu2d_init(void)
     init_rgba();
 }
 
-static int render_lines(int engine, uint32_t *fb, int y0, int y1, int graphics, int tree)
+enum { LAYERS_NORMAL, LAYERS_TREE, LAYERS_START, LAYERS_START_OVERVIEW };
+
+static int render_lines(int engine, uint32_t *fb, int y0, int y1, int graphics, int layers)
 {
     Engine e;
     Scratch sc;
@@ -1096,12 +1104,25 @@ static int render_lines(int engine, uint32_t *fb, int y0, int y1, int graphics, 
     engine_setup(&e, engine);
     /* The Tree uses BG2 for the nodes and connections, BG0 for description text
      * and OBJ for the selection. BG1 and BG3 supply its frame and wallpaper. */
-    if (tree)
+    const int clean_start = layers == LAYERS_START || layers == LAYERS_START_OVERVIEW;
+    const int has_model = clean_start && e.has3d;
+    if (layers == LAYERS_TREE)
         e.dispcnt &= ~((1u << 9) | (1u << 11));
+    if (clean_start) {
+        /* Both menu backgrounds are BG3. The root's button frames are sprites;
+         * its localized text lives on BG2. The status side needs its sprites. */
+        e.dispcnt &= ~(1u << 11);
+        if (e.is_a) {
+            e.dispcnt &= ~((1u << 8) | (1u << 12));
+            e.has3d = 0;
+        } else {
+            e.start_overview = layers == LAYERS_START_OVERVIEW;
+        }
+    }
     mode = graphics ? 1 : (e.dispcnt >> 16) & (e.is_a ? 3 : 1);
     fb += y0 * W;
     if (mode == 0 || (e.dispcnt & 0x80)) { /* display off, or forced blank: white */
-        memset(fb, tree ? 0 : 0xff, (size_t)(y1 - y0) * W * sizeof(*fb));
+        memset(fb, layers != LAYERS_NORMAL ? 0 : 0xff, (size_t)(y1 - y0) * W * sizeof(*fb));
         return 0;
     }
     mmode = graphics || kh_gpu2d_plain[engine] ? 0 : master_mode(&e, &mf);
@@ -1150,34 +1171,42 @@ static int render_lines(int engine, uint32_t *fb, int y0, int y1, int graphics, 
                 fb[x] = (to_rgba(row[x]) & 0xffffffu) | (uint32_t)code[x] << 24;
         } else {
             row_out(row, fb, mmode, mf);
-            if (tree)
-                for (x = 0; x < W; x++)
-                    fb[x] = sc.id0[x] == L_BD ? 0 : (fb[x] & 0xffffffu) | 0xfe000000u;
+            if (layers != LAYERS_NORMAL)
+                for (x = 0; x < W; x++) {
+                    const int portrait = !e.is_a && x >= 16 && x < 116 && line >= 24 && line < 105;
+                    const int black_fill = clean_start && !portrait && row[x] == 0;
+                    fb[x] = sc.id0[x] == L_BD || black_fill ? 0 : (fb[x] & 0xffffffu) | 0xfe000000u;
+                }
         }
         if (sc.prof) /* the whole line: the composition is what BGs and sprites leave */
             prof_add(&s_prof_us[!e.is_a][2], (uint32_t)(prof_now(sc.prof) - t) * 8);
     }
-    return e.has3d;
+    return e.has3d || has_model;
 }
 
 int kh_gpu2d_render_lines(int engine, uint32_t *fb, int y0, int y1)
 {
-    return render_lines(engine, fb, y0, y1, 0, 0);
+    return render_lines(engine, fb, y0, y1, 0, LAYERS_NORMAL);
 }
 
 int kh_gpu2d_render_tree_lines(uint32_t *fb, int y0, int y1)
 {
-    return render_lines(KH_ENGINE_B, fb, y0, y1, 0, 1);
+    return render_lines(KH_ENGINE_B, fb, y0, y1, 0, LAYERS_TREE);
+}
+
+int kh_gpu2d_render_start_lines(int engine, uint32_t *fb, int y0, int y1, int overview)
+{
+    return render_lines(engine, fb, y0, y1, 0, overview ? LAYERS_START_OVERVIEW : LAYERS_START);
 }
 
 int kh_gpu2d_render_graphics(int engine, uint32_t *fb)
 {
-    return render_lines(engine, fb, 0, 192, 1, 0);
+    return render_lines(engine, fb, 0, 192, 1, LAYERS_NORMAL);
 }
 
 int kh_gpu2d_render_graphics_lines(int engine, uint32_t *fb, int y0, int y1)
 {
-    return render_lines(engine, fb, y0, y1, 1, 0);
+    return render_lines(engine, fb, y0, y1, 1, LAYERS_NORMAL);
 }
 
 int kh_gpu2d_render(int engine, uint32_t *fb)
