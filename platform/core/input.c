@@ -344,6 +344,17 @@ void input_poll(InputState *out)
         const int px = touch.report[0].x / 2, py = touch.report[0].y / 2;
         int x, y;
         const int first = !s_front_down;
+        if (video_start_layout_active()) {
+            s_front_down = 1;
+            if (first)
+                s_front_swap = portmenu_is_open();
+            if (!s_front_swap && !portmenu_is_open() && video_map_start_touch(px, py, first, &x, &y)) {
+                out->touching = 1;
+                out->touch_x = x;
+                out->touch_y = y;
+            }
+            return;
+        }
         if (first) {
             /* a touch that lands on the small screen swaps the screens; the whole touch,
              * until the finger lifts, then belongs to that gesture */

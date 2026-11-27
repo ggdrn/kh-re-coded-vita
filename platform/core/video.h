@@ -48,6 +48,11 @@ void video_set_native_field_tab(unsigned tab, const uint32_t *pixels);
 /* config single_screen before the game (the title's overlay): one screen at a time, the
  * title's menu on the left over the player's picture (ux0:data/khrecoded/menu_bg.png). */
 void video_set_single_menus(int on);
+enum { VIDEO_START_OFF, VIDEO_START_ROOT, VIDEO_START_MATRIX };
+void video_set_start_layout(int layout);
+int video_start_layout_active(void);
+int video_map_start_touch(int px, int py, int first, int *x, int *y);
+int video_take_start_row(void);
 /* config single_screen out of the field's action: a scene whose bottom screen is black (a
  * dialogue) shown as the top screen alone over the display; the world / mission selection as
  * the top screen over the display and the bottom one (the list) beside it, on the right. */

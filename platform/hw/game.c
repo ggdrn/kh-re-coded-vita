@@ -721,6 +721,33 @@ static void defeat_trace(const KhGxFrame *f)
     }
 }
 
+typedef struct {
+    uint8_t cursor, entry_count, redraw, mode;
+    uint8_t reserved[4];
+    int full_menu;
+} StartRootMenu;
+
+static int s_start_root_ready;
+
+extern int GetPrimaryElementEnabled(void);
+extern void HandleRootMenuConfirm(StartRootMenu *menu);
+extern void __real_UpdateRootMenuFrame(StartRootMenu *menu);
+
+void __wrap_UpdateRootMenuFrame(StartRootMenu *menu)
+{
+    __real_UpdateRootMenuFrame(menu);
+    const int ready = menu->full_menu && menu->mode == 0;
+    __atomic_store_n(&s_start_root_ready, ready, __ATOMIC_RELEASE);
+    const int row = video_take_start_row();
+    if (ready && row > 0 && row <= menu->entry_count &&
+        video_start_layout_active() == VIDEO_START_ROOT && !portmenu_is_open() &&
+        GetPrimaryElementEnabled()) {
+        menu->cursor = row - 1;
+        menu->redraw = 1;
+        HandleRootMenuConfirm(menu);
+    }
+}
+
 static void present(void)
 {
     /* POWCNT1 bit 15: engine A on the top screen */
@@ -773,6 +800,20 @@ static void present(void)
     const int message_window = (panel & FIELD_MESSAGE_WINDOW) != 0;
     const int dialogue = (panel & (FIELD_MESSAGE_WINDOW | FIELD_MESSAGE_SPRITE)) != 0;
     const int native_menu = kh_overlay_menu_active();
+    int start_layout = VIDEO_START_OFF;
+    if (native_menu && kh_config.single_screen && !dual) {
+        if (a_on_top && kh_overlay_loaded(74) && kh_overlay_loaded(73) &&
+            __atomic_load_n(&s_start_root_ready, __ATOMIC_ACQUIRE))
+            start_layout = VIDEO_START_ROOT;
+        else if (kh_overlay_loaded(75) || kh_overlay_loaded(76) || kh_overlay_loaded(77))
+            start_layout = VIDEO_START_MATRIX;
+    }
+    if (!native_menu || !kh_overlay_loaded(74))
+        __atomic_store_n(&s_start_root_ready, 0, __ATOMIC_RELEASE);
+    static int last_start_layout;
+    const int start_layout_changed = start_layout != last_start_layout;
+    last_start_layout = start_layout;
+    video_set_start_layout(start_layout);
     const int field_engine_3d = (KH_IO32(0x04000000) & 0x108) == 0x108;
     const int results = kh_overlay_loaded(34) &&
                         __atomic_load_n(&gResultsScreenWorkPointer, __ATOMIC_RELAXED);
@@ -949,7 +990,7 @@ static void present(void)
         }
         /* dual 3D: the engines change screens with every toggle, so both are drawn each
          * time (a skipped one left the other engine's picture on its screen, 0.0.88) */
-        draw2d = dual || coliseum_hud_changed || tree_changed || (!smooth_3d && shortcut_sync_frames) ||
+        draw2d = dual || coliseum_hud_changed || tree_changed || start_layout_changed || (!smooth_3d && shortcut_sync_frames) ||
                  (pending && vb != serial_vb) || vb - drawn_vb >= 4;
         if (draw2d) {
             pending = 0;
@@ -984,7 +1025,8 @@ static void present(void)
             for (i = 0; i < 2; i++)
                 if (i == KH_ENGINE_B && skip_b)
                     continue;
-                else if (single || dual || tree_changed || i != inset_engine || (parity & 1))
+                else if (start_layout || start_layout_changed || single || dual || tree_changed ||
+                         i != inset_engine || (parity & 1))
                     f2d.eng[f2d.neng++] = i;
             parity++;
         }
@@ -1077,7 +1119,8 @@ static void present(void)
         else
             workers_begin(render_chunk, BANDS * f2d.neng, &f2d);
         if (f2d.neng && !dual && !lock30 && !capture_gfx) {
-            async_2d = !single && !shortcut_sync_frames && !coliseum_hud_changed && !tree_changed;
+            async_2d = !single && !start_layout && !start_layout_changed &&
+                       !shortcut_sync_frames && !coliseum_hud_changed && !tree_changed;
             async_top = a_on_top;
             if (async_2d)
                 s_2d_async++;

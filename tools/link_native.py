@@ -134,7 +134,7 @@ def main():
     script=out/'gen/ordered-overlays.ld';script.write_text(section_script(objects,ordered))
     # shared-address overlay dispatchers (tools/prepare_native_abi.py writes gen/ovdisp.S)
     subprocess.run([str(BIN/'arm-vita-eabi-gcc'),*COMMON_CFLAGS,'-c',str(out/'gen/ovdisp.S'),'-o',str(out/'gen/ovdisp.o')],check=True)
-    hooks = ('UpdateTitlePanel', 'NNSi_G2dGetUnpackedFont', 'NNS_G2dGetUnpackedCharacterData',
+    hooks = ('UpdateTitlePanel', 'UpdateRootMenuFrame', 'NNSi_G2dGetUnpackedFont', 'NNS_G2dGetUnpackedCharacterData',
              'NNS_G2dGetUnpackedBGCharacterData', 'DrawGradientRect', 'RefreshActiveMenuObjects',
              'DrawChannelMeter', 'DrawSpriteFrameQuadWithDepthUpdate', 'CloseResultsScreen', 'UpdateResultsScreen', 'UpdateChallengeScene',
              'UpdateStageLinkPanels',

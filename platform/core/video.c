@@ -1,4 +1,5 @@
 #include "video.h"
+#include "start_layout.h"
 
 #include "config.h"
 #include "font8x8.h"
@@ -1150,6 +1151,9 @@ static void run_capture(void)
  * menus): the bottom screen (the title's menu) on the left over the player's picture
  * (menubg.c), the whole time */
 static int s_menus;
+static int s_start_layout;
+static int s_start_input_layout;
+static int s_start_row;
 static int s_menus_layout = -1; /* 2: the menu over the picture */
 /* config single_screen out of the field's action (game.c decides when): a scene whose bottom
  * screen stays black (a dialogue) with the top screen alone over the display (s_scene), and
@@ -1616,6 +1620,51 @@ int video_map_field_touch(int px, int py, int first, int *x, int *y)
     return 0;
 }
 
+void video_set_start_layout(int layout)
+{
+    s_start_layout = layout;
+}
+
+int video_start_layout_active(void)
+{
+    return __atomic_load_n(&s_start_input_layout, __ATOMIC_ACQUIRE);
+}
+
+int video_take_start_row(void)
+{
+    return __atomic_exchange_n(&s_start_row, 0, __ATOMIC_ACQ_REL);
+}
+
+int video_map_start_touch(int px, int py, int first, int *x, int *y)
+{
+    static int gesture_layout;
+    static const StartRegion *gesture_region;
+    const int layout = video_start_layout_active();
+    if (first) {
+        gesture_layout = layout;
+        gesture_region = NULL;
+        if (layout == VIDEO_START_MATRIX && start_region_contains(&matrix_regions[1], px, py))
+            gesture_region = &matrix_regions[1];
+        if (layout == VIDEO_START_ROOT) {
+            for (int region = START_TABS; region <= START_STATUS; region++)
+                if (start_region_contains(&start_regions[region], px, py)) {
+                    gesture_region = &start_regions[region];
+                    break;
+                }
+        }
+        if (layout == VIDEO_START_ROOT && start_region_contains(&start_regions[START_OPTIONS], px, py)) {
+            start_region_touch(&start_regions[START_OPTIONS], px, py, x, y);
+            __atomic_store_n(&s_start_row, (*y - 24) / 16 + 1, __ATOMIC_RELEASE);
+        }
+    }
+    if (layout != gesture_layout)
+        gesture_region = NULL;
+    if (!gesture_region)
+        return 0;
+    start_region_touch(gesture_region, px, py, x, y);
+    return 1;
+}
+
 int video_map_touch(int px, int py, int *x, int *y)
 {
     const ScreenRect *r = &s_rect[1];
@@ -1757,8 +1806,8 @@ static void draw_panels(void)
     }
 }
 
-static void draw_field_quad(GLuint tex, ScreenRect dst, float u0, float v0, float u1, float v1,
-                            float alpha, int filter)
+static void draw_screen_region(GLuint tex, ScreenRect dst, float u0, float v0, float u1, float v1,
+                               GLuint tex3d, uint16_t brightness, float alpha, int filter)
 {
     const float x0 = dst.x / (DISPLAY_W / 2.0f) - 1.0f;
     const float x1 = (dst.x + dst.w) / (DISPLAY_W / 2.0f) - 1.0f;
@@ -1766,7 +1815,23 @@ static void draw_field_quad(GLuint tex, ScreenRect dst, float u0, float v0, floa
     const float y1 = 1.0f - (dst.y + dst.h) / (DISPLAY_H / 2.0f);
     const float quad[16] = { x0, y0, u0, v0, x1, y0, u1, v0,
                              x0, y1, u0, v1, x1, y1, u1, v1 };
-    compose_pass(quad, tex, 0, 0, 0, 0, 1.0f, alpha, filter);
+    compose_pass(quad, tex, 0, tex3d, brightness, 0, 1.0f, alpha, filter);
+}
+
+static void draw_field_quad(GLuint tex, ScreenRect dst, float u0, float v0, float u1, float v1,
+                            float alpha, int filter)
+{
+    draw_screen_region(tex, dst, u0, v0, u1, v1, 0, 0, alpha, filter);
+}
+
+static void draw_start_region(const StartRegion *region)
+{
+    const ScreenRect src = region->source;
+    const int has_3d = region->screen == s_3d_screen;
+    draw_screen_region(s_tex_cur(region->screen), region->display,
+                       (float)src.x / DS_SCREEN_W, (float)src.y / DS_SCREEN_H,
+                       (float)(src.x + src.w) / DS_SCREEN_W, (float)(src.y + src.h) / DS_SCREEN_H,
+                       has_3d ? s_3d_tex : 0, has_3d ? s_3d_bright : 0, 1.0f, FILTER_2D);
 }
 
 static void draw_field_panel(GLuint tex, ScreenRect src, ScreenRect dst)
@@ -2075,7 +2140,14 @@ void video_present(const uint32_t *top, const uint32_t *bottom)
     seg_mark(0);
 
     glViewport(0, 0, DISPLAY_W, DISPLAY_H);
-    glClearColor(0, 0, 0, 1);
+    const int start_layout = s_compose ? s_start_layout : VIDEO_START_OFF;
+    if (start_layout != VIDEO_START_ROOT)
+        __atomic_store_n(&s_start_row, 0, __ATOMIC_RELEASE);
+    __atomic_store_n(&s_start_input_layout, start_layout, __ATOMIC_RELEASE);
+    if (start_layout)
+        glClearColor(0.025f, 0.045f, 0.075f, 1.0f);
+    else
+        glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT);
     if (s_menus && !s_single && s_menus_layout == 2)
         draw_menubg();
@@ -2085,12 +2157,20 @@ void video_present(const uint32_t *top, const uint32_t *bottom)
         const int i = s_inset == 0 ? 1 - k : k;
         if (src[i])
             upload_screen(i, src[i]);
+        if (start_layout)
+            continue;
         /* the single screen's field HUD: the top screen's 2D left out where its pieces come from */
         s_holes_on = s_single && s_npieces && i == 0;
         draw_screen(i);
         s_holes_on = 0;
     }
-    if (s_single && s_compose) {
+    if (start_layout == VIDEO_START_ROOT) {
+        for (unsigned i = 0; i < sizeof(start_regions) / sizeof(start_regions[0]); i++)
+            draw_start_region(&start_regions[i]);
+    } else if (start_layout == VIDEO_START_MATRIX) {
+        for (unsigned i = 0; i < sizeof(matrix_regions) / sizeof(matrix_regions[0]); i++)
+            draw_start_region(&matrix_regions[i]);
+    } else if (s_single && s_compose) {
         /* the field HUD's pieces, over the top screen and the panels: the first on top */
         for (k = s_npieces - 1; k >= 0; k--)
             draw_piece(&s_pieces[k]);
