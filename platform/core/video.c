@@ -1720,6 +1720,17 @@ int video_map_start_touch(int px, int py, int first, int *x, int *y)
                 menu_touch = layout == VIDEO_START_MATRIX_COLUMN ? &wide_matrix_content : &wide_menu_content;
         } else if (layout == VIDEO_START_MATRIX) {
             menu_touch = &matrix_regions[1];
+        } else if (layout == VIDEO_START_SHOP) {
+            if (input_layout & START_INPUT_STATUS_TOUCH) {
+                for (unsigned i = 0; i < sizeof(shop_widgets) / sizeof(shop_widgets[0]); i++) {
+                    if (start_region_contains(&shop_widgets[i], px, py)) {
+                        menu_touch = &shop_widgets[i];
+                        break;
+                    }
+                }
+            } else {
+                menu_touch = &wide_menu_content;
+            }
         }
         if (menu_touch && start_region_contains(menu_touch, px, py))
             gesture_region = menu_touch;
@@ -1985,12 +1996,27 @@ static void draw_status_layout_region(StartRegion region, int isolated)
     draw_start_region(&region, isolated);
 }
 
+static void draw_wide_menu_content(const StartRegion *region)
+{
+    const ScreenRect content = region->display;
+    draw_start_frame((ScreenRect){ content.x - 8, content.y - 8, content.w + 16, content.h + 16 }, 0);
+    draw_status_layout_region(*region, 0);
+}
+
+static void draw_shop(void)
+{
+    draw_wide_menu_content(&wide_menu_content);
+    draw_start_frame((ScreenRect){ 676,  56, 272,  97 }, 0);
+    draw_start_frame((ScreenRect){ 676, 155, 272, 162 }, 0);
+    draw_start_frame((ScreenRect){ 676, 326, 272, 102 }, 0);
+    for (unsigned i = 0; i < sizeof(shop_widgets) / sizeof(shop_widgets[0]); i++)
+        draw_status_layout_region(shop_widgets[i], 1);
+}
+
 static void draw_menu_with_status(int layout)
 {
     const StartRegion *main = layout == VIDEO_START_MATRIX_COLUMN ? &wide_matrix_content : &wide_menu_content;
-    const ScreenRect content = main->display;
-    draw_start_frame((ScreenRect){ content.x - 8, content.y - 8, content.w + 16, content.h + 16 }, 0);
-    draw_status_layout_region(*main, 0);
+    draw_wide_menu_content(main);
 
     if (s_status_view == VIDEO_STATUS_FULL) {
         const ScreenRect status = full_menu_status.display;
@@ -2360,7 +2386,7 @@ void video_present(const uint32_t *top, const uint32_t *bottom)
     glViewport(0, 0, DISPLAY_W, DISPLAY_H);
     const int start_layout = s_compose ? s_start_layout : VIDEO_START_OFF;
     int start_input = start_layout;
-    if (video_start_has_status_column(start_layout) && s_status_column_touch)
+    if (s_status_column_touch && (video_start_has_status_column(start_layout) || start_layout == VIDEO_START_SHOP))
         start_input |= START_INPUT_STATUS_TOUCH | (s_status_view << START_INPUT_STATUS_VIEW_SHIFT);
     if (start_layout != VIDEO_START_ROOT)
         __atomic_store_n(&s_start_row, 0, __ATOMIC_RELEASE);
@@ -2392,6 +2418,8 @@ void video_present(const uint32_t *top, const uint32_t *bottom)
         draw_title();
     } else if (start_layout == VIDEO_START_ROOT) {
         draw_start_menu();
+    } else if (start_layout == VIDEO_START_SHOP) {
+        draw_shop();
     } else if (video_start_has_status_column(start_layout)) {
         draw_menu_with_status(start_layout);
     } else if (start_layout == VIDEO_START_MATRIX) {

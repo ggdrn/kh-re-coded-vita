@@ -64,6 +64,15 @@ static const StartRegion matrix_status_footer = {
     0, { 0, 145, 256, 47 }, { 684, 280, 256, 47 },
 };
 
+/* Shop's ov083 panel draws the owned count and stock to the left of the
+ * attributes, with the live totals and optional caption in the footer. */
+static const StartRegion shop_widgets[] = {
+    { 0, {  12,  24, 108, 43 }, { 710,  64, 204, 81 } },
+    { 0, { 120,  32, 124, 82 }, { 700, 163, 224, 146 } },
+    { 0, {   4, 147,  76, 43 }, { 700, 334, 152, 86 } },
+    { 0, {  84, 145, 172, 47 }, { 690, 433, 244, 65 } },
+};
+
 static inline int start_region_contains(const StartRegion *region, int px, int py)
 {
     const ScreenRect *r = &region->display;

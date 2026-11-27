@@ -302,6 +302,7 @@ typedef struct {
     int eng[3], neng; /* the engines drawn this frame */
     int transparent_tree;
     int clean_start;
+    int clean_shop;
     int status_view;
     int title_sprites;
     int start_overview;
@@ -373,7 +374,7 @@ static void render_chunk(int chunk, void *arg)
         r = kh_gpu2d_render_graphics_lines(KH_ENGINE_A, f->fb[engine], y0, y1);
     else if (engine == KH_ENGINE_B && f->title_sprites)
         r = kh_gpu2d_render_title_lines(f->fb[engine], y0, y1);
-    else if (engine == KH_ENGINE_B && f->status_view != VIDEO_STATUS_FULL)
+    else if (engine == KH_ENGINE_B && (f->clean_shop || f->status_view != VIDEO_STATUS_FULL))
         r = kh_gpu2d_render_start_lines(engine, f->fb[engine], y0, y1, f->status_view == VIDEO_STATUS_STATS);
     else if (f->clean_start)
         r = kh_gpu2d_render_start_lines(engine, f->fb[engine], y0, y1, f->start_overview);
@@ -881,9 +882,12 @@ static void present(void)
         const int root_ready = kh_overlay_loaded(74) && has_status &&
                                __atomic_load_n(&s_start_root_ready, __ATOMIC_ACQUIRE);
         const int matrix = kh_overlay_loaded(76) || kh_overlay_loaded(77);
+        const int shop = kh_overlay_loaded(83) && (kh_overlay_loaded(84) || kh_overlay_loaded(85));
         if (root_ready) {
             if (a_on_top)
                 start_layout = VIDEO_START_ROOT;
+        } else if (shop) {
+            start_layout = VIDEO_START_SHOP;
         } else if (has_status) {
             start_layout = matrix ? VIDEO_START_MATRIX_COLUMN : VIDEO_START_STATUS_COLUMN;
         } else if (matrix) {
@@ -895,7 +899,8 @@ static void present(void)
     static int last_start_layout;
     static int last_status_column_touch;
     const int has_status_column = video_start_has_status_column(start_layout);
-    const int status_column_touch = has_status_column && a_on_top;
+    const int clean_shop = start_layout == VIDEO_START_SHOP;
+    const int status_column_touch = (has_status_column || clean_shop) && a_on_top;
     const int start_layout_changed = start_layout != last_start_layout ||
                                      status_column_touch != last_status_column_touch;
     last_start_layout = start_layout;
@@ -1076,6 +1081,7 @@ static void present(void)
     f2d.transparent_tree = transparent_tree;
     f2d.title_sprites = title_sprites;
     f2d.clean_start = start_layout == VIDEO_START_ROOT;
+    f2d.clean_shop = clean_shop;
     f2d.start_overview = start_overview;
     f2d.status_view = status_view;
 

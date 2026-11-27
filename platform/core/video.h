@@ -50,7 +50,10 @@ enum { VIDEO_TITLE_MARKER_SIZE = 8 };
 void video_set_title_marker(const uint32_t *pixels);
 /* Returns whether the renderer can isolate the title menu's native OBJ layer. */
 int video_set_title_display(int mode, int screen, uint16_t brightness, unsigned menu_state);
-enum { VIDEO_START_OFF, VIDEO_START_ROOT, VIDEO_START_MATRIX, VIDEO_START_STATUS_COLUMN, VIDEO_START_MATRIX_COLUMN };
+enum {
+    VIDEO_START_OFF, VIDEO_START_ROOT, VIDEO_START_MATRIX, VIDEO_START_STATUS_COLUMN,
+    VIDEO_START_MATRIX_COLUMN, VIDEO_START_SHOP,
+};
 enum { VIDEO_STATUS_FULL, VIDEO_STATUS_STATS, VIDEO_STATUS_COMMANDS, VIDEO_STATUS_OVERCLOCKS };
 static inline int video_start_has_status_column(int layout)
 {
