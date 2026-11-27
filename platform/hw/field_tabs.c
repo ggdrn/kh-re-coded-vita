@@ -51,6 +51,30 @@ static uint32_t sprite_pixel(uint16_t color)
                          ((g << 3 | g >> 2) << 8) | (r << 3 | r >> 2);
 }
 
+void kh_load_title_marker(void)
+{
+    uint8_t data[2200];
+    /* ttl.p2 entry 2 contains the independent four-cell title cursor.
+     * Frame 0 starts at tile 0, in 8bpp 1D order. Read its center square. */
+    const int size = p2_entry("/ttl/ttl.p2", 2, data, sizeof(data));
+    const unsigned palette = 0x88, characters = 0x2d0;
+    if (size < (int)(characters + 256) || memcmp(data + 0x60, "RLCN", 4) ||
+        memcmp(data + 0x2a0, "RGCN", 4))
+        return;
+
+    uint32_t pixels[VIDEO_TITLE_MARKER_SIZE * VIDEO_TITLE_MARKER_SIZE];
+    for (unsigned y = 0; y < VIDEO_TITLE_MARKER_SIZE; y++) {
+        for (unsigned x = 0; x < VIDEO_TITLE_MARKER_SIZE; x++) {
+            const unsigned sx = x + 4, sy = y + 4;
+            const unsigned offset = (sy / 8 * 2 + sx / 8) * 64 + sy % 8 * 8 + sx % 8;
+            const unsigned index = data[characters + offset];
+            pixels[y * VIDEO_TITLE_MARKER_SIZE + x] =
+                index ? sprite_pixel(read16(data + palette + index * 2)) : 0;
+        }
+    }
+    video_set_title_marker(pixels);
+}
+
 void kh_load_field_tabs(int language)
 {
     static const char *const names[] = { "en", "fr", "de", "it", "es" };

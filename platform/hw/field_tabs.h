@@ -3,5 +3,6 @@
 
 /* Upload the localized native MAP and TREE pictures after the ROM filesystem is ready. */
 void kh_load_field_tabs(int language);
+void kh_load_title_marker(void);
 
 #endif

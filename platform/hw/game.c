@@ -78,7 +78,7 @@ static unsigned title_updated;
 static int s_title_card = -1;
 static unsigned s_title_view;
 
-enum { TITLE_VIEW_ENGINE_B = 1 << 8 };
+enum { TITLE_VIEW_ENGINE_B = 1 << 8, TITLE_VIEW_STATE_SHIFT = 16 };
 
 extern void *GetRunningTaskWork(void);
 extern void __real_ShowPanelBgScreen(void *panel, int card);
@@ -147,7 +147,10 @@ int __wrap_UpdateTitlePanel(void)
         } else if (state == 4 || state == 5) {
             view = VIDEO_TITLE_ANIMATION;
         } else if (state == 6 && s_title_card == 4) {
-            view = VIDEO_TITLE_MENU | TITLE_VIEW_ENGINE_B;
+            int cursor;
+            memcpy(&cursor, panel + 0x50, sizeof(cursor));
+            const unsigned menu_state = (panel[0x54] & 15u) | ((unsigned)cursor & 3u) << 4;
+            view = VIDEO_TITLE_MENU | TITLE_VIEW_ENGINE_B | menu_state << TITLE_VIEW_STATE_SHIFT;
         }
     }
     __atomic_store_n(&s_title_view, view, __ATOMIC_RELEASE);
@@ -175,6 +178,7 @@ static int boot_state(void)
 {
     kh_romfs_init();
     kh_load_field_tabs(kh_config.language);
+    kh_load_title_marker();
     kh_button_icons_init();
     kh_gx3d_init();
     audio_out_init();
@@ -857,10 +861,12 @@ static void present(void)
                                 __atomic_load_n(&s_title_view, __ATOMIC_ACQUIRE) : 0;
     const int title_sub = (title_view & TITLE_VIEW_ENGINE_B) != 0;
     const int title_sprites = video_set_title_display(title_view & 255, title_sub == a_on_top,
-                                                       KH_IO16(title_sub ? 0x0400106c : 0x0400006c));
+                                                       KH_IO16(title_sub ? 0x0400106c : 0x0400006c),
+                                                       title_view >> TITLE_VIEW_STATE_SHIFT);
+    const unsigned title_screen_view = title_view & 0x1ff;
     static unsigned last_title_view;
-    const int title_changed = title_view != last_title_view;
-    last_title_view = title_view;
+    const int title_changed = title_screen_view != last_title_view;
+    last_title_view = title_screen_view;
     int start_layout = VIDEO_START_OFF;
     if (native_menu && kh_config.single_screen && !dual) {
         if (a_on_top && kh_overlay_loaded(74) && kh_overlay_loaded(73) &&

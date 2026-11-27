@@ -46,8 +46,10 @@ enum { VIDEO_FIELD_TAB_WIDTH = 64, VIDEO_FIELD_TAB_HEIGHT = 28 };
 /* tab 0 opens the Tree, tab 1 returns to the map. Pixels are RGBA with binary alpha. */
 void video_set_native_field_tab(unsigned tab, const uint32_t *pixels);
 enum { VIDEO_TITLE_OFF, VIDEO_TITLE_CARD, VIDEO_TITLE_ANIMATION, VIDEO_TITLE_MENU };
+enum { VIDEO_TITLE_MARKER_SIZE = 8 };
+void video_set_title_marker(const uint32_t *pixels);
 /* Returns whether the renderer can isolate the title menu's native OBJ layer. */
-int video_set_title_display(int mode, int screen, uint16_t brightness);
+int video_set_title_display(int mode, int screen, uint16_t brightness, unsigned menu_state);
 enum { VIDEO_START_OFF, VIDEO_START_ROOT, VIDEO_START_MATRIX };
 void video_set_start_layout(int layout, unsigned selection);
 int video_start_layout_active(void);

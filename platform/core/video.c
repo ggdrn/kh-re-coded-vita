@@ -177,6 +177,18 @@ static const char s_compose_fs[] =
     "    float4 b = tex2D(u2d, v2d);\n"
     "    float4 t = tex2D(u3d, v3d);\n"
     "#ifdef PANEL\n"
+    "    if (uPanel.x > 7.5) {\n"
+    "        float selected = step(8.5, uPanel.x);\n"
+    "        float2 p = vUv * uPanel.zw;\n"
+    "        float2 e = min(p, uPanel.zw - p);\n"
+    "        float d = min(min(e.x, e.y), (e.x + e.y - 4.0) * 0.7071);\n"
+    "        float3 lead = lerp(float3(0.26, 0.27, 0.30), float3(0.79, 0.29, 0.09), selected);\n"
+    "        float3 end = lerp(float3(0.42, 0.43, 0.46), float3(0.68, 0.45, 0.13), selected);\n"
+    "        float3 ink = lerp(lead, end, vUv.x) + 0.025 * (0.5 - vUv.y);\n"
+    "        if (uBright.x > 1.5) ink *= 1.0 - uBright.y;\n"
+    "        else if (uBright.x > 0.5) ink += (1.0 - ink) * uBright.y;\n"
+    "        return float4(ink, saturate(d + 0.5));\n"
+    "    }\n"
     "    if (uPanel.x > 6.5) {\n"
     "        float3 ink = b.rgb;\n"
     "        if (uBright.x > 1.5) ink *= 1.0 - uBright.y;\n"
@@ -1170,6 +1182,9 @@ static void run_capture(void)
 /* Experimental single screen (config single_screen, game.c decides when): the top screen alone
  * over the display, and the config's panels -- rectangles of the bottom screen -- over it. */
 static int s_title_mode, s_title_screen, s_title_sprites;
+static unsigned s_title_menu_state;
+static GLuint s_title_marker[2], s_title_labels[4];
+enum { TITLE_LABEL_W = 160, TITLE_LABEL_H = 10 };
 static uint16_t s_title_brightness;
 static int s_start_layout;
 static unsigned s_start_selection;
@@ -1392,10 +1407,54 @@ void video_set_single_select(int on)
     compute_layout();
 }
 
-int video_set_title_display(int mode, int screen, uint16_t brightness)
+void video_set_title_marker(const uint32_t *pixels)
+{
+    uint32_t neutral[VIDEO_TITLE_MARKER_SIZE * VIDEO_TITLE_MARKER_SIZE];
+    for (unsigned i = 0; i < sizeof(neutral) / sizeof(neutral[0]); i++) {
+        const unsigned rgba = pixels[i];
+        const unsigned shade = ((rgba & 255u) + ((rgba >> 8) & 255u) + ((rgba >> 16) & 255u)) / 3;
+        neutral[i] = (rgba & 0xff000000u) | shade * 0x010101u;
+    }
+    for (int active = 0; active < 2; active++) {
+        s_title_marker[active] = new_texture(VIDEO_TITLE_MARKER_SIZE, VIDEO_TITLE_MARKER_SIZE, GL_NEAREST);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, VIDEO_TITLE_MARKER_SIZE, VIDEO_TITLE_MARKER_SIZE,
+                        GL_RGBA, GL_UNSIGNED_BYTE, active ? pixels : neutral);
+    }
+}
+
+static void init_title_labels(void)
+{
+    static const char *const localized[5][4] = {
+        { "NEW GAME", "CONTINUE", "AVATAR MENU", "THEATER" },
+        { "NOUVELLE PARTIE", "CHARGER UNE PARTIE", "MENU AVATAR", "FILMS" },
+        { "NEUES SPIEL", "LADEN", "AVATAR-MENU", "KINO" },
+        { "NUOVO GIOCO", "CARICA I DATI", "MENU AVATAR", "RASSEGNA" },
+        { "NUEVA PARTIDA", "CARGAR", "MENU AVATAR", "REPRODUCTOR" },
+    };
+    const int locale = kh_config.language >= 1 && kh_config.language <= 5 ? kh_config.language - 1 : 0;
+    for (int row = 0; row < 4; row++) {
+        uint32_t pixels[TITLE_LABEL_W * TITLE_LABEL_H] = { 0 };
+        const char *text = localized[locale][row];
+        for (int i = 0; text[i]; i++) {
+            const uint8_t *glyph = font8x8_basic[(unsigned char)text[i] - ' '];
+            for (int y = 0; y < 8; y++)
+                for (int x = 0; x < 8; x++)
+                    if (glyph[y] & (1u << x)) {
+                        pixels[(y + 1) * TITLE_LABEL_W + i * 8 + x + 1] = 0xd0202730u;
+                        pixels[y * TITLE_LABEL_W + i * 8 + x] = 0xfff9fbffu;
+                    }
+        }
+        s_title_labels[row] = new_texture(TITLE_LABEL_W, TITLE_LABEL_H, GL_NEAREST);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, TITLE_LABEL_W, TITLE_LABEL_H,
+                        GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+    }
+}
+
+int video_set_title_display(int mode, int screen, uint16_t brightness, unsigned menu_state)
 {
     if (mode == VIDEO_TITLE_MENU && !s_menubg_tried) {
         s_menubg_tried = 1;
+        init_title_labels();
         uint32_t *bg = menubg_load(DISPLAY_W, DISPLAY_H);
         if (bg) {
             s_menubg_tex = new_texture(DISPLAY_W, DISPLAY_H, GL_LINEAR);
@@ -1413,6 +1472,7 @@ int video_set_title_display(int mode, int screen, uint16_t brightness)
     s_title_mode = s_compose ? mode : VIDEO_TITLE_OFF;
     s_title_screen = screen;
     s_title_brightness = brightness;
+    s_title_menu_state = menu_state;
     s_title_sprites = s_title_mode == VIDEO_TITLE_MENU && s_menubg_tex && s_menu_logo_tex &&
                       s_progs[PROG_PANEL].id;
     return s_title_sprites;
@@ -1840,7 +1900,7 @@ static void draw_title(void)
         draw_screen_region(screen, centered, 0, 0, 1, 1, model,
                            model ? s_3d_bright : 0, 1.0f, FILTER_2D);
         if (s_title_mode == VIDEO_TITLE_MENU)
-            draw_screen_region(s_tex_cur(1 - s_title_screen), (ScreenRect){ 20, 344, 280, 182 },
+            draw_screen_region(s_tex_cur(1 - s_title_screen), (ScreenRect){ 20, 12, 280, 182 },
                                0.05f, 0.14f, 0.95f, 0.86f, 0, 0, 1.0f, FILTER_2D);
         return;
     }
@@ -1849,10 +1909,26 @@ static void draw_title(void)
     const int logo_w = 320;
     const int logo_h = logo_w * s_menu_logo_h / s_menu_logo_w;
     s_panel[0] = 7.0f; /* PNG alpha is literal, not a DS composition code. */
-    draw_screen_region(s_menu_logo_tex, (ScreenRect){ 30, DISPLAY_H - logo_h - 21, logo_w, logo_h },
+    draw_screen_region(s_menu_logo_tex, (ScreenRect){ 30, 12, logo_w, logo_h },
                        0, 0, 1, 1, 0, s_title_brightness, 1.0f, FILTER_LINEAR);
-    s_panel[0] = 3.0f; /* Native title sprites, with the background layer removed. */
-    draw_field_quad(screen, (ScreenRect){ 44, 151, 304, 140 }, 0, 0.46f, 0.57f, 0.81f, 1.0f, FILTER_2D);
+    for (int row = 0; row < 4; row++) {
+        if (!(s_title_menu_state & (1u << row)))
+            continue;
+        const int active = (int)((s_title_menu_state >> 4) & 3) == row;
+        const ScreenRect button = { 44, 25 + logo_h + row * 42, 304, 34 };
+        s_panel[0] = active ? 9.0f : 8.0f;
+        s_panel[2] = (float)button.w;
+        s_panel[3] = (float)button.h;
+        draw_screen_region(s_clear_tex, button, 0, 0, 1, 1, 0, s_title_brightness, 1, FILTER_TEXEL);
+        s_panel[0] = 7.0f;
+        if (s_title_marker[active])
+            draw_screen_region(s_title_marker[active], (ScreenRect){ button.x + 10, button.y + 9, 16, 16 },
+                               0, 0, 1, 1, 0, s_title_brightness, 1, FILTER_TEXEL);
+        draw_screen_region(s_title_labels[row], (ScreenRect){ button.x + 36, button.y + 8, 258, 18 },
+                           0, 0, 1, 1, 0, s_title_brightness, 1, FILTER_TEXEL);
+    }
+    memset(s_panel, 0, sizeof(s_panel));
+    s_panel[0] = 3.0f; /* Only the native copyright strip uses the live OBJ layer. */
     draw_field_quad(screen, (ScreenRect){ 530, 513, 420, 26 }, 0, 0.927f, 1, 1, 1.0f, FILTER_2D);
     s_panel[0] = 0.0f;
 }
