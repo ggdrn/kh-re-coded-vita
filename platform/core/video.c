@@ -1911,11 +1911,17 @@ static void draw_title(void)
     s_panel[0] = 7.0f; /* PNG alpha is literal, not a DS composition code. */
     draw_screen_region(s_menu_logo_tex, (ScreenRect){ 30, 12, logo_w, logo_h },
                        0, 0, 1, 1, 0, s_title_brightness, 1.0f, FILTER_LINEAR);
-    for (int row = 0; row < 4; row++) {
+    /* Anchor the last available option to the lower part of the title screen. */
+    enum { BUTTON_HEIGHT = 34, BUTTON_STEP = 42, MENU_BOTTOM_MARGIN = 66 };
+    int last_row = 3;
+    while (last_row > 0 && !(s_title_menu_state & (1u << last_row)))
+        last_row--;
+    const int last_top = DISPLAY_H - MENU_BOTTOM_MARGIN - BUTTON_HEIGHT;
+    for (int row = 0; row <= last_row; row++) {
         if (!(s_title_menu_state & (1u << row)))
             continue;
         const int active = (int)((s_title_menu_state >> 4) & 3) == row;
-        const ScreenRect button = { 44, 25 + logo_h + row * 42, 304, 34 };
+        const ScreenRect button = { 44, last_top - (last_row - row) * BUTTON_STEP, 304, BUTTON_HEIGHT };
         s_panel[0] = active ? 9.0f : 8.0f;
         s_panel[2] = (float)button.w;
         s_panel[3] = (float)button.h;
