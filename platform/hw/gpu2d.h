@@ -35,6 +35,7 @@ void kh_gpu2d_init(void);
 int kh_gpu2d_render_lines(int engine, uint32_t *fb, int y0, int y1);
 /* Engine B's live Tree layers, with panel-compositor alpha codes. */
 int kh_gpu2d_render_tree_lines(uint32_t *fb, int y0, int y1);
+int kh_gpu2d_render_title_lines(uint32_t *fb, int y0, int y1);
 int kh_gpu2d_render_start_lines(int engine, uint32_t *fb, int y0, int y1, int overview);
 
 /* Diagnosis: one engine's BGs and sprites, each on its own (256x192 RGBA, alpha 255 where the

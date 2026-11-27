@@ -75,6 +75,19 @@ static uint32_t s_top[256 * 192], s_bottom[256 * 192];
 static int s_console; /* the on-screen log: off at start, L+R+Start toggles it */
 
 static unsigned title_updated;
+static int s_title_card = -1;
+static unsigned s_title_view;
+
+enum { TITLE_VIEW_ENGINE_B = 1 << 8 };
+
+extern void *GetRunningTaskWork(void);
+extern void __real_ShowPanelBgScreen(void *panel, int card);
+
+void __wrap_ShowPanelBgScreen(void *panel, int card)
+{
+    __real_ShowPanelBgScreen(panel, card);
+    s_title_card = card;
+}
 
 extern int __real_UpdateTitlePanel(void);
 extern void __real_DrawGradientRect(unsigned, unsigned, unsigned, unsigned,
@@ -118,7 +131,26 @@ void __wrap_DrawSpriteFrameQuadWithDepthUpdate(void *marker)
 
 int __wrap_UpdateTitlePanel(void)
 {
+    const uint8_t *panel = GetRunningTaskWork();
     int result = __real_UpdateTitlePanel();
+    unsigned view = VIDEO_TITLE_OFF;
+    if (result != -2 && panel) {
+        int state, timer;
+        memcpy(&state, panel + 0x2c, sizeof(state));
+        memcpy(&timer, panel + 0x24, sizeof(timer));
+        if (state >= 0 && state < 4) {
+            /* The timed phase holds each pair for 60 native updates.
+             * Pair 1 starts on sub (Square Enix), then main (Disney). */
+            const int second = timer >= 30;
+            const int sub = s_title_card == 1 ? !second : s_title_card >= 2 && second;
+            view = VIDEO_TITLE_CARD | (sub ? TITLE_VIEW_ENGINE_B : 0);
+        } else if (state == 4 || state == 5) {
+            view = VIDEO_TITLE_ANIMATION;
+        } else if (state == 6 && s_title_card == 4) {
+            view = VIDEO_TITLE_MENU | TITLE_VIEW_ENGINE_B;
+        }
+    }
+    __atomic_store_n(&s_title_view, view, __ATOMIC_RELEASE);
     if (!__atomic_load_n(&title_updated, __ATOMIC_RELAXED)) {
         kh_boot_mark("title update completed");
         __atomic_store_n(&title_updated, 1, __ATOMIC_RELEASE);
@@ -266,6 +298,7 @@ typedef struct {
     int eng[3], neng; /* the engines drawn this frame */
     int transparent_tree;
     int clean_start;
+    int title_sprites;
     int start_overview;
 } Frame2d;
 
@@ -333,6 +366,8 @@ static void render_chunk(int chunk, void *arg)
     int r;
     if (engine == ENG_CAPTURE)
         r = kh_gpu2d_render_graphics_lines(KH_ENGINE_A, f->fb[engine], y0, y1);
+    else if (engine == KH_ENGINE_B && f->title_sprites)
+        r = kh_gpu2d_render_title_lines(f->fb[engine], y0, y1);
     else if (f->clean_start)
         r = kh_gpu2d_render_start_lines(engine, f->fb[engine], y0, y1, f->start_overview);
     else if (engine == KH_ENGINE_B && f->transparent_tree)
@@ -816,6 +851,16 @@ static void present(void)
     const int message_window = (panel & FIELD_MESSAGE_WINDOW) != 0;
     const int dialogue = (panel & (FIELD_MESSAGE_WINDOW | FIELD_MESSAGE_SPRITE)) != 0;
     const int native_menu = kh_overlay_menu_active();
+    const unsigned title_view = !dual && !native_menu && kh_overlay_loaded(0) &&
+                                !kh_overlay_loaded(1) && !kh_overlay_loaded(22) &&
+                                !kh_overlay_loaded(37) ?
+                                __atomic_load_n(&s_title_view, __ATOMIC_ACQUIRE) : 0;
+    const int title_sub = (title_view & TITLE_VIEW_ENGINE_B) != 0;
+    const int title_sprites = video_set_title_display(title_view & 255, title_sub == a_on_top,
+                                                       KH_IO16(title_sub ? 0x0400106c : 0x0400006c));
+    static unsigned last_title_view;
+    const int title_changed = title_view != last_title_view;
+    last_title_view = title_view;
     int start_layout = VIDEO_START_OFF;
     if (native_menu && kh_config.single_screen && !dual) {
         if (a_on_top && kh_overlay_loaded(74) && kh_overlay_loaded(73) &&
@@ -992,6 +1037,7 @@ static void present(void)
 
     const int tree_changed = f2d.transparent_tree != transparent_tree;
     f2d.transparent_tree = transparent_tree;
+    f2d.title_sprites = title_sprites;
     f2d.clean_start = start_layout == VIDEO_START_ROOT;
     f2d.start_overview = __atomic_load_n(&s_start_status_page, __ATOMIC_ACQUIRE) == 0;
 
@@ -1008,7 +1054,8 @@ static void present(void)
         }
         /* dual 3D: the engines change screens with every toggle, so both are drawn each
          * time (a skipped one left the other engine's picture on its screen, 0.0.88) */
-        draw2d = dual || coliseum_hud_changed || tree_changed || start_layout_changed || (!smooth_3d && shortcut_sync_frames) ||
+        draw2d = dual || coliseum_hud_changed || tree_changed || start_layout_changed || title_changed ||
+                 (!smooth_3d && shortcut_sync_frames) ||
                  (pending && vb != serial_vb) || vb - drawn_vb >= 4;
         if (draw2d) {
             pending = 0;
@@ -1043,7 +1090,7 @@ static void present(void)
             for (i = 0; i < 2; i++)
                 if (i == KH_ENGINE_B && skip_b)
                     continue;
-                else if (start_layout || start_layout_changed || single || dual || tree_changed ||
+                else if (title_view || title_changed || start_layout || start_layout_changed || single || dual || tree_changed ||
                          i != inset_engine || (parity & 1))
                     f2d.eng[f2d.neng++] = i;
             parity++;
@@ -1137,7 +1184,7 @@ static void present(void)
         else
             workers_begin(render_chunk, BANDS * f2d.neng, &f2d);
         if (f2d.neng && !dual && !lock30 && !capture_gfx) {
-            async_2d = !single && !start_layout && !start_layout_changed &&
+            async_2d = !single && !title_view && !title_changed && !start_layout && !start_layout_changed &&
                        !shortcut_sync_frames && !coliseum_hud_changed && !tree_changed;
             async_top = a_on_top;
             if (async_2d)

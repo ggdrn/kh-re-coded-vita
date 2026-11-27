@@ -20,6 +20,11 @@
  * packed with the port (the build's assets/titlescreen/bg.png, app0:), else the player's own
  * (ux0:data/khrecoded/menu_bg.png or .jpg), scaled to cover w x h and cropped in the middle. NULL
  * when there is none. stb_image tells PNG from JPEG by the contents, whatever the name. */
+uint8_t *menu_logo_load(int *w, int *h)
+{
+    return stbi_load("app0:assets/titlescreen/logo.png", w, h, NULL, 4);
+}
+
 uint32_t *menubg_load(int w, int h)
 {
     static const char *const names[] = { "app0:assets/titlescreen/bg.png",

@@ -102,9 +102,13 @@ def main():
     rule("livearea", f"python3 tools/make_livearea.py {art_dir}" + (" --from art_src" if local_art else ""))
     art_files = [f"{art_dir}/{rel}" for rel in art]
     template = "sce_sys/livearea/contents/template.xml"
+    title_art = []
+    for (stem_name, target) in (("bg", "bg.png"), ("startup", "logo.png")):
+        if any(Path(path).stem == stem_name for path in local_art):
+            title_art += ["-a", f"{art_dir}/livearea/contents/{stem_name}.png=assets/titlescreen/{target}"]
     rule("vpk", q([BIN / "vita-pack-vpk"]) + " -s build/param.sfo -b $in " +
          q(["-a", f"{template}={template}"] +
-           [arg for rel in art for arg in ("-a", f"{art_dir}/{rel}=sce_sys/{rel}")]) + " $out")
+           [arg for rel in art for arg in ("-a", f"{art_dir}/{rel}=sce_sys/{rel}")] + title_art) + " $out")
     if args.with_game:
         native = "build/native"
         objects = [native + "/recoded.sdk.o"]

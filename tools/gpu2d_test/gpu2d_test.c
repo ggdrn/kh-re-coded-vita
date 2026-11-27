@@ -402,6 +402,30 @@ static int scene_transparent_tree(void)
     return !ok;
 }
 
+static int scene_title_sprites(void)
+{
+    static uint32_t fb[256 * 192];
+    reset();
+    w32(0x04001000, 0x00011200);
+    w16(0x0400100a, 10 << 8);
+    w16(0x04001050, 0x2250); /* OBJ blending into the old background */
+    w16(0x04001052, 0x1000);
+    tile4(kh_vram_bg_b, 0, 1, 2);
+    tile4(kh_vram_obj_b, 0, 0, 2);
+    pal(0x400, 1, RGB(0, 0, 31));
+    pal(0x600, 1, RGB(31, 15, 0));
+    const uint16_t tile = 1;
+    memcpy(kh_vram_bg_b + 10 * 0x800, &tile, 2);
+    oam(1, 0, 0x0400, 16, 0); /* a semi-transparent title cell */
+    kh_gpu2d_render_title_lines(fb, 0, 8);
+    int ok = fb[0] == 0 && fb[16] == (0xfe0000ffu | (123u << 8));
+    kh_gpu2d_render(KH_ENGINE_B, fb);
+    ok &= (fb[0] >> 24) == 0xff && fb[0] != fb[16];
+    puts(ok ? "ok title: menu cells survive without BG1 and the original blend"
+            : "FAIL title: layered button isolation");
+    return !ok;
+}
+
 static int scene_clean_start(void)
 {
     static uint32_t fb[256 * 192];
@@ -581,6 +605,7 @@ int main(void)
     failures |= scene_combo_limit_arrows();
     failures |= scene_transparent_tree();
     failures |= scene_clean_start();
+    failures |= scene_title_sprites();
     failures |= scene_sector_gauge();
     failures |= scene_area_party_hud();
     failures |= scene_coliseum_hud();

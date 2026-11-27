@@ -39,6 +39,7 @@ typedef struct {
     uint32_t dispcnt;
     int has3d;
     int start_overview;
+    int title_sprites;
 } Engine;
 
 typedef struct {
@@ -878,7 +879,7 @@ static void compose_line(const Engine *e, int line, uint16_t *out, uint8_t *code
 #define obj (*objp)
     uint8_t ctlbuf[W];
     const uint8_t *ctl;
-    const uint16_t bldcnt = io16(e, 0x50), bldalpha = io16(e, 0x52);
+    const uint16_t bldcnt = e->title_sprites ? 0 : io16(e, 0x50), bldalpha = io16(e, 0x52);
     /* plain (kh_gpu2d_plain): no fade, the alpha blend kept */
     const int effect = kh_gpu2d_plain[!e->is_a] && ((bldcnt >> 6) & 3) >= 2 ? 0 : (bldcnt >> 6) & 3;
     int eva = bldalpha & 31, evb = (bldalpha >> 8) & 31, evy = io16(e, 0x54) & 31;
@@ -1093,7 +1094,7 @@ void kh_gpu2d_init(void)
     init_rgba();
 }
 
-enum { LAYERS_NORMAL, LAYERS_TREE, LAYERS_START, LAYERS_START_OVERVIEW };
+enum { LAYERS_NORMAL, LAYERS_TREE, LAYERS_START, LAYERS_START_OVERVIEW, LAYERS_TITLE };
 
 static int render_lines(int engine, uint32_t *fb, int y0, int y1, int graphics, int layers)
 {
@@ -1108,6 +1109,11 @@ static int render_lines(int engine, uint32_t *fb, int y0, int y1, int graphics, 
     const int has_model = clean_start && e.has3d;
     if (layers == LAYERS_TREE)
         e.dispcnt &= ~((1u << 9) | (1u << 11));
+    if (layers == LAYERS_TITLE) {
+        /* Title buttons, selected row and copyright are native OBJ cells. */
+        e.dispcnt &= ~(0x0fu << 8);
+        e.title_sprites = 1;
+    }
     if (clean_start) {
         /* Both menu backgrounds are BG3. The root's button frames are sprites;
          * its localized text lives on BG2. The status side needs its sprites. */
@@ -1192,6 +1198,11 @@ int kh_gpu2d_render_lines(int engine, uint32_t *fb, int y0, int y1)
 int kh_gpu2d_render_tree_lines(uint32_t *fb, int y0, int y1)
 {
     return render_lines(KH_ENGINE_B, fb, y0, y1, 0, LAYERS_TREE);
+}
+
+int kh_gpu2d_render_title_lines(uint32_t *fb, int y0, int y1)
+{
+    return render_lines(KH_ENGINE_B, fb, y0, y1, 0, LAYERS_TITLE);
 }
 
 int kh_gpu2d_render_start_lines(int engine, uint32_t *fb, int y0, int y1, int overview)

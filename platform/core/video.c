@@ -177,6 +177,12 @@ static const char s_compose_fs[] =
     "    float4 b = tex2D(u2d, v2d);\n"
     "    float4 t = tex2D(u3d, v3d);\n"
     "#ifdef PANEL\n"
+    "    if (uPanel.x > 6.5) {\n"
+    "        float3 ink = b.rgb;\n"
+    "        if (uBright.x > 1.5) ink *= 1.0 - uBright.y;\n"
+    "        else if (uBright.x > 0.5) ink += (1.0 - ink) * uBright.y;\n"
+    "        return float4(ink, b.a);\n"
+    "    }\n"
     "    if (uPanel.x > 5.5) {\n"
     "        float3 model = t.rgb / max(t.a, 0.001);\n"
     "        if (uBright.x > 1.5) model *= 1.0 - uBright.y;\n"
@@ -1163,15 +1169,12 @@ static void run_capture(void)
 /* The small screen: 4:3, inset_width wide, in the corner config inset_corner names. */
 /* Experimental single screen (config single_screen, game.c decides when): the top screen alone
  * over the display, and the config's panels -- rectangles of the bottom screen -- over it. */
-/* config single_screen before the game (the title's overlay: the logos, the title and its
- * menus): the bottom screen (the title's menu) on the left over the player's picture
- * (menubg.c), the whole time */
-static int s_menus;
+static int s_title_mode, s_title_screen, s_title_sprites;
+static uint16_t s_title_brightness;
 static int s_start_layout;
 static unsigned s_start_selection;
 static int s_start_input_layout;
 static int s_start_row;
-static int s_menus_layout = -1; /* 2: the menu over the picture */
 /* config single_screen out of the field's action (game.c decides when): a scene whose bottom
  * screen stays black (a dialogue) with the top screen alone over the display (s_scene), and
  * the world / mission selection with the top screen over the display and the bottom one (the
@@ -1180,8 +1183,8 @@ static int s_menus_layout = -1; /* 2: the menu over the picture */
 #define SELECT_W 320
 #define SELECT_H 240
 #define SELECT_MARGIN 16
-static GLuint s_menubg_tex;
-static int s_menubg_tried;
+static GLuint s_menubg_tex, s_menu_logo_tex;
+static int s_menu_logo_w, s_menu_logo_h, s_menubg_tried;
 /* the bottom screen is all black (the field's conversations): as the small screen, not shown */
 static int s_inset_blank;
 static int s_tutorial; /* the bottom screen holds a tutorial page: shown whole, in the middle */
@@ -1389,61 +1392,30 @@ void video_set_single_select(int on)
     compute_layout();
 }
 
-void video_set_single_menus(int on)
+int video_set_title_display(int mode, int screen, uint16_t brightness)
 {
-    on = 0; /* Re:coded always keeps both DS screens. */
-    on = on != 0;
-    if (on == s_menus)
-        return;
-    s_menus = on;
-    s_menus_layout = -1;
-    compute_layout();
-}
-
-/* One layout from the first logo to the game, never switched (0.7.31 showed whichever screen
- * had something on it, and the title kept changing its layout): the bottom screen (the title's
- * menu) on the left, under the picture's logo and clear of its characters, the top one not
- * shown */
-static void menus_layout(void)
-{
-    s_rect[0] = (ScreenRect){ 0, 0, 0, 0 };
-    s_rect[1] = (ScreenRect){ 48, 196, 384, 288 };
-    s_inset = -1;
-    if (!s_menubg_tried) {
-        uint32_t *px;
+    if (mode == VIDEO_TITLE_MENU && !s_menubg_tried) {
         s_menubg_tried = 1;
-        px = menubg_load(DISPLAY_W, DISPLAY_H);
-        if (px) {
+        uint32_t *bg = menubg_load(DISPLAY_W, DISPLAY_H);
+        if (bg) {
             s_menubg_tex = new_texture(DISPLAY_W, DISPLAY_H, GL_LINEAR);
-            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, DISPLAY_W, DISPLAY_H, GL_RGBA,
-                            GL_UNSIGNED_BYTE, px);
-            free(px);
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, DISPLAY_W, DISPLAY_H, GL_RGBA, GL_UNSIGNED_BYTE, bg);
+            free(bg);
+        }
+        uint8_t *logo = menu_logo_load(&s_menu_logo_w, &s_menu_logo_h);
+        if (logo) {
+            s_menu_logo_tex = new_texture(s_menu_logo_w, s_menu_logo_h, GL_LINEAR);
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, s_menu_logo_w, s_menu_logo_h, GL_RGBA,
+                            GL_UNSIGNED_BYTE, logo);
+            free(logo);
         }
     }
-    if (s_menus_layout != 2)
-        LOG("video: single screen before the game: the menu over the picture");
-    s_menus_layout = 2;
-}
-
-/* the player's picture over the whole display (the menus' background) */
-static void draw_menubg(void)
-{
-    const float v[16] = { -1, 1, 0, 0, 1, 1, 1, 0, -1, -1, 0, 1, 1, -1, 1, 1 };
-    if (!s_menubg_tex || !s_overlay_prog)
-        return;
-    glBindTexture(GL_TEXTURE_2D, s_menubg_tex);
-    glUseProgram(s_overlay_prog);
-    glBindBuffer(GL_ARRAY_BUFFER, s_compose_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(v), v, GL_DYNAMIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 16, (void *)0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 16, (void *)8);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    glDisableVertexAttribArray(0);
-    glDisableVertexAttribArray(1);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glUseProgram(0);
+    s_title_mode = s_compose ? mode : VIDEO_TITLE_OFF;
+    s_title_screen = screen;
+    s_title_brightness = brightness;
+    s_title_sprites = s_title_mode == VIDEO_TITLE_MENU && s_menubg_tex && s_menu_logo_tex &&
+                      s_progs[PROG_PANEL].id;
+    return s_title_sprites;
 }
 
 void video_set_single_screen(int on)
@@ -1858,6 +1830,33 @@ static void draw_start_region(const StartRegion *region, int isolated)
     s_panel[0] = 0.0f;
 }
 
+static void draw_title(void)
+{
+    const ScreenRect full = { 0, 0, DISPLAY_W, DISPLAY_H };
+    const ScreenRect centered = { (DISPLAY_W - 724) / 2, 0, 724, DISPLAY_H };
+    const GLuint screen = s_tex_cur(s_title_screen);
+    const GLuint model = s_title_screen == s_3d_screen ? s_3d_tex : 0;
+    if (s_title_mode != VIDEO_TITLE_MENU || !s_title_sprites) {
+        draw_screen_region(screen, centered, 0, 0, 1, 1, model,
+                           model ? s_3d_bright : 0, 1.0f, FILTER_2D);
+        if (s_title_mode == VIDEO_TITLE_MENU)
+            draw_screen_region(s_tex_cur(1 - s_title_screen), (ScreenRect){ 20, 344, 280, 182 },
+                               0.05f, 0.14f, 0.95f, 0.86f, 0, 0, 1.0f, FILTER_2D);
+        return;
+    }
+
+    draw_screen_region(s_menubg_tex, full, 0, 0, 1, 1, 0, s_title_brightness, 1.0f, FILTER_LINEAR);
+    const int logo_w = 320;
+    const int logo_h = logo_w * s_menu_logo_h / s_menu_logo_w;
+    s_panel[0] = 7.0f; /* PNG alpha is literal, not a DS composition code. */
+    draw_screen_region(s_menu_logo_tex, (ScreenRect){ 30, DISPLAY_H - logo_h - 21, logo_w, logo_h },
+                       0, 0, 1, 1, 0, s_title_brightness, 1.0f, FILTER_LINEAR);
+    s_panel[0] = 3.0f; /* Native title sprites, with the background layer removed. */
+    draw_field_quad(screen, (ScreenRect){ 44, 151, 304, 140 }, 0, 0.46f, 0.57f, 0.81f, 1.0f, FILTER_2D);
+    draw_field_quad(screen, (ScreenRect){ 530, 513, 420, 26 }, 0, 0.927f, 1, 1, 1.0f, FILTER_2D);
+    s_panel[0] = 0.0f;
+}
+
 static void draw_start_frame(ScreenRect dst, int selected)
 {
     s_panel[0] = selected ? 5.0f : 4.0f;
@@ -1986,7 +1985,7 @@ static void draw_screen(int i)
         /* a plain 2D screen, through the same pass for the effect and the opacity */
         float v[16];
         screen_quad(i, v);
-        if ((s_menus && !s_single && s_menus_layout == 2) || (s_select && i == 1)) {
+        if (s_select && i == 1) {
             /* the title's menu over the picture, the mission list beside the world: a
              * window with rounded corners */
             s_panel[1] = 10.0f;
@@ -2183,8 +2182,6 @@ void video_present(const uint32_t *top, const uint32_t *bottom)
         s_pending = -1;
         compute_layout();
     }
-    if (s_menus && !s_single && !s_stretch_layout)
-        menus_layout();
     if (s_cap.pending)
         run_capture();
     if (s_single && bottom && (s_field_panel & VIDEO_FIELD_MODE_MASK) <= VIDEO_FIELD_TREE) {
@@ -2198,27 +2195,32 @@ void video_present(const uint32_t *top, const uint32_t *bottom)
     if (start_layout != VIDEO_START_ROOT)
         __atomic_store_n(&s_start_row, 0, __ATOMIC_RELEASE);
     __atomic_store_n(&s_start_input_layout, start_layout, __ATOMIC_RELEASE);
-    if (start_layout)
+    if (s_title_mode == VIDEO_TITLE_CARD || s_title_mode == VIDEO_TITLE_MENU) {
+        const unsigned mode = s_title_brightness >> 14;
+        const int level = (s_title_brightness & 31) > 16 ? 16 : s_title_brightness & 31;
+        const float white = mode == 2 ? 1.0f - level / 16.0f : 1.0f;
+        glClearColor(white, white, white, 1.0f);
+    } else if (start_layout)
         glClearColor(0.025f, 0.045f, 0.075f, 1.0f);
     else
         glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT);
-    if (s_menus && !s_single && s_menus_layout == 2)
-        draw_menubg();
     seg_mark(1);
     for (k = 0; k < 2; k++) {
         /* the large screen first, the inset over it */
         const int i = s_inset == 0 ? 1 - k : k;
         if (src[i])
             upload_screen(i, src[i]);
-        if (start_layout)
+        if (start_layout || s_title_mode)
             continue;
         /* the single screen's field HUD: the top screen's 2D left out where its pieces come from */
         s_holes_on = s_single && s_npieces && i == 0;
         draw_screen(i);
         s_holes_on = 0;
     }
-    if (start_layout == VIDEO_START_ROOT) {
+    if (s_title_mode) {
+        draw_title();
+    } else if (start_layout == VIDEO_START_ROOT) {
         draw_start_menu();
     } else if (start_layout == VIDEO_START_MATRIX) {
         for (unsigned i = 0; i < sizeof(matrix_regions) / sizeof(matrix_regions[0]); i++)
