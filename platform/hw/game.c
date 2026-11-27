@@ -872,7 +872,9 @@ static void present(void)
         if (a_on_top && kh_overlay_loaded(74) && kh_overlay_loaded(73) &&
             __atomic_load_n(&s_start_root_ready, __ATOMIC_ACQUIRE))
             start_layout = VIDEO_START_ROOT;
-        else if (kh_overlay_loaded(75) || kh_overlay_loaded(76) || kh_overlay_loaded(77))
+        else if (kh_overlay_loaded(75))
+            start_layout = VIDEO_START_STAT_MATRIX;
+        else if (kh_overlay_loaded(76) || kh_overlay_loaded(77))
             start_layout = VIDEO_START_MATRIX;
     }
     if (!native_menu || !kh_overlay_loaded(74))

@@ -32,6 +32,16 @@ static const StartRegion matrix_regions[] = {
     { 1, { 0, 0, DS_SCREEN_W, DS_SCREEN_H }, { 488, 101, 460, 345 } },
 };
 
+/* Stat Matrix uses 616/308 px columns, including an 8 px frame on each
+ * edge. Fit both complete DS surfaces at 4:3. The board is engine A on
+ * the physical touch screen, including its native controls and overlays. */
+static const StartRegion stat_matrix_board = {
+    1, { 0, 0, DS_SCREEN_W, DS_SCREEN_H }, { 20, 47, 600, 450 },
+};
+static const StartRegion stat_matrix_status = {
+    0, { 0, 0, DS_SCREEN_W, DS_SCREEN_H }, { 648, 47, 292, 219 },
+};
+
 static inline int start_region_contains(const StartRegion *region, int px, int py)
 {
     const ScreenRect *r = &region->display;

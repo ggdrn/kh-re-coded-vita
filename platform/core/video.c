@@ -1693,8 +1693,10 @@ int video_map_start_touch(int px, int py, int first, int *x, int *y)
     if (first) {
         gesture_layout = layout;
         gesture_region = NULL;
-        if (layout == VIDEO_START_MATRIX && start_region_contains(&matrix_regions[1], px, py))
-            gesture_region = &matrix_regions[1];
+        const StartRegion *matrix_touch = layout == VIDEO_START_STAT_MATRIX ? &stat_matrix_board :
+                                          layout == VIDEO_START_MATRIX ? &matrix_regions[1] : NULL;
+        if (matrix_touch && start_region_contains(matrix_touch, px, py))
+            gesture_region = matrix_touch;
         if (layout == VIDEO_START_ROOT) {
             for (int region = START_TABS; region <= START_STATUS; region++)
                 if (start_region_contains(&start_regions[region], px, py)) {
@@ -1947,6 +1949,17 @@ static void draw_start_frame(ScreenRect dst, int selected)
     s_panel[3] = (float)dst.h;
     draw_field_quad(s_clear_tex, dst, 0, 0, 1, 1, 1.0f, FILTER_TEXEL);
     memset(s_panel, 0, sizeof(s_panel));
+}
+
+static void draw_stat_matrix(void)
+{
+    const StartRegion *const columns[] = { &stat_matrix_board, &stat_matrix_status };
+    for (unsigned i = 0; i < sizeof(columns) / sizeof(columns[0]); i++) {
+        const StartRegion *region = columns[i];
+        const ScreenRect r = region->display;
+        draw_start_frame((ScreenRect){ r.x - 8, r.y - 8, r.w + 16, r.h + 16 }, 0);
+        draw_start_region(region, 0);
+    }
 }
 
 static void draw_start_menu(void)
@@ -2304,6 +2317,8 @@ void video_present(const uint32_t *top, const uint32_t *bottom)
         draw_title();
     } else if (start_layout == VIDEO_START_ROOT) {
         draw_start_menu();
+    } else if (start_layout == VIDEO_START_STAT_MATRIX) {
+        draw_stat_matrix();
     } else if (start_layout == VIDEO_START_MATRIX) {
         for (unsigned i = 0; i < sizeof(matrix_regions) / sizeof(matrix_regions[0]); i++)
             draw_start_region(&matrix_regions[i], 0);
