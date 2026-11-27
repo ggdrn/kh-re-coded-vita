@@ -139,7 +139,7 @@ def main():
              'DrawChannelMeter', 'DrawSpriteFrameQuadWithDepthUpdate', 'CloseResultsScreen', 'UpdateResultsScreen', 'UpdateChallengeScene',
              'UpdateStageLinkPanels',
              'StageEvents_CheckAllEvents', 'SubScene9_Request', 'SetSlotDisplayStyle',
-             'SetSceneEntryPrimaryBgmId')
+             'SetSceneEntryPrimaryBgmId', 'OpenMoviePlayback', 'StopMoviePlayback')
     cmd=[str(BIN/'arm-vita-eabi-ld'),'-r',*('--wrap='+name for name in hooks),
          '--no-enum-size-warning','-T',str(script),'-o',str(out/'recoded.partial.o'),
          str(out/'gen/ds_bss.o'),str(out/'gen/dtcm_init.o'),str(out/'gen/overlays.o'),str(out/'gen/ovdisp.o'),

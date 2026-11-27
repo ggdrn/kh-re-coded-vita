@@ -77,6 +77,30 @@ static int s_console; /* the on-screen log: off at start, L+R+Start toggles it *
 static unsigned title_updated;
 static int s_title_card = -1;
 static unsigned s_title_view;
+static int s_movie_engine = -1;
+
+typedef struct {
+    const char *path;
+    int32_t option;
+    int32_t use_main_screen;
+} MovieOpenParams;
+
+extern int __real_OpenMoviePlayback(const MovieOpenParams *params);
+extern void __real_StopMoviePlayback(void);
+
+int __wrap_OpenMoviePlayback(const MovieOpenParams *params)
+{
+    const int engine = params->use_main_screen ? KH_ENGINE_A : KH_ENGINE_B;
+    const int opened = __real_OpenMoviePlayback(params);
+    __atomic_store_n(&s_movie_engine, opened ? engine : -1, __ATOMIC_RELEASE);
+    return opened;
+}
+
+void __wrap_StopMoviePlayback(void)
+{
+    __real_StopMoviePlayback();
+    __atomic_store_n(&s_movie_engine, -1, __ATOMIC_RELEASE);
+}
 
 enum { TITLE_VIEW_ENGINE_B = 1 << 8, TITLE_VIEW_STATE_SHIFT = 16 };
 
@@ -812,13 +836,16 @@ static void present(void)
 {
     /* POWCNT1 bit 15: engine A on the top screen */
     int a_on_top = (KH_IO16(0x04000304) >> 15) & 1;
+    const int movie_engine = kh_overlay_loaded(22) ?
+                             __atomic_load_n(&s_movie_engine, __ATOMIC_ACQUIRE) : -1;
+    const int movie_active = movie_engine >= 0;
     /* Dual 3D (3D on both screens, one frame each in turn): the game swaps the screens to
      * match each 3D frame a little after the VBlank that shows it (Gfx_ToggleCaptureMode,
      * which calls kh_dual3d_toggled). Read at the VBlank, POWCNT was sometimes the previous
      * frame's and sometimes the next one's: the picture jumped between the screens (0.0.80 to
      * 0.0.83). While the scene runs, the display waits for that toggle (8 ms at most) and
      * takes the screens it recorded. */
-    const int dual = s_vblanks - s_toggle_vb < 8;
+    const int dual = !movie_active && s_vblanks - s_toggle_vb < 8;
     /* Scene 2 loads the Re:coded field session in overlay 1. */
     const int dual_field = dual && kh_overlay_loaded(1);
     const int keep = dual && !dual_field;
@@ -860,6 +887,11 @@ static void present(void)
     const int message_window = (panel & FIELD_MESSAGE_WINDOW) != 0;
     const int dialogue = (panel & (FIELD_MESSAGE_WINDOW | FIELD_MESSAGE_SPRITE)) != 0;
     const int native_menu = kh_overlay_menu_active();
+    const int movie_screen = movie_active ? ((movie_engine == KH_ENGINE_A) != a_on_top) : -1;
+    static int last_movie_screen = -1;
+    const int movie_changed = movie_screen != last_movie_screen;
+    last_movie_screen = movie_screen;
+    video_set_movie_screen(movie_screen);
     const unsigned title_view = !dual && !native_menu && kh_overlay_loaded(0) &&
                                 !kh_overlay_loaded(1) && !kh_overlay_loaded(22) &&
                                 !kh_overlay_loaded(37) ?
@@ -873,7 +905,7 @@ static void present(void)
     const int title_changed = title_screen_view != last_title_view;
     last_title_view = title_screen_view;
     int start_layout = VIDEO_START_OFF;
-    if (native_menu && kh_config.single_screen && !dual) {
+    if (native_menu && kh_config.single_screen && !dual && !movie_active) {
         /* ov039's secondary registry entry 0 is the ov073 status menu.
          * Use the current secondary handler, since a resident overlay can
          * outlive the screen that had been using it. */
@@ -937,7 +969,7 @@ static void present(void)
     const int field_3d = field_scene && !turn_battle;
     const int wide_scene = field_3d || (turn_battle && !dual && a_on_top);
     const int widescreen = wide_scene && kh_config.fullscreen_3d;
-    const int single = (wide_scene || event_2d || continue_scene) && kh_config.single_screen;
+    const int single = !movie_active && (wide_scene || event_2d || continue_scene) && kh_config.single_screen;
     const int stretch = !wide_scene && (kh_config.fullscreen_3d ||
                                         (standalone && kh_config.single_screen));
     const uint16_t blend_control = KH_IO16(0x04000050);
@@ -1008,7 +1040,7 @@ static void present(void)
             kh_gpu3d_set_scale(p == 4 ? 1 : kh_config.render_scale);
         }
     }
-    if (lock30 && !dual && kh_gx3d_serial() == s_shown_serial &&
+    if (lock30 && !dual && !movie_active && !movie_changed && kh_gx3d_serial() == s_shown_serial &&
         s_vblanks - s_game_frame_vb < 8) {
         /* 30 fps: the game's frames come every two VBlanks, and so do the swaps, each on its
          * own clock: a game frame finished just as a swap took the picture went to the next
@@ -1098,7 +1130,7 @@ static void present(void)
         }
         /* dual 3D: the engines change screens with every toggle, so both are drawn each
          * time (a skipped one left the other engine's picture on its screen, 0.0.88) */
-        draw2d = dual || coliseum_hud_changed || tree_changed || start_layout_changed ||
+        draw2d = dual || movie_active || movie_changed || coliseum_hud_changed || tree_changed || start_layout_changed ||
                  status_view_changed || title_changed ||
                  (!smooth_3d && shortcut_sync_frames) ||
                  (pending && vb != serial_vb) || vb - drawn_vb >= 4;
@@ -1135,7 +1167,8 @@ static void present(void)
             for (i = 0; i < 2; i++)
                 if (i == KH_ENGINE_B && skip_b)
                     continue;
-                else if (title_view || title_changed || start_layout || start_layout_changed || single || dual || tree_changed ||
+                else if (movie_active || movie_changed || title_view || title_changed ||
+                         start_layout || start_layout_changed || single || dual || tree_changed ||
                          i != inset_engine || (parity & 1))
                     f2d.eng[f2d.neng++] = i;
             parity++;
@@ -1229,7 +1262,8 @@ static void present(void)
         else
             workers_begin(render_chunk, BANDS * f2d.neng, &f2d);
         if (f2d.neng && !dual && !lock30 && !capture_gfx) {
-            async_2d = !single && !title_view && !title_changed && !start_layout && !start_layout_changed &&
+            async_2d = !single && !movie_active && !movie_changed &&
+                       !title_view && !title_changed && !start_layout && !start_layout_changed &&
                        !shortcut_sync_frames && !coliseum_hud_changed && !tree_changed;
             async_top = a_on_top;
             if (async_2d)

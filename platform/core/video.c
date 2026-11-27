@@ -1187,6 +1187,9 @@ static GLuint s_title_marker[2], s_title_labels[4];
 enum { TITLE_LABEL_W = 160, TITLE_LABEL_H = 10 };
 static uint16_t s_title_brightness;
 static int s_start_layout;
+static int s_movie_screen = -1;
+static int s_movie_input_screen = -1;
+static const ScreenRect movie_rect = { 0, 0, DISPLAY_W, DISPLAY_H };
 static unsigned s_start_selection;
 static int s_status_view;
 static int s_status_column_touch;
@@ -1582,6 +1585,8 @@ int video_map_top(int px, int py, int *x, int *y)
 int video_on_inset(int px, int py)
 {
     const ScreenRect *r;
+    if (__atomic_load_n(&s_movie_input_screen, __ATOMIC_ACQUIRE) >= 0)
+        return 0;
     if (s_inset < 0 || s_pending >= 0 || (s_inset == 1 && s_inset_blank))
         return 0;
     r = &s_rect[s_inset];
@@ -1680,6 +1685,11 @@ void video_set_start_layout(int layout, unsigned selection, int status_view, int
     s_status_column_touch = status_touch;
 }
 
+void video_set_movie_screen(int screen)
+{
+    s_movie_screen = screen;
+}
+
 int video_start_layout_active(void)
 {
     return __atomic_load_n(&s_start_input_layout, __ATOMIC_ACQUIRE) & START_INPUT_LAYOUT_MASK;
@@ -1756,10 +1766,11 @@ int video_map_start_touch(int px, int py, int first, int *x, int *y)
 
 int video_map_touch(int px, int py, int *x, int *y)
 {
-    const ScreenRect *r = &s_rect[1];
-    if (s_single)
+    const int movie_screen = __atomic_load_n(&s_movie_input_screen, __ATOMIC_ACQUIRE);
+    const ScreenRect *r = movie_screen == 1 ? &movie_rect : &s_rect[1];
+    if (movie_screen == 0 || s_single)
         return 0; /* field gestures use video_map_field_touch */
-    if (s_inset >= 0 && video_on_inset(px, py))
+    if (movie_screen < 0 && s_inset >= 0 && video_on_inset(px, py))
         return 0; /* the small screen is a button (it swaps the screens), not the DS's */
     if (px < r->x || px >= r->x + r->w || py < r->y || py >= r->y + r->h)
         return 0;
@@ -2384,14 +2395,16 @@ void video_present(const uint32_t *top, const uint32_t *bottom)
     seg_mark(0);
 
     glViewport(0, 0, DISPLAY_W, DISPLAY_H);
-    const int start_layout = s_compose ? s_start_layout : VIDEO_START_OFF;
+    const int movie_screen = s_movie_screen;
+    const int start_layout = movie_screen < 0 && s_compose ? s_start_layout : VIDEO_START_OFF;
     int start_input = start_layout;
     if (s_status_column_touch && (video_start_has_status_column(start_layout) || start_layout == VIDEO_START_SHOP))
         start_input |= START_INPUT_STATUS_TOUCH | (s_status_view << START_INPUT_STATUS_VIEW_SHIFT);
     if (start_layout != VIDEO_START_ROOT)
         __atomic_store_n(&s_start_row, 0, __ATOMIC_RELEASE);
     __atomic_store_n(&s_start_input_layout, start_input, __ATOMIC_RELEASE);
-    if (s_title_mode == VIDEO_TITLE_CARD || s_title_mode == VIDEO_TITLE_MENU) {
+    __atomic_store_n(&s_movie_input_screen, movie_screen, __ATOMIC_RELEASE);
+    if (movie_screen < 0 && (s_title_mode == VIDEO_TITLE_CARD || s_title_mode == VIDEO_TITLE_MENU)) {
         const unsigned mode = s_title_brightness >> 14;
         const int level = (s_title_brightness & 31) > 16 ? 16 : s_title_brightness & 31;
         const float white = mode == 2 ? 1.0f - level / 16.0f : 1.0f;
@@ -2407,14 +2420,22 @@ void video_present(const uint32_t *top, const uint32_t *bottom)
         const int i = s_inset == 0 ? 1 - k : k;
         if (src[i])
             upload_screen(i, src[i]);
-        if (start_layout || s_title_mode)
+        if (movie_screen >= 0 || start_layout || s_title_mode)
             continue;
         /* the single screen's field HUD: the top screen's 2D left out where its pieces come from */
         s_holes_on = s_single && s_npieces && i == 0;
         draw_screen(i);
         s_holes_on = 0;
     }
-    if (s_title_mode) {
+    if (movie_screen >= 0) {
+        if (s_compose) {
+            draw_screen_region(s_tex_cur(movie_screen), movie_rect, 0, 0, 1, 1,
+                               0, 0, 1.0f, FILTER_LINEAR);
+        } else {
+            glBindTexture(GL_TEXTURE_2D, s_tex_cur(movie_screen));
+            draw_quad(&movie_rect);
+        }
+    } else if (s_title_mode) {
         draw_title();
     } else if (start_layout == VIDEO_START_ROOT) {
         draw_start_menu();

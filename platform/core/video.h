@@ -50,6 +50,8 @@ enum { VIDEO_TITLE_MARKER_SIZE = 8 };
 void video_set_title_marker(const uint32_t *pixels);
 /* Returns whether the renderer can isolate the title menu's native OBJ layer. */
 int video_set_title_display(int mode, int screen, uint16_t brightness, unsigned menu_state);
+/* Physical DS screen playing a movie (top 0, bottom 1, off -1). */
+void video_set_movie_screen(int screen);
 enum {
     VIDEO_START_OFF, VIDEO_START_ROOT, VIDEO_START_MATRIX, VIDEO_START_STATUS_COLUMN,
     VIDEO_START_MATRIX_COLUMN, VIDEO_START_SHOP,
