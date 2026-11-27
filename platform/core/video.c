@@ -1188,9 +1188,9 @@ enum { TITLE_LABEL_W = 160, TITLE_LABEL_H = 10 };
 static uint16_t s_title_brightness;
 static int s_start_layout;
 static unsigned s_start_selection;
-static int s_status_column_overview;
+static int s_status_view;
 static int s_status_column_touch;
-enum { START_INPUT_LAYOUT_MASK = 255, START_INPUT_STATUS_TOUCH = 256, START_INPUT_STATUS_OVERVIEW = 512 };
+enum { START_INPUT_LAYOUT_MASK = 255, START_INPUT_STATUS_TOUCH = 256, START_INPUT_STATUS_VIEW_SHIFT = 9 };
 static int s_start_input_layout;
 static int s_start_row;
 /* config single_screen out of the field's action (game.c decides when): a scene whose bottom
@@ -1672,12 +1672,12 @@ int video_map_field_touch(int px, int py, int first, int *x, int *y)
     return 0;
 }
 
-void video_set_start_layout(int layout, unsigned selection, int status_column_overview, int status_column_touch)
+void video_set_start_layout(int layout, unsigned selection, int status_view, int status_touch)
 {
     s_start_layout = layout;
     s_start_selection = selection;
-    s_status_column_overview = status_column_overview;
-    s_status_column_touch = status_column_touch;
+    s_status_view = status_view;
+    s_status_column_touch = status_touch;
 }
 
 int video_start_layout_active(void)
@@ -1690,6 +1690,19 @@ int video_take_start_row(void)
     return __atomic_exchange_n(&s_start_row, 0, __ATOMIC_ACQ_REL);
 }
 
+static const StartRegion *status_touch_region(int view, int px, int py)
+{
+    if (view == VIDEO_STATUS_FULL)
+        return &full_menu_status;
+    if (view == VIDEO_STATUS_COMMANDS || view == VIDEO_STATUS_OVERCLOCKS) {
+        if (start_region_contains(&matrix_status_body[view], px, py))
+            return &matrix_status_body[view];
+        if (start_region_contains(&matrix_status_footer, px, py))
+            return &matrix_status_footer;
+    }
+    return &status_widgets[STATUS_HEADING];
+}
+
 int video_map_start_touch(int px, int py, int first, int *x, int *y)
 {
     static int gesture_layout;
@@ -1700,12 +1713,11 @@ int video_map_start_touch(int px, int py, int first, int *x, int *y)
         gesture_layout = input_layout;
         gesture_region = NULL;
         const StartRegion *menu_touch = NULL;
-        if (layout == VIDEO_START_STATUS_COLUMN) {
+        if (video_start_has_status_column(layout)) {
             if (input_layout & START_INPUT_STATUS_TOUCH)
-                menu_touch = input_layout & START_INPUT_STATUS_OVERVIEW ?
-                             &status_widgets[STATUS_HEADING] : &full_menu_status;
+                menu_touch = status_touch_region(input_layout >> START_INPUT_STATUS_VIEW_SHIFT, px, py);
             else
-                menu_touch = &wide_menu_content;
+                menu_touch = layout == VIDEO_START_MATRIX_COLUMN ? &wide_matrix_content : &wide_menu_content;
         } else if (layout == VIDEO_START_MATRIX) {
             menu_touch = &matrix_regions[1];
         }
@@ -1973,16 +1985,27 @@ static void draw_status_layout_region(StartRegion region, int isolated)
     draw_start_region(&region, isolated);
 }
 
-static void draw_menu_with_status(void)
+static void draw_menu_with_status(int layout)
 {
-    const ScreenRect content = wide_menu_content.display;
+    const StartRegion *main = layout == VIDEO_START_MATRIX_COLUMN ? &wide_matrix_content : &wide_menu_content;
+    const ScreenRect content = main->display;
     draw_start_frame((ScreenRect){ content.x - 8, content.y - 8, content.w + 16, content.h + 16 }, 0);
-    draw_status_layout_region(wide_menu_content, 0);
+    draw_status_layout_region(*main, 0);
 
-    if (!s_status_column_overview) {
+    if (s_status_view == VIDEO_STATUS_FULL) {
         const ScreenRect status = full_menu_status.display;
         draw_start_frame((ScreenRect){ status.x - 8, status.y - 8, status.w + 16, status.h + 16 }, 0);
         draw_status_layout_region(full_menu_status, 0);
+        return;
+    }
+
+    if (s_status_view == VIDEO_STATUS_COMMANDS || s_status_view == VIDEO_STATUS_OVERCLOCKS) {
+        draw_start_frame((ScreenRect){ 676, 24, 272, 38 }, 0);
+        draw_start_frame((ScreenRect){ 676, 68, 272, 196 }, 0);
+        draw_start_frame((ScreenRect){ 676, 272, 272, 63 }, 0);
+        draw_status_layout_region(status_widgets[STATUS_HEADING], 1);
+        draw_status_layout_region(matrix_status_body[s_status_view], 1);
+        draw_status_layout_region(matrix_status_footer, 1);
         return;
     }
 
@@ -2337,11 +2360,8 @@ void video_present(const uint32_t *top, const uint32_t *bottom)
     glViewport(0, 0, DISPLAY_W, DISPLAY_H);
     const int start_layout = s_compose ? s_start_layout : VIDEO_START_OFF;
     int start_input = start_layout;
-    if (start_layout == VIDEO_START_STATUS_COLUMN && s_status_column_touch) {
-        start_input |= START_INPUT_STATUS_TOUCH;
-        if (s_status_column_overview)
-            start_input |= START_INPUT_STATUS_OVERVIEW;
-    }
+    if (video_start_has_status_column(start_layout) && s_status_column_touch)
+        start_input |= START_INPUT_STATUS_TOUCH | (s_status_view << START_INPUT_STATUS_VIEW_SHIFT);
     if (start_layout != VIDEO_START_ROOT)
         __atomic_store_n(&s_start_row, 0, __ATOMIC_RELEASE);
     __atomic_store_n(&s_start_input_layout, start_input, __ATOMIC_RELEASE);
@@ -2372,8 +2392,8 @@ void video_present(const uint32_t *top, const uint32_t *bottom)
         draw_title();
     } else if (start_layout == VIDEO_START_ROOT) {
         draw_start_menu();
-    } else if (start_layout == VIDEO_START_STATUS_COLUMN) {
-        draw_menu_with_status();
+    } else if (video_start_has_status_column(start_layout)) {
+        draw_menu_with_status(start_layout);
     } else if (start_layout == VIDEO_START_MATRIX) {
         for (unsigned i = 0; i < sizeof(matrix_regions) / sizeof(matrix_regions[0]); i++)
             draw_start_region(&matrix_regions[i], 0);

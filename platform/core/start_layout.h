@@ -21,7 +21,7 @@ static const StartRegion start_regions[] = {
     [START_STATUS_HEADER] = { 1, { 0, 0, 105, 21 }, { 552, 133, 206,  38 } },
     [START_STATUS]   = { 1, { 0,  21, 256, 123 }, { 552, 171, 396, 199 } },
     [START_HELP]     = { 0, { 0, 163, 256,  29 }, {  12, 410, 624,  56 } },
-    [START_TOTALS]   = { 1, { 0, 146,  84,  44 }, { 762, 400, 186,  88 } },
+    [START_TOTALS]   = { 1, { 4, 146,  72,  44 }, { 780, 400, 160,  70 } },
     [START_CONTROLS] = { 1, { 86,146, 170,  44 }, {  12, 466, 302,  71 } },
 };
 
@@ -37,6 +37,9 @@ static const StartRegion matrix_regions[] = {
 static const StartRegion wide_menu_content = {
     1, { 0, 0, DS_SCREEN_W, DS_SCREEN_H }, { 20, 56, 640, 418 },
 };
+static const StartRegion wide_matrix_content = {
+    1, { 0, 0, DS_SCREEN_W, DS_SCREEN_H }, { 12, 56, 652, 410 },
+};
 /* Other ov073 pages have their own lists and use the complete surface. */
 static const StartRegion full_menu_status = {
     0, { 0, 0, DS_SCREEN_W, DS_SCREEN_H }, { 684, 32, 256, 192 },
@@ -49,6 +52,16 @@ static const StartRegion status_widgets[] = {
     [STATUS_HEADING]  = { 0, {  0,   0, 256, 22 }, { 684,  32, 256,  22 } },
     [STATUS_PORTRAIT] = { 0, { 16,  24,  80, 80 }, { 762,  65, 100, 100 } },
     [STATUS_FOOTER]   = { 0, {  0, 145, 256, 47 }, { 684, 428, 256,  47 } },
+};
+
+/* ov073 draws the command list and its scrollbar together. The Overclocks
+ * page needs the full row width for the rightmost trees and their links. */
+static const StartRegion matrix_status_body[] = {
+    [VIDEO_STATUS_COMMANDS]   = { 0, { 24, 20, 224, 125 }, { 686, 76, 252, 180 } },
+    [VIDEO_STATUS_OVERCLOCKS] = { 0, {  0, 20, 256, 125 }, { 684, 76, 256, 180 } },
+};
+static const StartRegion matrix_status_footer = {
+    0, { 0, 145, 256, 47 }, { 684, 280, 256, 47 },
 };
 
 static inline int start_region_contains(const StartRegion *region, int px, int py)

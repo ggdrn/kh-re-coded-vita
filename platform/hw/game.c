@@ -302,7 +302,7 @@ typedef struct {
     int eng[3], neng; /* the engines drawn this frame */
     int transparent_tree;
     int clean_start;
-    int status_column_overview;
+    int status_view;
     int title_sprites;
     int start_overview;
 } Frame2d;
@@ -373,8 +373,8 @@ static void render_chunk(int chunk, void *arg)
         r = kh_gpu2d_render_graphics_lines(KH_ENGINE_A, f->fb[engine], y0, y1);
     else if (engine == KH_ENGINE_B && f->title_sprites)
         r = kh_gpu2d_render_title_lines(f->fb[engine], y0, y1);
-    else if (engine == KH_ENGINE_B && f->status_column_overview)
-        r = kh_gpu2d_render_start_lines(engine, f->fb[engine], y0, y1, 1);
+    else if (engine == KH_ENGINE_B && f->status_view != VIDEO_STATUS_FULL)
+        r = kh_gpu2d_render_start_lines(engine, f->fb[engine], y0, y1, f->status_view == VIDEO_STATUS_STATS);
     else if (f->clean_start)
         r = kh_gpu2d_render_start_lines(engine, f->fb[engine], y0, y1, f->start_overview);
     else if (engine == KH_ENGINE_B && f->transparent_tree)
@@ -880,12 +880,13 @@ static void present(void)
                                __atomic_load_n(&gMenuSubOverlayIndexStorage[1], __ATOMIC_ACQUIRE) == 0;
         const int root_ready = kh_overlay_loaded(74) && has_status &&
                                __atomic_load_n(&s_start_root_ready, __ATOMIC_ACQUIRE);
+        const int matrix = kh_overlay_loaded(76) || kh_overlay_loaded(77);
         if (root_ready) {
             if (a_on_top)
                 start_layout = VIDEO_START_ROOT;
         } else if (has_status) {
-            start_layout = VIDEO_START_STATUS_COLUMN;
-        } else if (kh_overlay_loaded(76) || kh_overlay_loaded(77)) {
+            start_layout = matrix ? VIDEO_START_MATRIX_COLUMN : VIDEO_START_STATUS_COLUMN;
+        } else if (matrix) {
             start_layout = VIDEO_START_MATRIX;
         }
     }
@@ -893,15 +894,23 @@ static void present(void)
         __atomic_store_n(&s_start_root_ready, 0, __ATOMIC_RELEASE);
     static int last_start_layout;
     static int last_status_column_touch;
-    const int status_column_touch = start_layout == VIDEO_START_STATUS_COLUMN && a_on_top;
+    const int has_status_column = video_start_has_status_column(start_layout);
+    const int status_column_touch = has_status_column && a_on_top;
     const int start_layout_changed = start_layout != last_start_layout ||
                                      status_column_touch != last_status_column_touch;
     last_start_layout = start_layout;
     last_status_column_touch = status_column_touch;
-    const int start_overview = __atomic_load_n(&s_start_status_page, __ATOMIC_ACQUIRE) == 0;
-    const int status_column_overview = start_layout == VIDEO_START_STATUS_COLUMN && start_overview;
+    const int status_page = __atomic_load_n(&s_start_status_page, __ATOMIC_ACQUIRE);
+    const int start_overview = status_page == 0;
+    int status_view = VIDEO_STATUS_FULL;
+    if (has_status_column && start_overview)
+        status_view = VIDEO_STATUS_STATS;
+    else if (start_layout == VIDEO_START_MATRIX_COLUMN && status_page == 1)
+        status_view = VIDEO_STATUS_COMMANDS;
+    else if (start_layout == VIDEO_START_MATRIX_COLUMN && status_page == 4)
+        status_view = VIDEO_STATUS_OVERCLOCKS;
     video_set_start_layout(start_layout, __atomic_load_n(&s_start_selection, __ATOMIC_ACQUIRE),
-                           status_column_overview, status_column_touch);
+                           status_view, status_column_touch);
     const int field_engine_3d = (KH_IO32(0x04000000) & 0x108) == 0x108;
     const int results = kh_overlay_loaded(34) &&
                         __atomic_load_n(&gResultsScreenWorkPointer, __ATOMIC_RELAXED);
@@ -1063,12 +1072,12 @@ static void present(void)
     }
 
     const int tree_changed = f2d.transparent_tree != transparent_tree;
-    const int status_column_overview_changed = f2d.status_column_overview != status_column_overview;
+    const int status_view_changed = f2d.status_view != status_view;
     f2d.transparent_tree = transparent_tree;
     f2d.title_sprites = title_sprites;
     f2d.clean_start = start_layout == VIDEO_START_ROOT;
     f2d.start_overview = start_overview;
-    f2d.status_column_overview = status_column_overview;
+    f2d.status_view = status_view;
 
     /* The 2D image only changes when the game has finished a frame (its SWAP_BUFFERS) and the
      * VBlank after it has applied the frame's OAM and register updates: at the game's 30 fps
@@ -1084,7 +1093,7 @@ static void present(void)
         /* dual 3D: the engines change screens with every toggle, so both are drawn each
          * time (a skipped one left the other engine's picture on its screen, 0.0.88) */
         draw2d = dual || coliseum_hud_changed || tree_changed || start_layout_changed ||
-                 status_column_overview_changed || title_changed ||
+                 status_view_changed || title_changed ||
                  (!smooth_3d && shortcut_sync_frames) ||
                  (pending && vb != serial_vb) || vb - drawn_vb >= 4;
         if (draw2d) {

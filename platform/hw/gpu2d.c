@@ -896,7 +896,7 @@ static void compose_line(const Engine *e, int line, uint16_t *out, uint8_t *code
         shown[bg] = render_bg(e, bg, line, bgl[bg]);
         if (shown[bg] && e->start_overview && bg == L_BG2 && line >= 24 && line < 144) {
             /* The overview tags draw row frames on BG2. Keep its portrait area. */
-            const int left = line < 105 ? 112 : 0;
+            const int left = line < 104 ? 96 : 0;
             memset(bgl[bg] + left, 0, (W - left) * sizeof(bgl[bg][0]));
         }
         prio[bg] = io16(e, 0x08 + 2 * bg) & 3;

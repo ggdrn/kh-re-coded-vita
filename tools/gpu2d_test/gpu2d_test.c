@@ -451,6 +451,7 @@ static int scene_clean_start(void)
     memcpy(kh_vram_bg_a + 11 * 0x800 + map_row + 4, &tile, 2); /* root wallpaper */
     memcpy(kh_vram_bg_b + 12 * 0x800 + map_row + 28, &tile, 2); /* status text */
     memcpy(kh_vram_bg_b + 10 * 0x800 + map_row + 6, &tile, 2); /* portrait area */
+    memcpy(kh_vram_bg_b + 10 * 0x800 + map_row + 26, &tile, 2); /* left edge of attribute border */
     memcpy(kh_vram_bg_b + 10 * 0x800 + map_row + 30, &tile, 2); /* overview frame */
     memcpy(kh_vram_bg_b + 11 * 0x800 + map_row + 4, &tile, 2); /* status wallpaper */
     oam(0, 0, line, 32, 0);
@@ -460,7 +461,7 @@ static int scene_clean_start(void)
     int ok = kh_gpu2d_render_start_lines(KH_ENGINE_A, fb, line, line + 8, 1);
     ok &= (pixels[8] >> 24) == 0xfe && pixels[16] == 0 && pixels[32] == 0;
     kh_gpu2d_render_start_lines(KH_ENGINE_B, fb, line, line + 8, 1);
-    ok &= pixels[16] == 0 && (pixels[24] >> 24) == 0xfe && (pixels[32] >> 24) == 0xfe &&
+    ok &= pixels[16] == 0 && (pixels[24] >> 24) == 0xfe && (pixels[32] >> 24) == 0xfe && pixels[104] == 0 &&
           (pixels[112] >> 24) == 0xfe && pixels[120] == 0;
     kh_gpu2d_render_start_lines(KH_ENGINE_B, fb, line, line + 8, 0);
     ok &= (pixels[120] >> 24) == 0xfe;
