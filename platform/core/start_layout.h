@@ -32,23 +32,23 @@ static const StartRegion matrix_regions[] = {
     { 1, { 0, 0, DS_SCREEN_W, DS_SCREEN_H }, { 488, 101, 460, 345 } },
 };
 
-/* Give the native board a wider viewport. The scrolling tile background,
- * 3D quads and controls share this rectangle with the touch transform. */
-static const StartRegion stat_matrix_board = {
+/* The menu content on engine A keeps its native layers and touch coordinates
+ * in a wider viewport. The nominal screen indices assume engine A is below B. */
+static const StartRegion wide_menu_content = {
     1, { 0, 0, DS_SCREEN_W, DS_SCREEN_H }, { 20, 56, 640, 418 },
 };
 /* Other ov073 pages have their own lists and use the complete surface. */
-static const StartRegion stat_matrix_status = {
+static const StartRegion full_menu_status = {
     0, { 0, 0, DS_SCREEN_W, DS_SCREEN_H }, { 684, 32, 256, 192 },
 };
 
-/* Widgets from the ov073 Stats page. The description remains the live
- * selection text supplied by ov075. Each widget keeps its own proportions. */
-enum { STAT_HEADING, STAT_PORTRAIT, STAT_DESCRIPTION };
-static const StartRegion stat_matrix_widgets[] = {
-    [STAT_HEADING]     = { 0, { 0,   0, 256, 22 }, { 684,  32, 256, 22 } },
-    [STAT_PORTRAIT]    = { 0, { 16, 24, 80, 80 }, { 762, 65, 100, 100 } },
-    [STAT_DESCRIPTION] = { 0, { 0, 145, 256, 47 }, { 684, 428, 256, 47 } },
+/* Widgets from the ov073 Stats page. The footer stays live and can contain
+ * the selected chip description, Munny and time, or menu-specific controls. */
+enum { STATUS_HEADING, STATUS_PORTRAIT, STATUS_FOOTER };
+static const StartRegion status_widgets[] = {
+    [STATUS_HEADING]  = { 0, {  0,   0, 256, 22 }, { 684,  32, 256,  22 } },
+    [STATUS_PORTRAIT] = { 0, { 16,  24,  80, 80 }, { 762,  65, 100, 100 } },
+    [STATUS_FOOTER]   = { 0, {  0, 145, 256, 47 }, { 684, 428, 256,  47 } },
 };
 
 static inline int start_region_contains(const StartRegion *region, int px, int py)
