@@ -302,6 +302,7 @@ typedef struct {
     int eng[3], neng; /* the engines drawn this frame */
     int transparent_tree;
     int clean_start;
+    int stat_overview;
     int title_sprites;
     int start_overview;
 } Frame2d;
@@ -372,6 +373,8 @@ static void render_chunk(int chunk, void *arg)
         r = kh_gpu2d_render_graphics_lines(KH_ENGINE_A, f->fb[engine], y0, y1);
     else if (engine == KH_ENGINE_B && f->title_sprites)
         r = kh_gpu2d_render_title_lines(f->fb[engine], y0, y1);
+    else if (engine == KH_ENGINE_B && f->stat_overview)
+        r = kh_gpu2d_render_start_lines(engine, f->fb[engine], y0, y1, 1);
     else if (f->clean_start)
         r = kh_gpu2d_render_start_lines(engine, f->fb[engine], y0, y1, f->start_overview);
     else if (engine == KH_ENGINE_B && f->transparent_tree)
@@ -880,9 +883,16 @@ static void present(void)
     if (!native_menu || !kh_overlay_loaded(74))
         __atomic_store_n(&s_start_root_ready, 0, __ATOMIC_RELEASE);
     static int last_start_layout;
-    const int start_layout_changed = start_layout != last_start_layout;
+    static int last_stat_status_touch;
+    const int stat_status_touch = start_layout == VIDEO_START_STAT_MATRIX && a_on_top;
+    const int start_layout_changed = start_layout != last_start_layout ||
+                                     stat_status_touch != last_stat_status_touch;
     last_start_layout = start_layout;
-    video_set_start_layout(start_layout, __atomic_load_n(&s_start_selection, __ATOMIC_ACQUIRE));
+    last_stat_status_touch = stat_status_touch;
+    const int start_overview = __atomic_load_n(&s_start_status_page, __ATOMIC_ACQUIRE) == 0;
+    const int stat_overview = start_layout == VIDEO_START_STAT_MATRIX && start_overview;
+    video_set_start_layout(start_layout, __atomic_load_n(&s_start_selection, __ATOMIC_ACQUIRE),
+                           stat_overview, stat_status_touch);
     const int field_engine_3d = (KH_IO32(0x04000000) & 0x108) == 0x108;
     const int results = kh_overlay_loaded(34) &&
                         __atomic_load_n(&gResultsScreenWorkPointer, __ATOMIC_RELAXED);
@@ -1044,10 +1054,12 @@ static void present(void)
     }
 
     const int tree_changed = f2d.transparent_tree != transparent_tree;
+    const int stat_overview_changed = f2d.stat_overview != stat_overview;
     f2d.transparent_tree = transparent_tree;
     f2d.title_sprites = title_sprites;
     f2d.clean_start = start_layout == VIDEO_START_ROOT;
-    f2d.start_overview = __atomic_load_n(&s_start_status_page, __ATOMIC_ACQUIRE) == 0;
+    f2d.start_overview = start_overview;
+    f2d.stat_overview = stat_overview;
 
     /* The 2D image only changes when the game has finished a frame (its SWAP_BUFFERS) and the
      * VBlank after it has applied the frame's OAM and register updates: at the game's 30 fps
@@ -1062,7 +1074,8 @@ static void present(void)
         }
         /* dual 3D: the engines change screens with every toggle, so both are drawn each
          * time (a skipped one left the other engine's picture on its screen, 0.0.88) */
-        draw2d = dual || coliseum_hud_changed || tree_changed || start_layout_changed || title_changed ||
+        draw2d = dual || coliseum_hud_changed || tree_changed || start_layout_changed ||
+                 stat_overview_changed || title_changed ||
                  (!smooth_3d && shortcut_sync_frames) ||
                  (pending && vb != serial_vb) || vb - drawn_vb >= 4;
         if (draw2d) {

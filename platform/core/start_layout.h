@@ -32,14 +32,23 @@ static const StartRegion matrix_regions[] = {
     { 1, { 0, 0, DS_SCREEN_W, DS_SCREEN_H }, { 488, 101, 460, 345 } },
 };
 
-/* Stat Matrix uses 616/308 px columns, including an 8 px frame on each
- * edge. Fit both complete DS surfaces at 4:3. The board is engine A on
- * the physical touch screen, including its native controls and overlays. */
+/* Give the native board a wider viewport. The scrolling tile background,
+ * 3D quads and controls share this rectangle with the touch transform. */
 static const StartRegion stat_matrix_board = {
-    1, { 0, 0, DS_SCREEN_W, DS_SCREEN_H }, { 20, 47, 600, 450 },
+    1, { 0, 0, DS_SCREEN_W, DS_SCREEN_H }, { 20, 56, 640, 418 },
 };
+/* Other ov073 pages have their own lists and use the complete surface. */
 static const StartRegion stat_matrix_status = {
-    0, { 0, 0, DS_SCREEN_W, DS_SCREEN_H }, { 648, 47, 292, 219 },
+    0, { 0, 0, DS_SCREEN_W, DS_SCREEN_H }, { 684, 32, 256, 192 },
+};
+
+/* Widgets from the ov073 Stats page. The description remains the live
+ * selection text supplied by ov075. Each widget keeps its own proportions. */
+enum { STAT_HEADING, STAT_PORTRAIT, STAT_DESCRIPTION };
+static const StartRegion stat_matrix_widgets[] = {
+    [STAT_HEADING]     = { 0, { 0,   0, 256, 22 }, { 684,  32, 256, 22 } },
+    [STAT_PORTRAIT]    = { 0, { 16, 24, 80, 80 }, { 762, 65, 100, 100 } },
+    [STAT_DESCRIPTION] = { 0, { 0, 145, 256, 47 }, { 684, 428, 256, 47 } },
 };
 
 static inline int start_region_contains(const StartRegion *region, int px, int py)

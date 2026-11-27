@@ -51,7 +51,7 @@ void video_set_title_marker(const uint32_t *pixels);
 /* Returns whether the renderer can isolate the title menu's native OBJ layer. */
 int video_set_title_display(int mode, int screen, uint16_t brightness, unsigned menu_state);
 enum { VIDEO_START_OFF, VIDEO_START_ROOT, VIDEO_START_MATRIX, VIDEO_START_STAT_MATRIX };
-void video_set_start_layout(int layout, unsigned selection);
+void video_set_start_layout(int layout, unsigned selection, int stat_overview, int stat_status_touch);
 int video_start_layout_active(void);
 int video_map_start_touch(int px, int py, int first, int *x, int *y);
 int video_take_start_row(void);

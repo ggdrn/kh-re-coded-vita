@@ -1188,6 +1188,9 @@ enum { TITLE_LABEL_W = 160, TITLE_LABEL_H = 10 };
 static uint16_t s_title_brightness;
 static int s_start_layout;
 static unsigned s_start_selection;
+static int s_stat_overview;
+static int s_stat_status_touch;
+enum { START_INPUT_LAYOUT_MASK = 255, START_INPUT_STAT_STATUS = 256, START_INPUT_STAT_OVERVIEW = 512 };
 static int s_start_input_layout;
 static int s_start_row;
 /* config single_screen out of the field's action (game.c decides when): a scene whose bottom
@@ -1669,15 +1672,17 @@ int video_map_field_touch(int px, int py, int first, int *x, int *y)
     return 0;
 }
 
-void video_set_start_layout(int layout, unsigned selection)
+void video_set_start_layout(int layout, unsigned selection, int stat_overview, int stat_status_touch)
 {
     s_start_layout = layout;
     s_start_selection = selection;
+    s_stat_overview = stat_overview;
+    s_stat_status_touch = stat_status_touch;
 }
 
 int video_start_layout_active(void)
 {
-    return __atomic_load_n(&s_start_input_layout, __ATOMIC_ACQUIRE);
+    return __atomic_load_n(&s_start_input_layout, __ATOMIC_ACQUIRE) & START_INPUT_LAYOUT_MASK;
 }
 
 int video_take_start_row(void)
@@ -1689,12 +1694,21 @@ int video_map_start_touch(int px, int py, int first, int *x, int *y)
 {
     static int gesture_layout;
     static const StartRegion *gesture_region;
-    const int layout = video_start_layout_active();
+    const int input_layout = __atomic_load_n(&s_start_input_layout, __ATOMIC_ACQUIRE);
+    const int layout = input_layout & START_INPUT_LAYOUT_MASK;
     if (first) {
-        gesture_layout = layout;
+        gesture_layout = input_layout;
         gesture_region = NULL;
-        const StartRegion *matrix_touch = layout == VIDEO_START_STAT_MATRIX ? &stat_matrix_board :
-                                          layout == VIDEO_START_MATRIX ? &matrix_regions[1] : NULL;
+        const StartRegion *matrix_touch = NULL;
+        if (layout == VIDEO_START_STAT_MATRIX) {
+            if (input_layout & START_INPUT_STAT_STATUS)
+                matrix_touch = input_layout & START_INPUT_STAT_OVERVIEW ?
+                               &stat_matrix_widgets[STAT_HEADING] : &stat_matrix_status;
+            else
+                matrix_touch = &stat_matrix_board;
+        } else if (layout == VIDEO_START_MATRIX) {
+            matrix_touch = &matrix_regions[1];
+        }
         if (matrix_touch && start_region_contains(matrix_touch, px, py))
             gesture_region = matrix_touch;
         if (layout == VIDEO_START_ROOT) {
@@ -1709,7 +1723,7 @@ int video_map_start_touch(int px, int py, int first, int *x, int *y)
             __atomic_store_n(&s_start_row, (*y - 24) / 16 + 1, __ATOMIC_RELEASE);
         }
     }
-    if (layout != gesture_layout)
+    if (input_layout != gesture_layout)
         gesture_region = NULL;
     if (!gesture_region)
         return 0;
@@ -1951,14 +1965,49 @@ static void draw_start_frame(ScreenRect dst, int selected)
     memset(s_panel, 0, sizeof(s_panel));
 }
 
+static void draw_stat_region(StartRegion region, int isolated)
+{
+    /* The native Toggle screens action changes which engine accepts input.
+     * Keep the board and status anchored in their Vita columns. */
+    region.screen ^= s_stat_status_touch;
+    draw_start_region(&region, isolated);
+}
+
 static void draw_stat_matrix(void)
 {
-    const StartRegion *const columns[] = { &stat_matrix_board, &stat_matrix_status };
-    for (unsigned i = 0; i < sizeof(columns) / sizeof(columns[0]); i++) {
-        const StartRegion *region = columns[i];
-        const ScreenRect r = region->display;
-        draw_start_frame((ScreenRect){ r.x - 8, r.y - 8, r.w + 16, r.h + 16 }, 0);
-        draw_start_region(region, 0);
+    const ScreenRect board = stat_matrix_board.display;
+    draw_start_frame((ScreenRect){ board.x - 8, board.y - 8, board.w + 16, board.h + 16 }, 0);
+    draw_stat_region(stat_matrix_board, 0);
+
+    if (!s_stat_overview) {
+        const ScreenRect status = stat_matrix_status.display;
+        draw_start_frame((ScreenRect){ status.x - 8, status.y - 8, status.w + 16, status.h + 16 }, 0);
+        draw_stat_region(stat_matrix_status, 0);
+        return;
+    }
+
+    draw_start_frame((ScreenRect){ 676, 24, 272, 146 }, 0);
+    draw_start_frame((ScreenRect){ 676, 420, 272, 63 }, 0);
+    for (unsigned i = 0; i < sizeof(stat_matrix_widgets) / sizeof(stat_matrix_widgets[0]); i++)
+        draw_stat_region(stat_matrix_widgets[i], 1);
+
+    /* ov073 puts LV/HP in a short block below the portrait, with the
+     * remaining six rows on its right. Use the original text and value
+     * pixels at the same scale, with the numbers on a common right edge. */
+    for (int row = 0; row < 8; row++) {
+        const int y = 180 + row * 29;
+        draw_start_frame((ScreenRect){ 676, y, 272, 26 }, 0);
+        if (row < 2) {
+            const int source_y = 104 + row * 16;
+            const StartRegion label = { 0, { 18, source_y, 22, 16 }, { 714, y + 1, 33, 24 } };
+            const StartRegion value = { 0, { 40, source_y, 56, 16 }, { 842, y + 1, 84, 24 } };
+            draw_stat_region(label, 1);
+            draw_stat_region(value, 1);
+        } else {
+            const int source_y = row < 6 ? 24 + (row - 2) * 16 : 104 + (row - 6) * 16;
+            const StartRegion stat = { 0, { 96, source_y, 144, 16 }, { 710, y + 1, 216, 24 } };
+            draw_stat_region(stat, 1);
+        }
     }
 }
 
@@ -2287,9 +2336,15 @@ void video_present(const uint32_t *top, const uint32_t *bottom)
 
     glViewport(0, 0, DISPLAY_W, DISPLAY_H);
     const int start_layout = s_compose ? s_start_layout : VIDEO_START_OFF;
+    int start_input = start_layout;
+    if (start_layout == VIDEO_START_STAT_MATRIX && s_stat_status_touch) {
+        start_input |= START_INPUT_STAT_STATUS;
+        if (s_stat_overview)
+            start_input |= START_INPUT_STAT_OVERVIEW;
+    }
     if (start_layout != VIDEO_START_ROOT)
         __atomic_store_n(&s_start_row, 0, __ATOMIC_RELEASE);
-    __atomic_store_n(&s_start_input_layout, start_layout, __ATOMIC_RELEASE);
+    __atomic_store_n(&s_start_input_layout, start_input, __ATOMIC_RELEASE);
     if (s_title_mode == VIDEO_TITLE_CARD || s_title_mode == VIDEO_TITLE_MENU) {
         const unsigned mode = s_title_brightness >> 14;
         const int level = (s_title_brightness & 31) > 16 ? 16 : s_title_brightness & 31;
